@@ -17,18 +17,6 @@ function FilmReelIcon() {
     <svg viewBox="0 0 80 80" fill="none" className="h-16 w-16 text-[var(--text-dim)]">
       <circle cx="40" cy="40" r="28" stroke="currentColor" strokeWidth="1" />
       <circle cx="40" cy="40" r="8" stroke="currentColor" strokeWidth="1" />
-      {[0, 60, 120, 180, 240, 300].map((deg) => (
-        <line
-          key={deg}
-          x1="40"
-          y1="12"
-          x2="40"
-          y2="20"
-          stroke="currentColor"
-          strokeWidth="1"
-          transform={`rotate(${deg} 40 40)`}
-        />
-      ))}
     </svg>
   );
 }
@@ -61,7 +49,7 @@ export default function MovieGrid({
   return (
     <div>
       {countLabel && (
-        <p className="mb-4 inline-block bg-[var(--bg-surface)] px-3 py-1 text-xs text-[var(--text-dim)]">
+        <p className="mb-4 ml-auto w-fit bg-[var(--bg-surface)] px-3 py-1 text-xs text-[var(--text-dim)]">
           {countLabel}
         </p>
       )}
@@ -69,11 +57,15 @@ export default function MovieGrid({
         className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
         variants={prefersReducedMotion ? undefined : staggerContainer}
         initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-40px" }}
+        animate="visible"
       >
-        {movies.map((movie) => (
-          <motion.div key={movie.id} variants={prefersReducedMotion ? undefined : scaleInVariant}>
+        {movies.map((movie, index) => (
+          <motion.div
+            key={movie.id}
+            variants={prefersReducedMotion ? undefined : scaleInVariant}
+            custom={index}
+            transition={{ delay: index * 0.04 }}
+          >
             <MovieCard movie={movie} />
           </motion.div>
         ))}
