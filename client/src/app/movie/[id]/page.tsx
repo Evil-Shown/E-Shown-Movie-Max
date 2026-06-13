@@ -1,7 +1,8 @@
 import MovieDetailClient from "@/components/MovieDetailClient";
 import MovieDetailHero from "@/components/MovieDetailHero";
 import MovieRow from "@/components/MovieRow";
-import { backdropUrl, getMovieById, getSimilarMovies } from "@/lib/movies";
+import { backdropUrl, getSimilarMovies } from "@/lib/movies";
+import { resolveMovie } from "@/lib/movie-service";
 import { notFound } from "next/navigation";
 
 interface MoviePageProps {
@@ -15,7 +16,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: MoviePageProps) {
   const { id } = await params;
-  const movie = getMovieById(id);
+  const movie = await resolveMovie(id);
   if (!movie) return { title: "Movie Not Found" };
   return {
     title: `${movie.title} | E-Shown Movie Max`,
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: MoviePageProps) {
 
 export default async function MoviePage({ params }: MoviePageProps) {
   const { id } = await params;
-  const movie = getMovieById(id);
+  const movie = await resolveMovie(id);
   if (!movie) notFound();
 
   const similar = getSimilarMovies(movie);
@@ -39,8 +40,8 @@ export default async function MoviePage({ params }: MoviePageProps) {
       </div>
 
       {similar.length > 0 && (
-        <div className="border-t border-[var(--border-subtle)]">
-          <MovieRow title="You May Also Like" movies={similar} eyebrow="Recommended" />
+        <div className="section-base border-t border-[var(--divider)]">
+          <MovieRow embedded title="You May Also Like" movies={similar} eyebrow="Recommended" />
         </div>
       )}
     </>

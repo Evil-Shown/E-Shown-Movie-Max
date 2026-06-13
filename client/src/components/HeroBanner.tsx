@@ -7,8 +7,14 @@ import FloatingCard from "@/components/3d/FloatingCard";
 import PlayButton from "@/components/PlayButton";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import {
+  motion,
+  useMotionValueEvent,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
+import { useRef, useState } from "react";
 import { fadeUpVariant, staggerContainer } from "@/lib/motion";
 
 interface HeroBannerProps {
@@ -20,7 +26,7 @@ function AnimatedTitle({ title }: { title: string }) {
 
   if (prefersReducedMotion) {
     return (
-      <h1 className="font-cinzel text-5xl font-bold leading-[1.05] text-[var(--text-primary)] sm:text-6xl lg:text-7xl xl:text-8xl">
+      <h1 className="font-cinzel text-cinema-glow text-5xl font-bold leading-[1.05] text-[var(--text-primary)] sm:text-6xl lg:text-7xl xl:text-8xl">
         {title}
       </h1>
     );
@@ -28,8 +34,8 @@ function AnimatedTitle({ title }: { title: string }) {
 
   return (
     <h1
-      className="font-cinzel text-5xl font-bold leading-[1.05] text-[var(--text-primary)] sm:text-6xl lg:text-7xl xl:text-8xl"
-      style={{ textShadow: "0 0 80px rgba(201,168,76,0.3)" }}
+      className="font-cinzel text-cinema-glow text-5xl font-bold leading-[1.05] text-[var(--text-primary)] sm:text-6xl lg:text-7xl xl:text-8xl"
+      style={{ textShadow: "0 0 80px rgba(212,168,67,0.3)" }}
     >
       {title.split("").map((char, i) => (
         <motion.span
@@ -49,16 +55,33 @@ function AnimatedTitle({ title }: { title: string }) {
 export default function HeroBanner({ movie }: HeroBannerProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const prefersReducedMotion = useReducedMotion();
+  const [scrollProgress, setScrollProgress] = useState(0);
+
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"],
   });
+
+  useMotionValueEvent(scrollYProgress, "change", (v) => setScrollProgress(v));
+
   const backdropY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  const backdropScale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+  const contentScale = useTransform(scrollYProgress, [0, 0.6], [1, 0.94]);
+  const scrollLabelOpacity = useTransform(scrollYProgress, [0.85, 1], [1, 0]);
+  const progressWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+
   const runtimePct = Math.min(100, Math.round((movie.runtime / 200) * 100));
 
   return (
     <section ref={sectionRef} className="relative h-screen min-h-[700px] overflow-hidden">
-      <motion.div style={{ y: prefersReducedMotion ? 0 : backdropY }} className="absolute inset-0 scale-105">
+      <motion.div
+        style={{
+          y: prefersReducedMotion ? 0 : backdropY,
+          scale: prefersReducedMotion ? 1 : backdropScale,
+        }}
+        className="absolute inset-0 will-change-transform"
+      >
         <Image
           src={backdropUrl(movie.backdropPath)}
           alt=""
@@ -70,19 +93,23 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
       </motion.div>
 
       <div className="hero-overlay absolute inset-0" />
-      <HeroParticles />
+      <HeroParticles scrollProgress={scrollProgress} />
       <div className="scanline" />
 
       <div className="relative z-10 mx-auto flex h-full max-w-7xl items-end px-4 pb-20 pt-28 sm:px-6 lg:px-8">
         <motion.div
-          className="max-w-2xl"
+          style={{
+            opacity: prefersReducedMotion ? 1 : contentOpacity,
+            scale: prefersReducedMotion ? 1 : contentScale,
+          }}
+          className="max-w-2xl rounded-3xl border border-white/10 bg-[rgba(32,38,54,0.38)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-sm will-change-transform sm:p-7"
           variants={prefersReducedMotion ? undefined : staggerContainer}
           initial="hidden"
           animate="visible"
         >
           <motion.div variants={prefersReducedMotion ? undefined : fadeUpVariant} className="mb-4 flex items-center gap-3">
             <span className="h-px w-8 bg-[var(--gold-primary)]" />
-            <p className="text-[10px] uppercase tracking-[0.4em] text-[var(--gold-primary)]">
+            <p className="text-[10px] uppercase tracking-[0.4em] text-[var(--gold-bright)]">
               Now Featuring
             </p>
             <span className="h-px w-8 bg-[var(--gold-primary)]" />
@@ -112,7 +139,7 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
             {movie.genres.map((genre) => (
               <span
                 key={genre}
-                className="border border-[var(--border-subtle)] px-2 py-0.5 text-[10px] uppercase tracking-wider text-[var(--text-dim)]"
+                className="rounded-full border border-[var(--border-subtle)] bg-[rgba(32,38,54,0.48)] px-2.5 py-1 text-[10px] uppercase tracking-wider text-[var(--text-secondary)]"
               >
                 {genre}
               </span>
@@ -130,7 +157,8 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
             <PlayButton movie={movie} label="Play Now" />
             <Link
               href={`/movie/${movie.id}`}
-              className="inline-flex h-12 min-w-[160px] items-center justify-center border border-[rgba(201,168,76,0.4)] px-8 text-sm text-[rgba(240,237,228,0.8)] transition hover:border-[var(--border-hot)] hover:text-[var(--text-primary)]"
+              data-cursor="link"
+              className="inline-flex h-12 min-w-[160px] items-center justify-center rounded-full border border-[rgba(212,168,67,0.46)] bg-[rgba(32,38,54,0.46)] px-8 text-sm text-[var(--text-secondary)] transition hover:border-[var(--border-hot)] hover:bg-[rgba(212,168,67,0.1)] hover:text-[var(--text-primary)] active:scale-95"
             >
               More Info
             </Link>
@@ -139,11 +167,8 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
           <motion.div variants={prefersReducedMotion ? undefined : fadeUpVariant} className="mt-6">
             <p className="text-[9px] uppercase tracking-[0.3em] text-[var(--text-dim)]">Runtime</p>
             <p className="mt-1 text-xs text-[var(--text-secondary)]">{formatRuntime(movie.runtime)}</p>
-            <div className="mt-2 h-0.5 w-[200px] bg-[rgba(201,168,76,0.15)]">
-              <div
-                className="h-full bg-[var(--gold-primary)]"
-                style={{ width: `${runtimePct}%` }}
-              />
+            <div className="mt-2 h-0.5 w-[200px] bg-[rgba(212,168,67,0.15)]">
+              <div className="h-full bg-[var(--gold-primary)]" style={{ width: `${runtimePct}%` }} />
             </div>
           </motion.div>
         </motion.div>
@@ -151,7 +176,7 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
         <div className="absolute bottom-24 right-8 hidden lg:block">
           <FloatingCard>
             <div className="animate-float">
-              <div className="h-[390px] w-[260px] overflow-hidden rounded-xl ring-1 ring-[var(--border-mid)]">
+              <div className="h-[390px] w-[260px] overflow-hidden rounded-2xl shadow-[0_30px_90px_rgba(0,0,0,0.38),0_0_40px_rgba(212,168,67,0.14)] ring-1 ring-[var(--border-mid)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={posterUrl(movie.posterPath, "w500")}
@@ -161,27 +186,23 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
                   className="h-full w-full object-cover"
                 />
               </div>
-              <div className="poster-reflection relative mt-2 h-16 w-[260px] overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={posterUrl(movie.posterPath, "w500")}
-                  alt=""
-                  width={260}
-                  height={64}
-                  className="h-full w-full object-cover"
-                />
-              </div>
             </div>
           </FloatingCard>
         </div>
       </div>
 
-      <div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2">
-        <span className="text-[10px] uppercase tracking-[0.4em] text-[rgba(240,237,228,0.3)]">
+      <div className="absolute bottom-8 left-1/2 z-10 flex w-48 -translate-x-1/2 flex-col items-center gap-2">
+        <motion.span
+          style={{ opacity: prefersReducedMotion ? 1 : scrollLabelOpacity }}
+          className="text-[10px] uppercase tracking-[0.4em] text-[rgba(240,237,228,0.3)]"
+        >
           Scroll
-        </span>
-        <div className="relative h-10 w-px bg-[rgba(201,168,76,0.2)]">
-          <div className="scroll-line-indicator absolute inset-0 bg-[var(--gold-primary)]" />
+        </motion.span>
+        <div className="relative h-0.5 w-full overflow-hidden rounded-full bg-[rgba(212,168,67,0.15)]">
+          <motion.div
+            style={{ width: prefersReducedMotion ? "30%" : progressWidth }}
+            className="animate-shimmer h-full bg-gradient-to-r from-[var(--gold-primary)] via-[var(--gold-bright)] to-[var(--gold-primary)]"
+          />
         </div>
       </div>
     </section>

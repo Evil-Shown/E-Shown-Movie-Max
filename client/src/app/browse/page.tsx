@@ -16,22 +16,15 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
   return (
     <div>
-      <section className="noise-texture relative overflow-hidden bg-[var(--bg-surface)] px-4 py-16 sm:px-6 lg:px-8">
-        <GlowOrb color="rgba(201,168,76,0.15)" size={240} x="85%" y="35%" blur={80} opacity={0.5} />
-        <GlowOrb color="rgba(26,143,255,0.12)" size={200} x="8%" y="65%" blur={70} opacity={0.4} />
+      <section className="browse-hero-bg surface-texture relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8">
+        <GlowOrb color="rgba(212,168,67,0.2)" size={200} x="85%" y="35%" blur={70} opacity={0.28} />
+        <GlowOrb color="rgba(74,144,217,0.15)" size={180} x="8%" y="65%" blur={60} opacity={0.2} />
 
-        <div className="relative mx-auto max-w-7xl">
-          <h1
-            className="font-cinzel text-5xl text-transparent sm:text-6xl"
-            style={{
-              background: "linear-gradient(135deg, var(--gold-primary), var(--gold-bright))",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-            }}
-          >
+        <div className="relative mx-auto max-w-7xl rounded-[2rem] border border-white/10 bg-[rgba(32,38,54,0.34)] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur-sm sm:p-8">
+          <h1 className="font-cinzel text-cinema-glow text-5xl text-[var(--gold-primary)] sm:text-6xl">
             The Library
           </h1>
-          <div className="mt-4 h-px w-[120px] bg-[var(--gold-primary)]" />
+          <div className="mt-4 h-px w-[160px] bg-gradient-to-r from-[var(--gold-primary)] to-transparent" />
           <p className="font-cormorant mt-4 text-lg italic text-[var(--text-secondary)]">
             {sorted.length} title{sorted.length !== 1 ? "s" : ""}
             {activeGenre ? ` in ${activeGenre}` : " across all genres"}
@@ -43,7 +36,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <MovieGrid
           movies={sorted}
           countLabel={`Showing ${sorted.length} titles`}

@@ -50,7 +50,13 @@ export default function SearchBar({
   return (
     <form onSubmit={handleSubmit} className="relative w-full">
       {focused && (
-        <span className="absolute bottom-0 left-0 top-0 w-1 bg-[var(--gold-primary)]" aria-hidden />
+        <span className="absolute bottom-3 left-3 top-3 z-[1] w-1 rounded-full bg-[var(--gold-primary)]" aria-hidden />
+      )}
+      {!query && !focused && (
+        <span
+          className="search-idle-underline pointer-events-none absolute bottom-0 left-4 right-4 h-px origin-center"
+          aria-hidden
+        />
       )}
       <input
         type="search"
@@ -60,19 +66,21 @@ export default function SearchBar({
         onBlur={() => setFocused(false)}
         placeholder={query ? "Search titles, directors, actors..." : placeholder}
         autoFocus={autoFocus}
-        className={`font-cormorant w-full rounded-none border bg-[var(--bg-surface)] text-[var(--text-primary)] outline-none transition duration-200 ${
-          large ? "h-16 py-4 pl-6 pr-14 text-lg" : "h-11 py-2.5 pl-5 pr-12 text-sm"
+        data-cursor="text"
+        className={`font-cormorant w-full rounded-2xl border bg-[rgba(42,49,69,0.82)] text-[var(--text-primary)] shadow-[0_14px_36px_rgba(0,0,0,0.16)] outline-none backdrop-blur-sm transition duration-200 ${
+          large ? "h-16 py-4 pl-7 pr-14 text-lg" : "h-11 py-2.5 pl-5 pr-12 text-sm"
         } ${
           focused
-            ? "border-[var(--gold-primary)] shadow-[0_0_20px_rgba(201,168,76,0.15)] brightness-110"
-            : "border-[var(--border-mid)]"
-        } ${!query && placeholderVisible ? "placeholder:opacity-100" : "placeholder:opacity-70"} placeholder:italic placeholder:text-[var(--text-dim)] placeholder:transition-opacity placeholder:duration-300`}
+            ? "border-[var(--gold-primary)] shadow-[0_0_0_3px_rgba(212,168,67,0.14),0_18px_44px_rgba(0,0,0,0.18)] brightness-110"
+            : "border-[rgba(255,255,255,0.12)]"
+        } ${!query && placeholderVisible ? "placeholder:opacity-100" : "placeholder:opacity-70"} placeholder:italic placeholder:text-[var(--text-secondary)] placeholder:transition-opacity placeholder:duration-300`}
       />
       <button
         type="button"
+        data-cursor="link"
         onClick={() => handleSubmit()}
         aria-label="Search"
-        className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] transition hover:text-[var(--gold-primary)]"
+        className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1 text-[var(--text-secondary)] transition hover:bg-[rgba(212,168,67,0.12)] hover:text-[var(--gold-primary)] active:scale-95"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-5 w-5">
           <circle cx="11" cy="11" r="8" />

@@ -30,7 +30,7 @@ export default function MovieGrid({
 
   if (movies.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center border border-dashed border-[var(--border-mid)] bg-[var(--bg-surface)] py-24 text-center">
+      <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-[var(--border-mid)] bg-[rgba(32,38,54,0.72)] py-24 text-center shadow-[0_18px_54px_rgba(0,0,0,0.16)]">
         <FilmReelIcon />
         <p className="font-cinzel mt-6 text-2xl text-[var(--text-primary)]">No titles found</p>
         <p className="font-cormorant mt-2 text-lg italic text-[var(--text-secondary)]">
@@ -38,7 +38,8 @@ export default function MovieGrid({
         </p>
         <Link
           href="/browse"
-          className="mt-8 border border-[var(--border-hot)] bg-[var(--gold-primary)] px-6 py-3 text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-[var(--gold-bright)]"
+          data-cursor="link"
+          className="mt-8 rounded-full border border-[var(--border-hot)] bg-[var(--gold-primary)] px-6 py-3 text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-[var(--gold-bright)] active:scale-95"
         >
           Browse All
         </Link>
@@ -49,12 +50,12 @@ export default function MovieGrid({
   return (
     <div>
       {countLabel && (
-        <p className="mb-4 ml-auto w-fit bg-[var(--bg-surface)] px-3 py-1 text-xs text-[var(--text-dim)]">
+        <p className="mb-5 ml-auto w-fit rounded-full border border-white/10 bg-[rgba(32,38,54,0.72)] px-4 py-1.5 text-xs text-[var(--text-secondary)] shadow-[0_10px_26px_rgba(0,0,0,0.12)]">
           {countLabel}
         </p>
       )}
       <motion.div
-        className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+        className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
         variants={prefersReducedMotion ? undefined : staggerContainer}
         initial="hidden"
         animate="visible"

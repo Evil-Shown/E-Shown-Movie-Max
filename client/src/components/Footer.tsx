@@ -1,6 +1,5 @@
 import Link from "next/link";
 import FooterDivider from "@/components/FooterDivider";
-import GlowOrb from "@/components/3d/GlowOrb";
 
 function HexLogoSmall() {
   return (
@@ -20,12 +19,17 @@ export default function Footer() {
   return (
     <>
       <FooterDivider />
-      <footer className="relative mt-auto overflow-hidden bg-[var(--bg-void)]">
-        <GlowOrb color="rgba(201,168,76,0.12)" size={400} x="10%" y="30%" blur={100} opacity={0.4} />
-
+      <footer className="surface-texture relative mt-auto overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 70% 45% at 20% 0%, rgba(212,168,67,0.06), transparent 60%), linear-gradient(to bottom, var(--bg-base), var(--bg-footer))",
+          }}
+        />
         <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="grid gap-10 md:grid-cols-3">
-            <div>
+            <div className="rounded-2xl border border-white/10 border-l-[3px] border-l-[rgba(212,168,67,0.34)] bg-[rgba(32,38,54,0.36)] p-6">
               <div className="flex items-center gap-3">
                 <HexLogoSmall />
                 <p className="font-cinzel text-lg tracking-[0.15em] text-[var(--gold-primary)]">
@@ -37,8 +41,11 @@ export default function Footer() {
               </p>
             </div>
 
-            <div>
-              <p className="font-cinzel text-xs uppercase tracking-[0.2em] text-[var(--gold-primary)]">
+            <div className="rounded-2xl border border-white/10 bg-[rgba(32,38,54,0.24)] p-6">
+              <p
+                className="font-cinzel text-[0.65rem] uppercase tracking-[0.25em]"
+                style={{ color: "rgba(212, 168, 67, 0.7)" }}
+              >
                 Explore
               </p>
               <ul className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
@@ -48,7 +55,7 @@ export default function Footer() {
                   { href: "/search", label: "Search Movies" },
                 ].map((item) => (
                   <li key={item.href}>
-                    <Link href={item.href} className="transition duration-200 hover:text-[var(--gold-primary)]">
+                    <Link href={item.href} data-cursor="link" className="footer-link transition duration-200 hover:text-[var(--gold-primary)]">
                       {item.label}
                     </Link>
                   </li>
@@ -56,8 +63,11 @@ export default function Footer() {
               </ul>
             </div>
 
-            <div>
-              <p className="font-cinzel text-xs uppercase tracking-[0.2em] text-[var(--gold-primary)]">
+            <div className="rounded-2xl border border-white/10 bg-[rgba(32,38,54,0.24)] p-6">
+              <p
+                className="font-cinzel text-[0.65rem] uppercase tracking-[0.25em]"
+                style={{ color: "rgba(212, 168, 67, 0.7)" }}
+              >
                 Genres
               </p>
               <ul className="mt-4 flex flex-wrap gap-2">
@@ -65,7 +75,8 @@ export default function Footer() {
                   <li key={genre}>
                     <Link
                       href={`/browse?genre=${encodeURIComponent(genre)}`}
-                      className="inline-block border-l-2 border-[var(--gold-primary)] pl-2 pr-3 py-1 text-[10px] uppercase tracking-[0.15em] text-[var(--text-secondary)] transition duration-200 hover:bg-[rgba(201,168,76,0.08)] hover:text-[var(--gold-primary)]"
+                      data-cursor="link"
+                      className="footer-link inline-block border-l-2 border-[var(--gold-primary)] pl-2 pr-3 py-1 text-[10px] uppercase tracking-[0.15em] text-[var(--text-secondary)] transition duration-200 hover:bg-[rgba(212,168,67,0.08)] hover:text-[var(--gold-primary)]"
                     >
                       {genre}
                     </Link>
@@ -75,7 +86,7 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-[var(--border-subtle)] pt-8 sm:flex-row">
+          <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-[var(--divider)] pt-8 sm:flex-row">
             <p className="text-xs text-[var(--text-dim)]">
               © {new Date().getFullYear()} E-Shown Movie Max. Built for cinema lovers.
             </p>

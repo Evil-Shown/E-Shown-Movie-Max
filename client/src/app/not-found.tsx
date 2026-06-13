@@ -7,15 +7,7 @@ export default function NotFound() {
       <GlowOrb color="rgba(201,168,76,0.2)" size={500} x="20%" y="40%" blur={120} opacity={0.35} />
       <GlowOrb color="rgba(26,143,255,0.15)" size={600} x="80%" y="60%" blur={140} opacity={0.3} />
 
-      <p
-        className="font-cinzel text-[10rem] font-bold leading-none sm:text-[15rem]"
-        style={{
-          background: "linear-gradient(135deg, var(--gold-primary), var(--electric-blue))",
-          WebkitBackgroundClip: "text",
-          backgroundClip: "text",
-          color: "transparent",
-        }}
-      >
+      <p className="font-cinzel gradient-hue-rotate text-[10rem] font-bold leading-none sm:text-[15rem]">
         404
       </p>
       <h1 className="font-cormorant mt-4 text-3xl italic text-[var(--text-primary)]">
@@ -26,7 +18,8 @@ export default function NotFound() {
       </p>
       <Link
         href="/"
-        className="font-cinzel mt-10 bg-[var(--gold-primary)] px-8 py-3 text-xs font-bold uppercase tracking-[0.25em] text-black transition hover:bg-[var(--gold-bright)]"
+        data-cursor="link"
+        className="font-cinzel mt-10 bg-[var(--gold-primary)] px-8 py-3 text-xs font-bold uppercase tracking-[0.25em] text-black transition hover:bg-[var(--gold-bright)] active:scale-95"
       >
         Return to Main Stage
       </Link>
