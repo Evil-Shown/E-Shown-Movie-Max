@@ -1,12 +1,15 @@
 import HeroBanner from "@/components/HeroBanner";
 import MovieRow from "@/components/MovieRow";
+import GlowOrb from "@/components/3d/GlowOrb";
 import {
+  backdropUrl,
   getFeaturedMovie,
   getMoviesByGenre,
   getNewReleases,
   getTrendingMovies,
   movies,
 } from "@/lib/movies";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -16,17 +19,19 @@ export default function HomePage() {
   const topRated = [...movies].sort((a, b) => b.rating - a.rating).slice(0, 8);
   const sciFi = getMoviesByGenre("Sci-Fi");
   const drama = getMoviesByGenre("Drama");
+  const ctaBackdrop = backdropUrl(movies[2]?.backdropPath ?? featured.backdropPath);
 
   return (
     <>
       <HeroBanner movie={featured} />
 
-      <div className="relative -mt-8 space-y-2 pb-12">
+      <div className="relative bg-[var(--bg-void)] pb-12">
         <MovieRow
-          title="Trending Now"
+          title="Trending"
           subtitle="What everyone is watching this week"
           movies={trending}
           priorityFirst
+          showRank
         />
         <MovieRow
           title="New Releases"
@@ -37,22 +42,40 @@ export default function HomePage() {
         <MovieRow title="Sci-Fi & Beyond" movies={sciFi} />
         <MovieRow title="Drama Collection" movies={drama} />
 
-        <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-transparent to-purple-500/10 p-8 sm:p-12">
-            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl" />
-            <div className="relative max-w-lg">
-              <h2 className="font-display text-3xl font-bold text-white sm:text-4xl">
-                Unlimited cinema, one subscription
-              </h2>
-              <p className="mt-4 text-zinc-400">
-                Explore our full library of {movies.length}+ hand-picked titles spanning every
-                genre. From blockbusters to hidden gems.
+        <section className="relative mx-auto mt-8 h-[400px] max-w-7xl overflow-hidden px-4 sm:px-6 lg:px-8">
+          <GlowOrb color="rgba(201,168,76,0.2)" size={280} x="15%" y="50%" blur={90} opacity={0.5} />
+          <GlowOrb
+            color="rgba(26,143,255,0.2)"
+            size={320}
+            x="85%"
+            y="40%"
+            blur={100}
+            opacity={0.45}
+            animationDelay="1.5s"
+          />
+
+          <div className="relative h-full overflow-hidden border border-[var(--border-subtle)]">
+            <Image src={ctaBackdrop} alt="" fill className="object-cover blur-sm brightness-50" sizes="1280px" />
+            <div className="absolute inset-0 bg-[var(--bg-void)]/75" />
+
+            <div className="relative flex h-full flex-col items-center justify-center px-6 text-center">
+              <p className="font-cinzel text-[10px] uppercase tracking-[0.4em] text-[var(--gold-primary)]">
+                Unlimited Cinema
               </p>
+              <h2 className="font-cinzel mt-4 text-4xl text-[var(--text-primary)] sm:text-5xl">
+                Every Story. Every World.
+              </h2>
+              <p className="font-cormorant mt-4 max-w-lg text-lg italic text-[var(--text-secondary)]">
+                From blockbusters to hidden gems — curated for the discerning viewer.
+              </p>
+              <span className="mt-6 border border-[var(--border-mid)] px-4 py-1.5 text-xs uppercase tracking-[0.2em] text-[var(--gold-primary)]">
+                {movies.length} curated films
+              </span>
               <Link
                 href="/browse"
-                className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-black transition hover:bg-zinc-200"
+                className="font-cinzel mt-8 bg-[var(--gold-primary)] px-10 py-4 text-sm font-bold uppercase tracking-[0.2em] text-black transition hover:bg-[var(--gold-bright)]"
               >
-                Browse Full Library
+                Browse Library
               </Link>
             </div>
           </div>

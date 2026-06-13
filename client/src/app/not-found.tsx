@@ -1,19 +1,34 @@
+import GlowOrb from "@/components/3d/GlowOrb";
 import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4 py-24 text-center">
-      <p className="font-display text-8xl font-bold text-amber-500/20">404</p>
-      <h1 className="mt-4 font-display text-3xl font-bold text-white">Page not found</h1>
-      <p className="mt-2 max-w-md text-zinc-500">
-        This scene got cut from the final edit. The page you&apos;re looking for doesn&apos;t
-        exist.
+    <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4 py-24 text-center">
+      <GlowOrb color="rgba(201,168,76,0.2)" size={500} x="20%" y="40%" blur={120} opacity={0.35} />
+      <GlowOrb color="rgba(26,143,255,0.15)" size={600} x="80%" y="60%" blur={140} opacity={0.3} />
+
+      <p
+        className="font-cinzel text-[10rem] font-bold leading-none sm:text-[15rem]"
+        style={{
+          background: "linear-gradient(135deg, var(--gold-primary), var(--electric-blue))",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          color: "transparent",
+        }}
+      >
+        404
+      </p>
+      <h1 className="font-cormorant mt-4 text-3xl italic text-[var(--text-primary)]">
+        This reel has gone dark.
+      </h1>
+      <p className="mt-3 max-w-md text-sm text-[var(--text-secondary)]">
+        The page you&apos;re looking for doesn&apos;t exist in our catalog.
       </p>
       <Link
         href="/"
-        className="mt-8 rounded-full bg-amber-500 px-6 py-3 text-sm font-bold text-black transition hover:bg-amber-400"
+        className="font-cinzel mt-10 bg-[var(--gold-primary)] px-8 py-3 text-xs font-bold uppercase tracking-[0.25em] text-black transition hover:bg-[var(--gold-bright)]"
       >
-        Back to Home
+        Return to Main Stage
       </Link>
     </div>
   );
