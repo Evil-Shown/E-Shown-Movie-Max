@@ -57,7 +57,9 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
           style={{ opacity: prefersReducedMotion ? 1 : contentOpacity }}
           className={styles.grid}
         >
-          <div className={styles.contentCard}>
+          <div className={styles.contentCol}>
+            <div className={styles.contentAmbient} aria-hidden />
+            <div className={styles.contentWrap}>
             <p className={`${styles.badge} ${styles.fadeItem} ${styles.fadeBadge}`}>
               FEATURED PICK
             </p>
@@ -97,6 +99,7 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
               <Link href={`/movie/${movie.id}`} className={styles.moreButton}>
                 More Info
               </Link>
+            </div>
             </div>
           </div>
 

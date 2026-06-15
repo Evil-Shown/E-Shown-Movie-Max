@@ -28,9 +28,7 @@ export default function CtaBanner({ stats }: CtaBannerProps) {
           {items.map((stat, index) => (
             <div
               key={stat.label}
-              className={`px-6 ${
-                index > 0 ? "sm:border-l sm:border-[rgba(247,244,239,0.16)]" : ""
-              }`}
+              className={`px-6 ${index > 0 ? "sm:border-l sm:border-[rgba(247,244,239,0.16)]" : ""}`}
             >
               <p className="font-[var(--font-playfair)] text-5xl font-bold text-[var(--accent-warm)]">
                 {stat.value}
