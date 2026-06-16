@@ -62,6 +62,14 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${geistMono.variable} ${playfair.variable} ${cinzel.variable} ${notoSinhala.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="dns-prefetch" href="https://vsembed.ru" />
+        <link rel="dns-prefetch" href="https://vidlink.pro" />
+        <link rel="dns-prefetch" href="https://multiembed.mov" />
+        <link rel="dns-prefetch" href="https://embed.su" />
+        <link rel="preconnect" href="https://vidlink.pro" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://vsembed.ru" crossOrigin="anonymous" />
+      </head>
       <body className="flex min-h-full flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <SplashScreen />
         <QueryProvider>

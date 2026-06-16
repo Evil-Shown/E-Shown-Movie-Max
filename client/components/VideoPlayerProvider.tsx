@@ -2,7 +2,15 @@
 
 import type { Movie } from "@/lib/types";
 import { backdropUrl, posterUrl } from "@/lib/movies";
-import { PROVIDER_LABELS, nextProvider, type StreamProvider } from "@/lib/providers";
+import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from "@/lib/providers";
+import { getBestProvider, recordProviderLoad } from "@/lib/storage/provider-performance";
+import {
+  formatProviderSwitchMessage,
+  getNextProvider,
+  getStreamLoadTimeoutMs,
+  getStabilityTip,
+  warmStreamProviders,
+} from "@/lib/stream-optimizer";
 import { getMovieEmbedUrl, isTvShow } from "@/lib/streaming";
 import { getTrailerId } from "@/lib/trailers";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
@@ -68,6 +76,8 @@ function PlayerLoadingOverlay({
   resumeSeconds,
   heroImage,
   posterImage,
+  autoSwitchMessage,
+  stabilityTip,
 }: {
   movie: Movie;
   isTrailer: boolean;
@@ -76,6 +86,8 @@ function PlayerLoadingOverlay({
   resumeSeconds?: number;
   heroImage: string;
   posterImage: string;
+  autoSwitchMessage?: string | null;
+  stabilityTip?: string | null;
 }) {
   const messages = isTrailer ? TRAILER_LOADING_MESSAGES : MOVIE_LOADING_MESSAGES;
   const [messageIndex, setMessageIndex] = useState(0);
@@ -127,6 +139,16 @@ function PlayerLoadingOverlay({
           </p>
         ) : null}
 
+        {stabilityTip ? (
+          <p className="mt-3 max-w-sm rounded-full border border-[rgba(74,124,142,0.35)] bg-[rgba(74,124,142,0.12)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a8d4e0]">
+            {stabilityTip}
+          </p>
+        ) : null}
+
+        {autoSwitchMessage ? (
+          <p className="mt-3 max-w-sm text-sm font-medium text-[#f4c27a]">{autoSwitchMessage}</p>
+        ) : null}
+
         <div className="player-loading-progress mt-8 w-full max-w-xs" aria-hidden>
           <div className="player-loading-progress-track">
             <div className="player-loading-progress-bar" />
@@ -172,9 +194,13 @@ function VideoPlayerModal({
   const [loadFailed, setLoadFailed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showKeyboardHint, setShowKeyboardHint] = useState(false);
+  const [autoSwitchMessage, setAutoSwitchMessage] = useState<string | null>(null);
   const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadStartedAtRef = useRef(Date.now());
+  const failoverAttemptsRef = useRef(0);
   const stageRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const stabilityTip = getStabilityTip();
   const trailerId = movie.trailerKey ?? getTrailerId(movie.id);
 
   const movieEmbedUrl = isTrailer
@@ -196,23 +222,41 @@ function VideoPlayerModal({
     season && episode ? `S${season} · E${episode}` : null;
 
   useEffect(() => {
+    warmStreamProviders();
+    failoverAttemptsRef.current = 0;
+    setAutoSwitchMessage(null);
+  }, [movie.id, mode]);
+
+  useEffect(() => {
     setLoaded(false);
     setLoadFailed(false);
+    loadStartedAtRef.current = Date.now();
 
     if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
     if (!isTrailer && iframeSrc) {
       loadTimerRef.current = setTimeout(() => {
-        setLoadFailed(true);
-      }, 18000);
+        if (failoverAttemptsRef.current >= STREAM_PROVIDERS.length - 1) {
+          setLoadFailed(true);
+          setAutoSwitchMessage(null);
+          return;
+        }
+
+        const next = getNextProvider(provider);
+        failoverAttemptsRef.current += 1;
+        setAutoSwitchMessage(formatProviderSwitchMessage(next));
+        onProviderChange(next);
+        setProvider(next);
+      }, getStreamLoadTimeoutMs());
     }
 
     return () => {
       if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
     };
-  }, [iframeSrc, isTrailer]);
+  }, [iframeSrc, isTrailer, provider, onProviderChange, setProvider]);
 
   useEffect(() => {
     if (!isTrailer && loaded && movieEmbedUrl) {
+      setProvider(provider);
       savePlayback({
         movie,
         provider,
@@ -222,7 +266,7 @@ function VideoPlayerModal({
         duration: (movie.runtime || 90) * 60,
       });
     }
-  }, [loaded, isTrailer, movie, provider, season, episode, resumeSeconds, movieEmbedUrl, savePlayback]);
+  }, [loaded, isTrailer, movie, provider, season, episode, resumeSeconds, movieEmbedUrl, savePlayback, setProvider]);
 
   useEffect(() => {
     if (!showKeyboardHint) return;
@@ -279,11 +323,13 @@ function VideoPlayerModal({
   }
 
   function handleProviderSwitch() {
-    const next = nextProvider(provider);
+    const next = getNextProvider(provider);
     onProviderChange(next);
     setProvider(next);
     setLoaded(false);
     setLoadFailed(false);
+    setAutoSwitchMessage(formatProviderSwitchMessage(next));
+    failoverAttemptsRef.current += 1;
   }
 
   return (
@@ -415,6 +461,8 @@ function VideoPlayerModal({
                       resumeSeconds={resumeSeconds}
                       heroImage={heroImage}
                       posterImage={posterImage}
+                      autoSwitchMessage={autoSwitchMessage}
+                      stabilityTip={stabilityTip}
                     />
                   )}
                   {loadFailed && !loaded && (
@@ -438,8 +486,10 @@ function VideoPlayerModal({
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     allowFullScreen
                     onLoad={() => {
+                      recordProviderLoad(provider, Date.now() - loadStartedAtRef.current);
                       setLoaded(true);
                       setLoadFailed(false);
+                      setAutoSwitchMessage(null);
                       setShowKeyboardHint(true);
                       if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
                       window.setTimeout(() => iframeRef.current?.focus(), 100);
@@ -538,13 +588,15 @@ export default function VideoPlayerProvider({ children }: { children: React.Reac
 
   const openMovie = useCallback(
     (movie: Movie, options?: OpenMovieOptions) => {
+      warmStreamProviders();
       const resume = options?.resumeSeconds ?? getResumeTime(movie.id);
+      const provider = options?.provider ?? getBestProvider(preferredProvider);
       setActive({
         movie,
         mode: "movie",
         season: options?.season ?? (isTvShow(movie) ? 1 : undefined),
         episode: options?.episode ?? (isTvShow(movie) ? 1 : undefined),
-        provider: options?.provider ?? preferredProvider,
+        provider,
         resumeSeconds: resume > 30 ? resume : undefined,
       });
     },
