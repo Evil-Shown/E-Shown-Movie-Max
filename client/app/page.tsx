@@ -1,25 +1,49 @@
-import HeroBanner from "@/components/HeroBanner";
+import ContinueWatchingRow from "@/components/ContinueWatchingRow";
+import HeroCarousel from "@/components/HeroCarousel";
 import HomeSection from "@/components/HomeSection";
 import MovieRow from "@/components/MovieRow";
 import CtaBanner from "@/components/CtaBanner";
 import { getHomeCatalog } from "@/lib/movie-service";
 
 export default async function HomePage() {
-  const { featured, trending, newReleases, topRated, sciFi, drama, stats } = await getHomeCatalog();
+  const {
+    heroMovies,
+    trending,
+    trendingDay,
+    newReleases,
+    topRated,
+    popularTv,
+    sinhalaCinema,
+    sciFi,
+    drama,
+    stats,
+  } = await getHomeCatalog();
 
   return (
     <>
-      <HeroBanner movie={featured} />
+      <HeroCarousel movies={heroMovies} />
+
+      <ContinueWatchingRow />
 
       <HomeSection className="section-base py-12">
         <MovieRow
           embedded
-          eyebrow="Popular Now"
-          title="Trending"
-          subtitle="What everyone is watching this week"
-          movies={trending}
+          eyebrow="🔥 Trending"
+          title="Trending Today"
+          subtitle="What everyone is watching right now"
+          movies={trendingDay.length ? trendingDay : trending}
           priorityFirst
           showRank
+        />
+      </HomeSection>
+
+      <HomeSection className="section-alt py-12">
+        <MovieRow
+          embedded
+          eyebrow="Popular Now"
+          title="Popular Movies"
+          subtitle="Most watched this week"
+          movies={trending}
         />
       </HomeSection>
 
@@ -33,7 +57,31 @@ export default async function HomePage() {
         />
       </HomeSection>
 
-      <HomeSection className="section-surface py-12">
+      {popularTv.length > 0 && (
+        <HomeSection className="section-surface py-12">
+          <MovieRow
+            embedded
+            eyebrow="Series"
+            title="Popular Series"
+            subtitle="Binge-worthy TV from TMDB"
+            movies={popularTv}
+          />
+        </HomeSection>
+      )}
+
+      {sinhalaCinema.length > 0 && (
+        <HomeSection className="section-alt py-12">
+          <MovieRow
+            embedded
+            eyebrow="Hela Cinema"
+            title="Sri Lankan Cinema"
+            subtitle="Films in Sinhala"
+            movies={sinhalaCinema}
+          />
+        </HomeSection>
+      )}
+
+      <HomeSection className="section-base py-12">
         <MovieRow
           embedded
           eyebrow="Critics' Choice"

@@ -2,7 +2,10 @@
 
 import type { Movie } from "@/lib/types";
 import PosterImage from "@/components/PosterImage";
+import RatingRing from "@/components/RatingRing";
+import WatchlistButton from "@/components/WatchlistButton";
 import { useQuickView } from "@/components/QuickViewProvider";
+import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
@@ -19,7 +22,10 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
   const prefersReducedMotion = useReducedMotion();
   const { openMovie } = useVideoPlayer();
   const { openQuickView } = useQuickView();
+  const { continueWatching } = useUserLibrary();
   const [loaded, setLoaded] = useState(false);
+
+  const progress = continueWatching.find((item) => item.id === movie.id)?.progress ?? 0;
 
   return (
     <motion.div
@@ -53,6 +59,10 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
           <div className={styles.poster}>
             {!loaded && <div className="skeleton absolute inset-0 z-[1]" />}
 
+            <div className="absolute right-2 top-2 z-[3]">
+              <WatchlistButton movie={movie} />
+            </div>
+
             <PosterImage
               posterPath={movie.posterPath}
               title={movie.title}
@@ -63,6 +73,11 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
 
             <div className={styles.posterOverlay} aria-hidden />
             <div className={styles.posterBar} aria-hidden />
+            {progress > 0 && (
+              <div className="absolute inset-x-0 bottom-0 z-[2] h-1 bg-black/35">
+                <div className="h-full bg-[var(--accent-warm)]" style={{ width: `${Math.max(progress, 4)}%` }} />
+              </div>
+            )}
 
             <button
               type="button"
@@ -87,7 +102,7 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
             </div>
             <div className={styles.statsRow}>
               <span className={styles.year}>{movie.year}</span>
-              <span className={styles.rating}>★ {movie.rating.toFixed(1)}</span>
+              <RatingRing rating={movie.rating} size={28} />
             </div>
           </div>
         </div>

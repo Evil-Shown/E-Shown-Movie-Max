@@ -14,6 +14,7 @@ import { fetchOmdbByImdbId, isOmdbConfigured, searchOmdb, searchOmdbSeries } fro
 import { mapOmdbDetail, mapOmdbSearchItem } from "@/lib/omdb/map";
 import {
   discoverMovies,
+  discoverSinhalaCinema,
   fetchBrowsePage,
   fetchNowPlaying,
   fetchPopular,
@@ -22,6 +23,7 @@ import {
   fetchTmdbMovie,
   fetchTmdbTv,
   fetchTopRated,
+  fetchTrendingDay,
   fetchTvPopular,
   isTmdbConfigured,
   searchTmdbMovies,
@@ -53,9 +55,13 @@ export interface CatalogStats {
 
 export interface HomeCatalog {
   featured: Movie;
+  heroMovies: Movie[];
   trending: Movie[];
+  trendingDay: Movie[];
   newReleases: Movie[];
   topRated: Movie[];
+  popularTv: Movie[];
+  sinhalaCinema: Movie[];
   sciFi: Movie[];
   drama: Movie[];
   source: CatalogSource;
@@ -163,11 +169,16 @@ export async function getSimilarMovies(movie: Movie, limit = 8): Promise<Movie[]
 export async function getHomeCatalog(): Promise<HomeCatalog> {
   if (!isTmdbConfigured()) {
     const topRated = [...localMovies].sort((a, b) => b.rating - a.rating).slice(0, 8);
+    const heroMovies = getTrendingMovies().slice(0, 5);
     return {
       featured: getFeaturedMovie(),
+      heroMovies,
       trending: getTrendingMovies(),
+      trendingDay: getTrendingMovies(),
       newReleases: getNewReleases(),
       topRated,
+      popularTv: [],
+      sinhalaCinema: [],
       sciFi: getLocalMoviesByGenre("Sci-Fi"),
       drama: getLocalMoviesByGenre("Drama"),
       source: "local",
@@ -176,27 +187,42 @@ export async function getHomeCatalog(): Promise<HomeCatalog> {
   }
 
   try {
-    const [popular, nowPlaying, topRatedRes, sciFiRes, dramaRes] = await Promise.all([
+    const [popular, nowPlaying, topRatedRes, sciFiRes, dramaRes, trendingDayRes, tvPopularRes, sinhalaRes] =
+      await Promise.all([
       fetchPopular(1),
       fetchNowPlaying(1),
       fetchTopRated(1),
       discoverMovies({ genre: "Sci-Fi", page: 1 }),
       discoverMovies({ genre: "Drama", page: 1 }),
+      fetchTrendingDay(1),
+      fetchTvPopular(1),
+      discoverSinhalaCinema(1).catch(() => ({ results: [], page: 1, total_pages: 0, total_results: 0 })),
     ]);
 
     const trending = popular.results.map(mapTmdbListItem);
-    const featured = trending[0] ?? getFeaturedMovie();
+    const heroMovies = nowPlaying.results.slice(0, 7).map(mapTmdbListItem);
+    const featured = heroMovies[0] ?? trending[0] ?? getFeaturedMovie();
     const newReleases = nowPlaying.results.map(mapTmdbListItem);
     const topRated = topRatedRes.results.slice(0, 8).map(mapTmdbListItem);
+    const trendingDay = trendingDayRes.results
+      .map(mapTmdbMultiItem)
+      .filter((item): item is Movie => item !== null)
+      .slice(0, 12);
+    const popularTv = tvPopularRes.results.map(mapTmdbTvListItem);
+    const sinhalaCinema = sinhalaRes.results.map(mapTmdbListItem);
     const sciFi = sciFiRes.results.map(mapTmdbListItem);
     const drama = dramaRes.results.map(mapTmdbListItem);
     const sampled = uniqueMovies([...trending, ...newReleases, ...topRated, ...sciFi, ...drama]);
 
     return {
       featured,
+      heroMovies: heroMovies.length ? heroMovies : [featured],
       trending,
+      trendingDay,
       newReleases,
       topRated,
+      popularTv,
+      sinhalaCinema,
       sciFi,
       drama,
       source: "tmdb",
@@ -213,11 +239,16 @@ export async function getHomeCatalog(): Promise<HomeCatalog> {
 
 function getHomeCatalogFallback(): HomeCatalog {
   const topRated = [...localMovies].sort((a, b) => b.rating - a.rating).slice(0, 8);
+  const heroMovies = getTrendingMovies().slice(0, 5);
   return {
     featured: getFeaturedMovie(),
+    heroMovies,
     trending: getTrendingMovies(),
+    trendingDay: getTrendingMovies(),
     newReleases: getNewReleases(),
     topRated,
+    popularTv: [],
+    sinhalaCinema: [],
     sciFi: getLocalMoviesByGenre("Sci-Fi"),
     drama: getLocalMoviesByGenre("Drama"),
     source: "local",
