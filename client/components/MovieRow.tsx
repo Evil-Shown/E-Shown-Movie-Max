@@ -3,9 +3,7 @@
 import type { Movie } from "@/lib/types";
 import MovieCard from "./MovieCard";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { staggerContainer } from "@/lib/motion";
 import styles from "./MovieRow.module.css";
 
 interface MovieRowProps {
@@ -29,7 +27,6 @@ export default function MovieRow({
 }: MovieRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScroll, setCanScroll] = useState(false);
-  const prefersReducedMotion = useReducedMotion();
 
   function updateScrollState() {
     if (!scrollRef.current) return;
@@ -94,17 +91,9 @@ export default function MovieRow({
           </>
         )}
 
-        <motion.div
-          ref={scrollRef}
-          data-cursor="grab"
-          className={styles.track}
-          variants={prefersReducedMotion ? undefined : staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-40px" }}
-        >
+        <div ref={scrollRef} className={styles.track}>
           {movies.map((movie, i) => (
-            <div key={movie.id} className={styles.cardSlot}>
+            <div key={`${title}-${movie.id}`} className={styles.cardSlot}>
               <MovieCard
                 movie={movie}
                 priority={priorityFirst && i < 4}
@@ -112,7 +101,7 @@ export default function MovieRow({
               />
             </div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

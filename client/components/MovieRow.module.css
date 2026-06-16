@@ -110,23 +110,11 @@
   display: flex;
   gap: 1rem;
   overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-x: contain;
   padding: 4px 1.5rem 1rem;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    #1c1917 24px,
-    #1c1917 calc(100% - 56px),
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    #1c1917 24px,
-    #1c1917 calc(100% - 56px),
-    transparent 100%
-  );
 }
 
 .track::-webkit-scrollbar {
