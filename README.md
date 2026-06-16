@@ -89,6 +89,22 @@ Frontend also exposes app routes under `client/app/api`:
 - Do not commit real API keys (`.env.local`, `.env`)
 - The existing `client/.env.local` appears to contain active keys; rotate them if they were shared publicly
 
+## Share with a friend (Windows PC)
+
+To bundle a ready-to-run copy **without touching your dev setup**:
+
+1. Make sure `client/.env.local` has your API keys.
+2. Double-click `scripts/package-for-friend.bat` (or run `scripts/package-for-friend.ps1`).
+3. Send the zip from `release/Chithra-Cinema-*.zip` to your friend.
+
+Your friend only needs to:
+- Install [Node.js LTS](https://nodejs.org/) once
+- Unzip the folder
+- Double-click `START-CHITHRA.bat`
+
+The package includes `.env.local` so they do not configure anything.  
+**Share privately** — the zip contains your API keys.
+
 ## License
 
 No license has been declared yet. Add one before publishing/distributing.
