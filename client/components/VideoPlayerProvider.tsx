@@ -35,6 +35,15 @@ interface VideoPlayerContextValue {
 
 const VideoPlayerContext = createContext<VideoPlayerContextValue | null>(null);
 
+async function safeExitFullscreen() {
+  if (!document.fullscreenElement) return;
+  try {
+    await document.exitFullscreen();
+  } catch {
+    // Tab/window inactive, embed-owned fullscreen, or already exited.
+  }
+}
+
 export function useVideoPlayer() {
   const ctx = useContext(VideoPlayerContext);
   if (!ctx) throw new Error("useVideoPlayer must be used within VideoPlayerProvider");
@@ -296,9 +305,7 @@ function VideoPlayerModal({
       document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
       document.removeEventListener("fullscreenchange", onFullscreenChange);
-      if (document.fullscreenElement === stageRef.current) {
-        void document.exitFullscreen();
-      }
+      void safeExitFullscreen();
     };
   }, [onClose]);
 
@@ -313,7 +320,7 @@ function VideoPlayerModal({
 
     try {
       if (document.fullscreenElement === stage) {
-        await document.exitFullscreen();
+        await safeExitFullscreen();
       } else {
         await stage.requestFullscreen();
         focusPlayer();

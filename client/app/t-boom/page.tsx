@@ -1012,7 +1012,7 @@ export default function TBoomPage() {
     if (!video) return;
     try {
       if (document.fullscreenElement) {
-        await document.exitFullscreen();
+        await document.exitFullscreen().catch(() => undefined);
       } else {
         await video.requestFullscreen();
       }

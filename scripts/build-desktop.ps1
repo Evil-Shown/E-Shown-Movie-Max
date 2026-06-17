@@ -12,6 +12,22 @@ $resourcesApp = Join-Path $desktop "resources/app"
 $resourcesServer = Join-Path $desktop "resources/server"
 $iconSource = Join-Path $client "app/favicon.ico"
 $iconDest = Join-Path $desktop "assets/icon.ico"
+$desktopShell = Join-Path $PSScriptRoot "desktop-shell"
+
+function Sync-DesktopShell {
+  $required = @("package.json", "main.js", "preload.js", "splash.html")
+  if (-not (Test-Path $desktopShell)) {
+    throw "Missing $desktopShell - Electron shell templates are required."
+  }
+  foreach ($name in $required) {
+    $src = Join-Path $desktopShell $name
+    if (-not (Test-Path $src)) {
+      throw "Missing $src"
+    }
+    New-Item -ItemType Directory -Path $desktop -Force | Out-Null
+    Copy-Item $src (Join-Path $desktop $name) -Force
+  }
+}
 
 function Invoke-ProductionBuild {
   param([string]$WorkDir)
@@ -82,6 +98,8 @@ if (-not (Test-Path $serverEnvFile)) {
   throw "Missing $serverEnvFile"
 }
 
+Sync-DesktopShell
+
 $clientStaging = Join-Path $env:TEMP "chithra-desktop-client-$([Guid]::NewGuid().ToString('N'))"
 $serverStaging = Join-Path $env:TEMP "chithra-desktop-server-$([Guid]::NewGuid().ToString('N'))"
 
@@ -140,11 +158,15 @@ Remove-Item $clientStaging -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item $serverStaging -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host "[6/6] Building Electron installer (this can take several minutes)..."
+Sync-DesktopShell
 Push-Location $desktop
-if (-not (Test-Path "node_modules")) {
-  npm install
-  if ($LASTEXITCODE -ne 0) { Pop-Location; throw "desktop npm install failed" }
-}
+
+npm install
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "desktop npm install failed" }
+
+# Skip Authenticode signing (avoids winCodeSign symlink extraction on Windows without Developer Mode).
+$env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
+
 npm run dist
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "electron-builder failed" }
 Pop-Location
