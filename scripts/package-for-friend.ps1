@@ -68,7 +68,7 @@ function Prepare-ClientEnvForPackage {
     "NEXT_PUBLIC_API_BASE_URL"      = "http://localhost:5000"
     "NEXT_PUBLIC_GODS_EYE_API_URL"  = "http://localhost:5000"
     "NEXT_PUBLIC_TBOOM_API_URL"     = "http://localhost:5000"
-    "NEXT_PUBLIC_SITE_NAME"         = "CHITHRA - CINEMA"
+    "NEXT_PUBLIC_SITE_NAME"         = "CHITHRA — CINEMA"
   }
 
   if ($tmdbKey -and -not ($lines -match '^\s*NEXT_PUBLIC_TMDB_KEY=')) {
@@ -85,7 +85,7 @@ function Prepare-ClientEnvForPackage {
 }
 
 Write-Host ""
-Write-Host "=== Chithra Cinema - package for friend ===" -ForegroundColor Cyan
+Write-Host "=== CHITHRA — CINEMA - package for friend ===" -ForegroundColor Cyan
 Write-Host ""
 
 if (-not (Test-Path $client)) {
@@ -188,7 +188,7 @@ foreach ($item in $serverShipItems) {
 
 $batLines = @(
   '@echo off',
-  'title Chithra Cinema',
+  'title CHITHRA - CINEMA',
   'cd /d "%~dp0"',
   '',
   'where node >nul 2>nul',
@@ -203,7 +203,7 @@ $batLines = @(
   ')',
   '',
   'echo.',
-  'echo  Starting Chithra Cinema (API + website)...',
+  'echo  Starting CHITHRA - CINEMA (API + website)...',
   'echo  Keep this window open while you use the app.',
   'echo.',
   '',

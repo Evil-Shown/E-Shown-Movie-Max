@@ -35,7 +35,7 @@ export default function SplashScreen() {
   if (!visible) return null;
 
   return (
-    <div className={`chithra-splash${exiting ? " splash-exit" : ""}`} aria-label="Chithra Rekha intro">
+    <div className={`chithra-splash${exiting ? " splash-exit" : ""}`} aria-label="CHITHRA — CINEMA intro">
       <div className="film-strip film-strip-top" aria-hidden="true">
         {HOLES.map((_, index) => (
           <span className="film-hole" key={`top-${index}`} />
@@ -73,7 +73,7 @@ export default function SplashScreen() {
         <h1 className="chithra-title">
           CHITH<span>RA</span>
         </h1>
-        <p className="chithra-subtitle">චිත්‍ර · රේඛා</p>
+        <p className="chithra-subtitle">චිත්‍ර — Cinema</p>
 
         <div className="chithra-rule">
           <span />

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { BRAND_NAME } from "@/lib/brand";
 import TBoomResultCard from "@/components/TBoom/ResultCard";
 import EmptyState from "@/components/TBoom/EmptyState";
 import ErrorState from "@/components/TBoom/ErrorState";
@@ -1814,7 +1815,7 @@ export default function TBoomPage() {
                           }}
                           onShare={async () => {
                             const shareData = {
-                              title: torrent.name || "CHITHRA — CINEMA upload",
+                              title: torrent.name || `${BRAND_NAME} upload`,
                               url: window.location.href
                             };
                             if (navigator.share) {

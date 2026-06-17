@@ -10,6 +10,7 @@ import QuickViewProvider from "@/components/QuickViewProvider";
 import CinemaIntro from "@/components/CinemaIntro";
 import UserLibraryProvider from "@/components/UserLibraryProvider";
 import VideoPlayerProvider from "@/components/VideoPlayerProvider";
+import { BRAND_DESCRIPTION, BRAND_NAME } from "@/lib/brand";
 import "@/components/CinemaIntro/cinema-intro.css";
 import "./globals.css";
 
@@ -45,11 +46,11 @@ const notoSinhala = Noto_Sans_Sinhala({
 
 export const metadata: Metadata = {
   title: {
-    default: "E-Shown Movie Max",
-    template: "%s | E-Shown Movie Max",
+    default: BRAND_NAME,
+    template: `%s | ${BRAND_NAME}`,
   },
-  description:
-    "Stream the world's best films. Discover trending hits, new releases, and timeless classics on E-Shown Movie Max.",
+  description: BRAND_DESCRIPTION,
+  applicationName: BRAND_NAME,
 };
 
 export default function RootLayout({

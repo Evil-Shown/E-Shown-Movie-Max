@@ -1,10 +1,10 @@
 {
   "name": "chithra-cinema",
-  "productName": "Chithra Cinema",
+  "productName": "CHITHRA - CINEMA",
   "version": "1.0.0",
-  "description": "Chithra Cinema desktop app",
+  "description": "CHITHRA — CINEMA desktop app (චිත්‍ර — Cinema)",
   "main": "main.js",
-  "author": "Chithra Cinema",
+  "author": "CHITHRA — CINEMA",
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
@@ -18,7 +18,7 @@
   },
   "build": {
     "appId": "com.chithra.cinema",
-    "productName": "Chithra Cinema",
+    "productName": "CHITHRA - CINEMA",
     "directories": {
       "output": "../release/desktop"
     },
@@ -57,7 +57,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Chithra Cinema",
+      "shortcutName": "CHITHRA - CINEMA",
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
       "installerHeaderIcon": "assets/icon.ico"
