@@ -536,7 +536,7 @@ function VideoPlayerModal({
                     src={iframeSrc}
                     title={isTrailer ? `${movie.title} trailer` : `${movie.title} stream`}
                     tabIndex={0}
-                    referrerPolicy="no-referrer"
+                    referrerPolicy="origin"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     allowFullScreen
                     onLoad={() => {
