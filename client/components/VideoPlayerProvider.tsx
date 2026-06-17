@@ -378,41 +378,41 @@ function VideoPlayerModal({
         className="relative flex h-[92dvh] max-h-[92dvh] w-full max-w-6xl flex-col overflow-hidden rounded-[1.25rem] border border-[rgba(232,164,74,0.34)] bg-[rgba(247,244,239,0.96)] shadow-[0_30px_120px_rgba(0,0,0,0.55)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative shrink-0 overflow-hidden border-b border-[rgba(201,106,43,0.18)] bg-[linear-gradient(135deg,rgba(28,25,23,0.96),rgba(80,45,26,0.92))] px-4 py-3 text-stone-50 sm:px-5">
-          <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(28,25,23,0.96),rgba(28,25,23,0.72),rgba(28,25,23,0.94))]" />
+        <div className="relative shrink-0 overflow-hidden border-b border-[rgba(201,106,43,0.18)] bg-[linear-gradient(135deg,#fffdf9,#f3ebe0)] px-4 py-3 sm:px-5">
+          <div className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,249,0.94),rgba(255,253,249,0.78),rgba(255,253,249,0.94))]" />
           <div className="relative flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="hidden h-12 w-8 overflow-hidden rounded-md border border-white/15 bg-white/10 shadow-lg sm:block">
+              <div className="hidden h-12 w-8 overflow-hidden rounded-md border border-[rgba(201,106,43,0.2)] bg-white shadow-sm sm:block">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={posterImage} alt="" className="h-full w-full object-cover" />
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-[rgba(232,164,74,0.42)] bg-[rgba(232,164,74,0.16)] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#f4c27a]">
+                  <span className="rounded-full border border-[rgba(201,106,43,0.35)] bg-[rgba(232,164,74,0.16)] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9a4f1a]">
                     {playerLabel}
                   </span>
                   {!isTrailer && (
-                    <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[9px] uppercase tracking-[0.14em] text-stone-400">
+                    <span className="rounded-full border border-[var(--border)] bg-white/80 px-2.5 py-1 text-[9px] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                       {episodeLabel ?? "HD Stream"}
                     </span>
                   )}
                 </div>
-                <h2 className="mt-1 truncate font-[var(--font-playfair)] text-xl text-white sm:text-2xl">
+                <h2 className="mt-1 truncate font-[var(--font-playfair)] text-xl text-[var(--text-primary)] sm:text-2xl">
                   {movie.title}
                 </h2>
-                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-stone-300">
+                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-[var(--text-secondary)]">
                   <span>{movie.year}</span>
                   <span>/</span>
                   <span>{movie.runtime} min</span>
                   <span>/</span>
                   <span>{movie.genres.slice(0, 2).join(", ")}</span>
                   <span>/</span>
-                  <span className="font-semibold text-[#f4c27a]">Rating {movie.rating.toFixed(1)}</span>
+                  <span className="font-semibold text-[var(--accent-primary)]">Rating {movie.rating.toFixed(1)}</span>
                   {resumeSeconds && resumeSeconds > 30 ? (
                     <>
                       <span>/</span>
-                      <span className="text-[#f4c27a]">Resume {formatResumeTime(resumeSeconds)}</span>
+                      <span className="text-[var(--accent-primary)]">Resume {formatResumeTime(resumeSeconds)}</span>
                     </>
                   ) : null}
                 </div>
@@ -423,16 +423,16 @@ function VideoPlayerModal({
               onClick={onClose}
               aria-label="Close player"
               data-cursor="link"
-              className="group flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white hover:border-[#f4c27a] hover:bg-[#f4c27a] hover:text-stone-950 active:scale-95"
+              className="group flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white active:scale-95"
             >
               <span className="reel-close-icon" aria-hidden />
             </button>
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col bg-[linear-gradient(180deg,#0f0d0b,#1c1917)] p-2 sm:p-3">
+        <div className="flex min-h-0 flex-1 flex-col bg-[linear-gradient(180deg,#faf6ef,#f0e8dc)] p-2 sm:p-3">
           {!isTrailer && isTvShow(movie) && (
-            <div className="mb-2 shrink-0 rounded-lg border border-white/10 bg-black/35 px-3 py-2">
+            <div className="mb-2 shrink-0">
               <PlayerTvSelector
                 movie={movie}
                 season={season ?? 1}
@@ -545,11 +545,11 @@ function VideoPlayerModal({
                           <path d="M8 5v14l11-7z" />
                         </svg>
                       </span>
-                      <span className="text-sm font-semibold uppercase tracking-[0.16em] text-white">
+                      <span className="text-sm font-semibold uppercase tracking-[0.16em] text-stone-100">
                         Click to start watching
                       </span>
-                      <span className="max-w-xs text-xs text-stone-300">
-                        Blocks accidental ad redirects from stream hosts. Use player controls after this.
+                      <span className="max-w-xs text-xs text-stone-200">
+                        Tap once to focus the player and avoid accidental ad clicks.
                       </span>
                     </button>
                   )}
@@ -584,7 +584,7 @@ function VideoPlayerModal({
             </div>
           </div>
           {loaded && iframeSrc && (
-            <p className="mt-2 text-center text-[10px] text-stone-500">
+            <p className="mt-2 text-center text-[10px] text-[var(--text-secondary)]">
               Use the player timeline to jump to any moment. Click inside the video first for keyboard shortcuts.
             </p>
           )}
