@@ -105,7 +105,7 @@ export default function InstantSearch({ className = "" }: InstantSearchProps) {
       </svg>
 
       {open && query.trim().length >= 2 && (
-        <div className="absolute right-0 top-[calc(100%+8px)] z-[120] w-[min(100vw-2rem,22rem)] overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--bg-card)] shadow-[var(--shadow-lg)]">
+        <div className="absolute right-0 top-[calc(100%+8px)] z-[120] w-[min(100vw-2rem,22rem)] overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[color:rgba(247,244,239,0.96)]/95 backdrop-blur-md shadow-[0_20px_48px_rgba(28,25,23,0.26),0_8px_20px_rgba(28,25,23,0.18)]">
           {loading ? (
             <div className="p-4 text-sm text-[var(--text-secondary)]">Searching...</div>
           ) : results.length ? (
