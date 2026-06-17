@@ -40,6 +40,19 @@ npm run package
 
 Output: `release/desktop/Chithra-Cinema-Setup-1.0.0.exe`
 
+## Publish update (auto-update for installed users)
+
+Bump `scripts/desktop-shell/package.json` version, then:
+
+```powershell
+$env:GH_TOKEN = "your_github_token"
+npm run package:publish
+```
+
+Installed apps check [GitHub Releases](https://github.com/Evil-Shown/E-Shown-Movie-Max/releases) on startup and prompt users to accept or skip updates.
+
+See `scripts/desktop-shell/README.md` for details.
+
 ## Portable zip (legacy)
 
 ```powershell
