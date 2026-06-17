@@ -7,10 +7,10 @@ import NavigationProgress from "@/components/NavigationProgress";
 import PageTransition from "@/components/PageTransition";
 import QueryProvider from "@/components/QueryProvider";
 import QuickViewProvider from "@/components/QuickViewProvider";
-import SplashScreen from "@/components/ChithraRekha/SplashScreen";
+import CinemaIntro from "@/components/CinemaIntro";
 import UserLibraryProvider from "@/components/UserLibraryProvider";
 import VideoPlayerProvider from "@/components/VideoPlayerProvider";
-import "@/components/ChithraRekha/SplashScreen.css";
+import "@/components/CinemaIntro/cinema-intro.css";
 import "./globals.css";
 
 const inter = Inter({
@@ -71,7 +71,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://vsembed.ru" crossOrigin="anonymous" />
       </head>
       <body className="flex min-h-full flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
-        <SplashScreen />
+        <CinemaIntro />
         <QueryProvider>
           <UserLibraryProvider>
             <VideoPlayerProvider>
