@@ -2,7 +2,7 @@
 
 import type { Movie } from "@/lib/types";
 import { BRAND_NAME } from "@/lib/brand";
-import { backdropUrl, posterUrl } from "@/lib/movies";
+import { backdropUrl, formatDisplayYear, posterUrl } from "@/lib/movies";
 import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from "@/lib/providers";
 import { getBestProvider, recordProviderLoad } from "@/lib/storage/provider-performance";
 import {
@@ -140,7 +140,7 @@ function PlayerLoadingOverlay({
           {movie.title}
         </h3>
         <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-stone-300">
-          {movie.year}
+          {formatDisplayYear(movie.year) ?? "Series"}
           <span className="mx-2 text-stone-500">·</span>
           {statusLine}
         </p>
@@ -231,6 +231,8 @@ function VideoPlayerModal({
     : movieEmbedUrl;
 
   const playerLabel = isTrailer ? "Trailer" : isTvShow(movie) ? "Now Streaming · TV" : "Now Streaming";
+  const isTvPlayer = !isTrailer && isTvShow(movie);
+  const displayYear = formatDisplayYear(movie.year);
   const heroImage = backdropUrl(movie.backdropPath || movie.posterPath);
   const posterImage = posterUrl(movie.posterPath);
   const episodeLabel =
@@ -360,25 +362,39 @@ function VideoPlayerModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden bg-[rgba(18,15,12,0.96)] p-2 backdrop-blur-xl sm:p-4"
+      className={`fixed inset-0 z-[200] flex overflow-hidden bg-[rgba(18,15,12,0.96)] backdrop-blur-xl ${
+        isTvPlayer ? "p-0" : "items-center justify-center p-2 sm:p-4"
+      }`}
       onClick={onClose}
     >
-      <div
-        className="absolute inset-0 opacity-30 blur-3xl"
-        style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center" }}
-      />
-      <div className="player-vignette absolute inset-0" />
-      <div className="cinema-sweep pointer-events-none absolute inset-x-0 top-0 h-1/2" />
+      {!isTvPlayer ? (
+        <>
+          <div
+            className="absolute inset-0 opacity-30 blur-3xl"
+            style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center" }}
+          />
+          <div className="player-vignette absolute inset-0" />
+          <div className="cinema-sweep pointer-events-none absolute inset-x-0 top-0 h-1/2" />
+        </>
+      ) : null}
 
       <motion.div
-        initial={{ scale: 0.94, opacity: 0, y: 28 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.95, opacity: 0, y: 12 }}
+        initial={isTvPlayer ? { opacity: 0 } : { scale: 0.94, opacity: 0, y: 28 }}
+        animate={isTvPlayer ? { opacity: 1 } : { scale: 1, opacity: 1, y: 0 }}
+        exit={isTvPlayer ? { opacity: 0 } : { scale: 0.95, opacity: 0, y: 12 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="relative flex h-[92dvh] max-h-[92dvh] w-full max-w-6xl flex-col overflow-hidden rounded-[1.25rem] border border-[rgba(232,164,74,0.34)] bg-[rgba(247,244,239,0.96)] shadow-[0_30px_120px_rgba(0,0,0,0.55)]"
+        className={`relative flex w-full flex-col overflow-hidden bg-[rgba(247,244,239,0.98)] ${
+          isTvPlayer
+            ? "h-[100dvh] max-h-[100dvh] rounded-none border-0 shadow-none"
+            : "h-[92dvh] max-h-[92dvh] max-w-6xl rounded-[1.25rem] border border-[rgba(232,164,74,0.34)] shadow-[0_30px_120px_rgba(0,0,0,0.55)]"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative shrink-0 overflow-hidden border-b border-[rgba(201,106,43,0.18)] bg-[linear-gradient(135deg,#fffdf9,#f3ebe0)] px-4 py-3 sm:px-5">
+        <div
+          className={`relative shrink-0 overflow-hidden border-b border-[rgba(201,106,43,0.18)] bg-[linear-gradient(135deg,#fffdf9,#f3ebe0)] ${
+            isTvPlayer ? "px-3 py-2 sm:px-4" : "px-4 py-3 sm:px-5"
+          }`}
+        >
           <div className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center" }} />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,249,0.94),rgba(255,253,249,0.78),rgba(255,253,249,0.94))]" />
           <div className="relative flex items-center justify-between gap-4">
@@ -402,11 +418,19 @@ function VideoPlayerModal({
                   {movie.title}
                 </h2>
                 <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-[var(--text-secondary)]">
-                  <span>{movie.year}</span>
-                  <span>/</span>
-                  <span>{movie.runtime} min</span>
-                  <span>/</span>
-                  <span>{movie.genres.slice(0, 2).join(", ")}</span>
+                  {displayYear ? (
+                    <>
+                      <span>{displayYear}</span>
+                      <span>/</span>
+                    </>
+                  ) : null}
+                  {movie.runtime > 0 ? (
+                    <>
+                      <span>{movie.runtime} min</span>
+                      <span>/</span>
+                    </>
+                  ) : null}
+                  <span>{movie.genres.slice(0, 2).join(", ") || "Series"}</span>
                   <span>/</span>
                   <span className="font-semibold text-[var(--accent-primary)]">Rating {movie.rating.toFixed(1)}</span>
                   {resumeSeconds && resumeSeconds > 30 ? (
@@ -422,33 +446,28 @@ function VideoPlayerModal({
               type="button"
               onClick={onClose}
               aria-label="Close player"
-              data-cursor="link"
-              className="group flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white active:scale-95"
+              title="Close"
+              className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white active:scale-95"
             >
-              <span className="reel-close-icon" aria-hidden />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="h-5 w-5" aria-hidden>
+                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              </svg>
             </button>
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col bg-[linear-gradient(180deg,#faf6ef,#f0e8dc)] p-2 sm:p-3">
-          {!isTrailer && isTvShow(movie) && (
-            <div className="mb-2 shrink-0">
-              <PlayerTvSelector
-                movie={movie}
-                season={season ?? 1}
-                episode={episode ?? 1}
-                disabled={!loaded && !loadFailed}
-                onChange={onSeasonEpisodeChange}
-              />
-            </div>
-          )}
+        <div className={`flex min-h-0 flex-1 flex-col bg-[linear-gradient(180deg,#faf6ef,#f0e8dc)] ${isTvPlayer ? "p-0" : "p-2 sm:p-3"}`}>
           <div
-            ref={stageRef}
-            className={`player-stage player-screen-glow relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black ${
-              isTrailer ? "border border-white/10" : "player-cinema-frame"
-            }`}
+            className={`flex min-h-0 flex-1 ${isTvPlayer ? "flex-col lg:flex-row lg:gap-0" : "flex-col gap-2 sm:gap-3"}`}
           >
-            <div className="player-video-fit bg-[var(--bg-dark)]">
+            <div className={`flex min-h-0 min-w-0 flex-1 flex-col ${isTvPlayer ? "p-2 sm:p-3 lg:pr-2" : ""}`}>
+              <div
+                ref={stageRef}
+                className={`player-stage player-screen-glow relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black ${
+                  isTvPlayer ? "rounded-none lg:rounded-xl" : "rounded-xl"
+                } ${isTrailer ? "border border-white/10" : "player-cinema-frame"}`}
+              >
+                <div className="player-video-fit bg-[var(--bg-dark)]">
               {!isFullscreen && (
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-[2]">
                   <div className={`player-cinema-bar ${isTrailer ? "player-cinema-bar--trailer" : ""}`} />
@@ -581,24 +600,43 @@ function VideoPlayerModal({
                   </p>
                 </div>
               )}
+                </div>
+              </div>
+              {loaded && iframeSrc && (
+                <p className="mt-2 text-center text-[10px] text-[var(--text-secondary)] lg:text-left">
+                  Use the player timeline to jump to any moment. Click inside the video first for keyboard shortcuts.
+                </p>
+              )}
             </div>
+
+            {!isTrailer && isTvShow(movie) && (
+              <PlayerTvSelector
+                movie={movie}
+                season={season ?? 1}
+                episode={episode ?? 1}
+                disabled={!loaded && !loadFailed}
+                onChange={onSeasonEpisodeChange}
+                onSwitchProvider={handleProviderSwitch}
+              />
+            )}
           </div>
-          {loaded && iframeSrc && (
-            <p className="mt-2 text-center text-[10px] text-[var(--text-secondary)]">
-              Use the player timeline to jump to any moment. Click inside the video first for keyboard shortcuts.
-            </p>
-          )}
         </div>
 
-        <div className="grid shrink-0 gap-3 border-t border-[var(--border-subtle)] bg-[linear-gradient(180deg,var(--bg-card),var(--bg-secondary))] px-4 py-3 lg:grid-cols-[1fr_auto] lg:px-5">
-          <div>
-            <p className="line-clamp-1 font-[var(--font-playfair)] text-base italic text-[var(--text-primary)]">
-              &ldquo;{movie.tagline || movie.title}&rdquo;
-            </p>
-            <p className="mt-1 line-clamp-1 max-w-3xl text-xs leading-relaxed text-[var(--text-secondary)]">
-              {movie.overview}
-            </p>
-          </div>
+        <div
+          className={`shrink-0 border-t border-[var(--border-subtle)] bg-[linear-gradient(180deg,var(--bg-card),var(--bg-secondary))] ${
+            isTvPlayer ? "flex items-center justify-end gap-2 px-3 py-2 sm:px-4" : "grid gap-3 px-4 py-3 lg:grid-cols-[1fr_auto] lg:px-5"
+          }`}
+        >
+          {!isTvPlayer ? (
+            <div>
+              <p className="line-clamp-1 font-[var(--font-playfair)] text-base italic text-[var(--text-primary)]">
+                &ldquo;{movie.tagline || movie.title}&rdquo;
+              </p>
+              <p className="mt-1 line-clamp-1 max-w-3xl text-xs leading-relaxed text-[var(--text-secondary)]">
+                {movie.overview}
+              </p>
+            </div>
+          ) : null}
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             {!isTrailer && iframeSrc && (
               <button
