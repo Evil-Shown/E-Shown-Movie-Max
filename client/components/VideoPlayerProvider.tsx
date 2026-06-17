@@ -13,6 +13,8 @@ import {
   warmStreamProviders,
 } from "@/lib/stream-optimizer";
 import { getMovieEmbedUrl, isTvShow } from "@/lib/streaming";
+import { installAdPopupBlocker } from "@/lib/block-ad-nav";
+import PlayerTvSelector from "@/components/PlayerTvSelector";
 import { getTrailerId } from "@/lib/trailers";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { AnimatePresence, motion } from "framer-motion";
@@ -191,11 +193,13 @@ function VideoPlayerModal({
   onClose,
   onModeChange,
   onProviderChange,
+  onSeasonEpisodeChange,
 }: {
   active: ActivePlayer;
   onClose: () => void;
   onModeChange: (mode: PlayerMode) => void;
   onProviderChange: (provider: StreamProvider) => void;
+  onSeasonEpisodeChange: (season: number, episode: number) => void;
 }) {
   const { movie, mode, season, episode, provider, resumeSeconds } = active;
   const { savePlayback, setProvider } = useUserLibrary();
@@ -205,6 +209,7 @@ function VideoPlayerModal({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showKeyboardHint, setShowKeyboardHint] = useState(false);
   const [autoSwitchMessage, setAutoSwitchMessage] = useState<string | null>(null);
+  const [playerEngaged, setPlayerEngaged] = useState(false);
   const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadStartedAtRef = useRef(Date.now());
   const failoverAttemptsRef = useRef(0);
@@ -235,7 +240,17 @@ function VideoPlayerModal({
     warmStreamProviders();
     failoverAttemptsRef.current = 0;
     setAutoSwitchMessage(null);
+    setPlayerEngaged(false);
   }, [movie.id, mode]);
+
+  useEffect(() => {
+    if (isTrailer) return;
+    return installAdPopupBlocker();
+  }, [isTrailer, movie.id]);
+
+  useEffect(() => {
+    setPlayerEngaged(false);
+  }, [season, episode, provider, iframeSrc]);
 
   useEffect(() => {
     setLoaded(false);
@@ -416,6 +431,17 @@ function VideoPlayerModal({
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col bg-[linear-gradient(180deg,#0f0d0b,#1c1917)] p-2 sm:p-3">
+          {!isTrailer && isTvShow(movie) && (
+            <div className="mb-2 shrink-0 rounded-lg border border-white/10 bg-black/35 px-3 py-2">
+              <PlayerTvSelector
+                movie={movie}
+                season={season ?? 1}
+                episode={episode ?? 1}
+                disabled={!loaded && !loadFailed}
+                onChange={onSeasonEpisodeChange}
+              />
+            </div>
+          )}
           <div
             ref={stageRef}
             className={`player-stage player-screen-glow relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black ${
@@ -487,10 +513,12 @@ function VideoPlayerModal({
                   )}
                   <iframe
                     ref={iframeRef}
-                    key={`${provider}-${iframeSrc}`}
+                    key={`${provider}-${season ?? 0}-${episode ?? 0}-${iframeSrc}`}
                     src={iframeSrc}
                     title={isTrailer ? `${movie.title} trailer` : `${movie.title} stream`}
                     tabIndex={0}
+                    sandbox="allow-scripts allow-same-origin allow-presentation allow-forms allowfullscreen"
+                    referrerPolicy="no-referrer"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     allowFullScreen
                     onLoad={() => {
@@ -500,11 +528,32 @@ function VideoPlayerModal({
                       setAutoSwitchMessage(null);
                       setShowKeyboardHint(true);
                       if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
-                      window.setTimeout(() => iframeRef.current?.focus(), 100);
                     }}
                     onPointerDown={focusPlayer}
                     className="player-embed-iframe absolute inset-0 z-[1] h-full w-full border-0"
                   />
+                  {!isTrailer && loaded && !playerEngaged && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPlayerEngaged(true);
+                        focusPlayer();
+                      }}
+                      className="absolute inset-0 z-[6] flex flex-col items-center justify-center gap-3 bg-black/55 px-6 text-center backdrop-blur-[2px] transition hover:bg-black/45"
+                    >
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full border border-[#f4c27a]/50 bg-[#f4c27a]/15 text-[#f4c27a]">
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7" aria-hidden>
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </span>
+                      <span className="text-sm font-semibold uppercase tracking-[0.16em] text-white">
+                        Click to start watching
+                      </span>
+                      <span className="max-w-xs text-xs text-stone-300">
+                        Blocks accidental ad redirects from stream hosts. Use player controls after this.
+                      </span>
+                    </button>
+                  )}
                 </>
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[radial-gradient(circle_at_center,rgba(201,106,43,0.2),transparent_42%),#0f0d0b] px-6 text-center">
@@ -618,6 +667,11 @@ export default function VideoPlayerProvider({ children }: { children: React.Reac
   const changeProvider = useCallback((provider: StreamProvider) => {
     setActive((current) => (current ? { ...current, provider } : current));
   }, []);
+  const changeSeasonEpisode = useCallback((season: number, episode: number) => {
+    setActive((current) =>
+      current ? { ...current, season, episode, resumeSeconds: undefined } : current
+    );
+  }, []);
   const closePlayer = useCallback(() => setActive(null), []);
 
   return (
@@ -630,6 +684,7 @@ export default function VideoPlayerProvider({ children }: { children: React.Reac
             onClose={closePlayer}
             onModeChange={changeMode}
             onProviderChange={changeProvider}
+            onSeasonEpisodeChange={changeSeasonEpisode}
           />
         )}
       </AnimatePresence>
