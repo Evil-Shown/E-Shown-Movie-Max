@@ -131,8 +131,8 @@ export default function Header() {
               <InstantSearch />
             </div>
 
-            <Link href="/t-boom" className={styles.tBoomButton}>
-              T-BOOM
+            <Link href="/gods-eye" className={styles.tBoomButton}>
+              THE GOD'S EYE
             </Link>
 
             <Link href="/watchlist" aria-label="Watchlist" className={`${styles.searchButton} relative`}>
@@ -172,8 +172,8 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
-          <Link href="/t-boom" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
-            T-BOOM
+          <Link href="/gods-eye" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
+            THE GOD'S EYE
           </Link>
           <Link href="/browse" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
             Watch Free
