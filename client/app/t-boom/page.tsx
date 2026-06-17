@@ -1218,14 +1218,54 @@ export default function TBoomPage() {
   return (
     <div className="section-base min-h-full px-6 py-16">
       <div className="mx-auto max-w-[980px]">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-sm)] sm:p-8">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-cool)]">THE GOD&apos;S EYE</p>
-          <h1 className="mt-2 font-[var(--font-playfair)] text-[34px] font-bold text-[var(--text-primary)]">
-            Search the World&apos;s Uploads
-          </h1>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            Discover, stream, and download from a global upload index.
-          </p>
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-sm)] sm:p-8">
+          {/* Hero */}
+          <div className="relative mb-2 rounded-xl border border-[var(--border-strong)] bg-gradient-to-br from-[var(--accent-cool)]/[0.07] via-[var(--bg-card)] to-[var(--accent-primary)]/[0.09] px-5 py-7 sm:px-8 sm:py-9">
+            <div
+              className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-[var(--accent-cool)]/10 blur-3xl"
+              aria-hidden="true"
+            />
+            <div
+              className="pointer-events-none absolute -bottom-10 -left-6 h-36 w-36 rounded-full bg-[var(--accent-primary)]/12 blur-3xl"
+              aria-hidden="true"
+            />
+
+            <div className="relative flex flex-col items-center text-center">
+              <div className="mb-4 flex items-center gap-3">
+                <span className="h-px w-10 bg-gradient-to-r from-transparent to-[var(--accent-cool)]/60 sm:w-14" />
+                <svg
+                  className="h-7 w-7 text-[var(--accent-cool)] drop-shadow-[0_0_12px_rgba(74,124,142,0.45)]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12 5C7 5 3.2 8.1 2 12c1.2 3.9 5 7 10 7s8.8-3.1 10-7c-1.2-3.9-5-7-10-7z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" />
+                  <circle cx="12" cy="12" r="1" fill="var(--accent-primary)" />
+                </svg>
+                <span className="h-px w-10 bg-gradient-to-l from-transparent to-[var(--accent-cool)]/60 sm:w-14" />
+              </div>
+
+              <h1 className="font-[var(--font-cinzel)] text-[clamp(1.65rem,4.8vw,2.65rem)] font-bold uppercase leading-[1.08] tracking-[0.18em]">
+                <span className="bg-gradient-to-r from-[var(--accent-cool)] via-[var(--text-primary)] to-[var(--accent-primary)] bg-clip-text text-transparent">
+                  The God&apos;s Eye
+                </span>
+              </h1>
+
+              <p className="mt-3 max-w-xl font-[var(--font-playfair)] text-[clamp(1.05rem,2.4vw,1.35rem)] italic leading-snug text-[var(--text-secondary)]">
+                The World&apos;s{" "}
+                <span className="font-semibold not-italic text-[var(--accent-primary)]">Infinite</span> Search Engine.
+              </p>
+
+              <p className="mt-3 max-w-lg text-xs uppercase tracking-[0.22em] text-[var(--text-muted)] sm:text-[11px]">
+                Discover · Stream · Download
+              </p>
+            </div>
+          </div>
 
           {continueWatching && (
             <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg-main)] p-3">
