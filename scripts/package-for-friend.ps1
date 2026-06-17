@@ -1,5 +1,5 @@
 # Builds a portable Windows folder your friend can run with START-CHITHRA.bat
-# Writes only to release/ — your dev client/ folder is copied to a temp staging dir first.
+# Writes only to release/ - your dev client/ folder is copied to a temp staging dir first.
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path $PSScriptRoot -Parent
@@ -25,21 +25,22 @@ function Invoke-ProductionBuild {
     return
   }
 
-  Write-Host "  Turbopack build failed — retrying with webpack..." -ForegroundColor Yellow
+  Write-Host "  Turbopack build failed - retrying with webpack..." -ForegroundColor Yellow
   npx next build --webpack 2>&1 | ForEach-Object { Write-Host $_ }
   if ($LASTEXITCODE -ne 0) {
     Pop-Location
-    throw @"
+    $buildHelp = @'
 Production build failed.
 
 Common cause (fixed in source): WebTorrent must load from CDN in the browser, not from npm,
 because node-datachannel breaks Next.js production builds.
 
 If this persists:
-  1) cd client && npm install && npm run build
-  2) Fix any TypeScript/ESLint errors shown above
-  3) Re-run scripts\package-for-friend.ps1
-"@
+  1. cd client; npm install; npm run build
+  2. Fix any TypeScript or ESLint errors shown above
+  3. Re-run scripts\package-for-friend.ps1
+'@
+    throw $buildHelp
   }
   Pop-Location
 }
@@ -105,64 +106,69 @@ foreach ($item in $shipItems) {
   Copy-Item $source (Join-Path $appDir $item) -Recurse -Force
 }
 
-@'
-@echo off
-title Chithra Cinema
-cd /d "%~dp0app"
-
-where node >nul 2>nul
-if errorlevel 1 (
-  echo.
-  echo  Node.js is not installed.
-  echo  Install the LTS version from https://nodejs.org then run this file again.
-  echo.
-  start https://nodejs.org/
-  pause
-  exit /b 1
+$batLines = @(
+  '@echo off',
+  'title Chithra Cinema',
+  'cd /d "%~dp0app"',
+  '',
+  'where node >nul 2>nul',
+  'if errorlevel 1 (',
+  '  echo.',
+  '  echo  Node.js is not installed.',
+  '  echo  Install the LTS version from https://nodejs.org then run this file again.',
+  '  echo.',
+  '  start https://nodejs.org/',
+  '  pause',
+  '  exit /b 1',
+  ')',
+  '',
+  'echo.',
+  'echo  Starting Chithra Cinema...',
+  'echo  Keep this window open while you watch.',
+  'echo  Close this window to stop the app.',
+  'echo.',
+  '',
+  'timeout /t 4 /nobreak >nul',
+  'start http://localhost:3000',
+  '',
+  'set PORT=3000',
+  'npm start',
+  '',
+  'echo.',
+  'echo  App stopped.',
+  'pause'
 )
+$batContent = $batLines -join "`r`n"
+Set-Content -Path (Join-Path $packageDir "START-CHITHRA.bat") -Value $batContent -Encoding ASCII
 
-echo.
-echo  Starting Chithra Cinema...
-echo  Keep this window open while you watch.
-echo  Close this window to stop the app.
-echo.
-
-start "" cmd /c "timeout /t 4 /nobreak >nul && start http://localhost:3000"
-
-set PORT=3000
-npm start
-
-echo.
-echo  App stopped.
-pause
-'@ | Set-Content -Path (Join-Path $packageDir "START-CHITHRA.bat") -Encoding ASCII
-
-@'
-CHITHRA CINEMA - quick start
-============================
-
-1) Install Node.js (one time only)
-   https://nodejs.org/
-   Choose the LTS version, install with default options.
-
-2) Unzip this folder anywhere (Desktop is fine).
-
-3) Double-click: START-CHITHRA.bat
-
-4) Your browser opens to http://localhost:3000
-   Keep the black window open while using the app.
-   Close that window when you are done.
-
-Troubleshooting
----------------
-- "Node.js is not installed" -> install from nodejs.org, restart PC, try again.
-- Page won't load -> wait 10 seconds and refresh the browser.
-- Port busy -> close any other Chithra window and try again.
-- God's Eye stream/download needs internet (WebTorrent loads from CDN).
-
-Note: This package includes API keys needed to run the app.
-      Share only with people you trust. Do not upload publicly.
-'@ | Set-Content -Path (Join-Path $packageDir "README-FOR-FRIEND.txt") -Encoding UTF8
+$readmeLines = @(
+  'CHITHRA CINEMA - quick start',
+  '============================',
+  '',
+  '1) Install Node.js (one time only)',
+  '   https://nodejs.org/',
+  '   Choose the LTS version, install with default options.',
+  '',
+  '2) Unzip this folder anywhere (Desktop is fine).',
+  '',
+  '3) Double-click: START-CHITHRA.bat',
+  '',
+  '4) Your browser opens to http://localhost:3000',
+  '   Keep the black window open while using the app.',
+  '   Close that window when you are done.',
+  '',
+  'Troubleshooting',
+  '---------------',
+  '- "Node.js is not installed" -> install from nodejs.org, restart PC, try again.',
+  '- Page won''t load -> wait 10 seconds and refresh the browser.',
+  '- Port busy -> close any other Chithra window and try again.',
+  '- Gods Eye stream/download needs internet (WebTorrent loads from CDN).',
+  '',
+  'Note: This package includes API keys needed to run the app.',
+  '      Share only with people you trust. Do not upload publicly.'
+)
+$readmeContent = $readmeLines -join "`r`n"
+Set-Content -Path (Join-Path $packageDir "README-FOR-FRIEND.txt") -Value $readmeContent -Encoding UTF8
 
 Write-Host "[5/5] Creating zip archive (large - may take several minutes)..."
 if (Test-Path $zipPath) {
