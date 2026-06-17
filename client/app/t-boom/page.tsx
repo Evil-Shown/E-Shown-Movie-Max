@@ -100,14 +100,11 @@ function loadWebTorrentFromCdn(): Promise<WebTorrentLikeCtor> {
 }
 
 async function loadWebTorrentCtor(): Promise<WebTorrentLikeCtor> {
-  try {
-    const webTorrentModule = await import("webtorrent");
-    const ctor = (webTorrentModule.default ?? webTorrentModule) as WebTorrentLikeCtor;
-    if (typeof ctor === "function") return ctor;
-    throw new Error("Invalid WebTorrent module export.");
-  } catch {
-    return loadWebTorrentFromCdn();
+  if (!hasBrowserTorrentPrerequisites()) {
+    throw new Error("WebTorrent requires a browser with WebRTC support.");
   }
+  // Load from CDN only — the npm package pulls native node-datachannel and breaks `next build`.
+  return loadWebTorrentFromCdn();
 }
 
 type ParsedTitle = {
@@ -356,8 +353,8 @@ export default function TBoomPage() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const clientRef = useRef<unknown>(null);
   const downloadClientRef = useRef<unknown>(null);
-  const downloadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const downloadTimeoutRef = useRef<number | null>(null);
+  const searchDebounceRef = useRef<number | null>(null);
   const timeUpdateHandlerRef = useRef<(() => void) | null>(null);
 
   const trimmedQuery = useMemo(() => query.trim(), [query]);
@@ -477,8 +474,7 @@ export default function TBoomPage() {
     }, 45000);
 
     try {
-      const webTorrentModule = await import("webtorrent");
-      const WebTorrentCtor = webTorrentModule.default ?? webTorrentModule;
+      const WebTorrentCtor = await loadWebTorrentCtor();
       type TorrentFile = {
         name: string;
         length?: number;
