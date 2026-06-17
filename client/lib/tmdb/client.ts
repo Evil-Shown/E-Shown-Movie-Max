@@ -34,6 +34,57 @@ async function tmdbFetch<T>(path: string, params: Record<string, string> = {}): 
   return res.json() as Promise<T>;
 }
 
+export async function fetchTvTopRated(page = 1) {
+  return tmdbFetch<TmdbPagedResponse<TmdbTvListItem>>("/tv/top_rated", {
+    page: String(page),
+  });
+}
+
+export async function fetchTvOnTheAir(page = 1) {
+  return tmdbFetch<TmdbPagedResponse<TmdbTvListItem>>("/tv/on_the_air", {
+    page: String(page),
+  });
+}
+
+export async function discoverTv(options: {
+  page?: number;
+  genre?: Genre;
+  sortBy?: string;
+}) {
+  const params: Record<string, string> = {
+    page: String(options.page ?? 1),
+    sort_by: options.sortBy ?? "popularity.desc",
+    include_adult: "false",
+  };
+
+  if (options.genre) {
+    params.with_genres = String(genreToTmdbId(options.genre));
+  }
+
+  return tmdbFetch<TmdbPagedResponse<TmdbTvListItem>>("/discover/tv", params);
+}
+
+export async function fetchTvBrowsePage(
+  page: number,
+  options: { genre?: Genre; sort?: BrowseSort } = {}
+) {
+  const sort = options.sort ?? "popular";
+
+  if (sort === "top_rated") {
+    return fetchTvTopRated(page);
+  }
+
+  if (sort === "now_playing") {
+    return fetchTvOnTheAir(page);
+  }
+
+  if (options.genre) {
+    return discoverTv({ page, genre: options.genre, sortBy: "popularity.desc" });
+  }
+
+  return fetchTvPopular(page);
+}
+
 export async function fetchPopular(page = 1) {
   return tmdbFetch<TmdbPagedResponse<TmdbMovieListItem>>("/movie/popular", {
     page: String(page),

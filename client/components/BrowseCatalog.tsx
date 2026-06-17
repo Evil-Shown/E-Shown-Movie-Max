@@ -13,6 +13,7 @@ interface BrowseCatalogProps {
   genre: string | null;
   sort: BrowseSort;
   source: CatalogSource;
+  mediaType?: "movie" | "tv";
 }
 
 function mergeMovies(existing: Movie[], incoming: Movie[]) {
@@ -34,6 +35,7 @@ export default function BrowseCatalog({
   genre,
   sort,
   source,
+  mediaType = "movie",
 }: BrowseCatalogProps) {
   const [movies, setMovies] = useState(initialMovies);
   const [loadedPage, setLoadedPage] = useState(lastLoadedPage);
@@ -61,6 +63,7 @@ export default function BrowseCatalog({
         sort,
       });
       if (genre) params.set("genre", genre);
+      if (mediaType === "tv") params.set("type", "tv");
 
       const res = await fetch(`/api/browse?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to load more movies");
@@ -73,7 +76,7 @@ export default function BrowseCatalog({
     } finally {
       setLoading(false);
     }
-  }, [genre, hasMore, loadedPage, loading, sort, source]);
+  }, [genre, hasMore, loadedPage, loading, sort, source, mediaType]);
 
   useEffect(() => {
     if (!hasMore || source !== "tmdb") return;

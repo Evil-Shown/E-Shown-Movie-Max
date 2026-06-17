@@ -15,10 +15,12 @@ interface GenrePillsProps {
 
 function browseHref(basePath: string, genre?: string, sort?: string | null) {
   const params = new URLSearchParams();
+  if (basePath.includes("type=tv")) params.set("type", "tv");
   if (genre) params.set("genre", genre);
   if (sort && sort !== "popular") params.set("sort", sort);
   const qs = params.toString();
-  return qs ? `${basePath}?${qs}` : basePath;
+  const path = basePath.split("?")[0];
+  return qs ? `${path}?${qs}` : path;
 }
 
 export default function GenrePills({
