@@ -10,9 +10,10 @@ import TrailerButton from "@/components/TrailerButton";
 import TvSeasonPicker from "@/components/TvSeasonPicker";
 import WatchlistButton from "@/components/WatchlistButton";
 import RatingRing from "@/components/RatingRing";
+import { recordTitleView } from "@/lib/storage/taste-signals";
 import Link from "next/link";
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface MovieDetailClientProps {
   movie: Movie;
@@ -72,6 +73,15 @@ function RatingBar({ rating }: { rating: number }) {
 export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
   const [overviewExpanded, setOverviewExpanded] = useState(false);
   const showTv = isTvShow(movie);
+
+  useEffect(() => {
+    recordTitleView({
+      id: movie.id,
+      title: movie.title,
+      genres: movie.genres,
+      mediaType: movie.mediaType,
+    });
+  }, [movie.id, movie.title, movie.genres, movie.mediaType]);
 
   return (
     <div

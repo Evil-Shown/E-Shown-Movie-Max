@@ -1,5 +1,6 @@
 "use client";
 
+import { recordTitleQuickView } from "@/lib/storage/taste-signals";
 import type { Movie } from "@/lib/types";
 import MovieQuickView from "@/components/MovieQuickView";
 import { createContext, useCallback, useContext, useState } from "react";
@@ -21,7 +22,15 @@ export function useQuickView() {
 export default function QuickViewProvider({ children }: { children: React.ReactNode }) {
   const [activeMovie, setActiveMovie] = useState<Movie | null>(null);
 
-  const openQuickView = useCallback((movie: Movie) => setActiveMovie(movie), []);
+  const openQuickView = useCallback((movie: Movie) => {
+    recordTitleQuickView({
+      id: movie.id,
+      title: movie.title,
+      genres: movie.genres,
+      mediaType: movie.mediaType,
+    });
+    setActiveMovie(movie);
+  }, []);
   const closeQuickView = useCallback(() => setActiveMovie(null), []);
 
   return (
