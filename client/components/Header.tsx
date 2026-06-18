@@ -13,7 +13,9 @@ const navLinks = [
   { href: "/browse", label: "Movies", series: false },
   { href: "/browse?type=tv", label: "Series", series: true },
   { href: "/watchlist", label: "Watchlist" },
-  { href: "/search", label: "Search" },
+  { href: "/LiveTV", label: "Live TV" },
+  { href: "/anime", label: "Anime" },
+
 ];
 
 function NavLink({
