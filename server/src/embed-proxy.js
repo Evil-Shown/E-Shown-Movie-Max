@@ -23,18 +23,20 @@ const REFERRERS = [
 ];
 
 const ALLOWED_EMBED_HOSTS = new Set([
-  "vsembed.ru",
-  "www.vsembed.ru",
-  "vidsrc.me",
-  "www.vidsrc.me",
-  "vidsrc.to",
-  "www.vidsrc.to",
+  "vidfast.pro",
+  "www.vidfast.pro",
+  "vidsrc.cc",
+  "www.vidsrc.cc",
+  "vidsrc.pm",
+  "www.vidsrc.pm",
+  "vidsrc.in",
+  "www.vidsrc.in",
   "vidlink.pro",
   "www.vidlink.pro",
   "multiembed.mov",
   "www.multiembed.mov",
-  "embed.su",
-  "www.embed.su",
+  "autoembed.co",
+  "www.autoembed.co",
   "2embed.skin",
   "www.2embed.skin",
 ]);

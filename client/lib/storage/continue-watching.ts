@@ -30,6 +30,11 @@ export function removeFromContinueWatching(id: string) {
   write(read().filter((item) => item.id !== id));
 }
 
+export function clearContinueWatching() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(KEY);
+}
+
 export function getContinueItem(id: string): ContinueWatchingItem | undefined {
   return read().find((item) => item.id === id);
 }

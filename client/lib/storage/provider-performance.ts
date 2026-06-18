@@ -50,12 +50,21 @@ export function getProviderPerformance(): PerformanceStore {
   return readStore();
 }
 
-/** Providers sorted fastest-first using stored load times. */
+/** Record a failed or blocked playback attempt so we rank this provider lower. */
+export function recordProviderFailure(provider: StreamProvider) {
+  recordProviderLoad(provider, 90_000);
+}
+
+/** Providers sorted fastest-first; flaky hosts deprioritized. */
 export function getRankedProviders(): StreamProvider[] {
   const store = readStore();
+  const penalty: Partial<Record<StreamProvider, number>> = {
+    vidsrc: 10_000,
+    vidsrcpm: 6_000,
+  };
   return [...STREAM_PROVIDERS].sort((a, b) => {
-    const aMs = store[a]?.avgMs ?? 12_000;
-    const bMs = store[b]?.avgMs ?? 12_000;
+    const aMs = (store[a]?.avgMs ?? 12_000) + (penalty[a] ?? 0);
+    const bMs = (store[b]?.avgMs ?? 12_000) + (penalty[b] ?? 0);
     return aMs - bMs;
   });
 }

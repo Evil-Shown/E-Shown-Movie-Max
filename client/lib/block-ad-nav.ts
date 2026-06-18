@@ -1,4 +1,4 @@
-/** Block gambling / clickunder redirects from third-party embed players. */
+/** Block gambling popups from embed players — do NOT block in-iframe network requests. */
 
 const BLOCKED_HOST_PATTERNS = [
   /(^|\.)1xbet\./i,
@@ -50,6 +50,7 @@ export function isBlockedAdUrl(raw: string): boolean {
   }
 }
 
+/** Only intercepts window.open popups — never blocks iframe scripts or video CDNs. */
 export function installAdPopupBlocker(): () => void {
   if (typeof window === "undefined") return () => undefined;
 

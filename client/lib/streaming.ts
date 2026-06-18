@@ -1,5 +1,5 @@
 import type { Movie } from "@/lib/types";
-import { buildEmbedUrl, type StreamProvider } from "./providers";
+import { buildEmbedUrl, DEFAULT_STREAM_PROVIDER, type StreamProvider } from "./providers";
 import { proxifyEmbedUrl } from "./embed-proxy";
 
 /** TMDB IDs for curated local slug-based movies */
@@ -66,7 +66,7 @@ export function getTvEmbedUrl(
 
 export function getMovieEmbedUrl(
   movie: Movie,
-  provider: StreamProvider = "vidsrc",
+  provider: StreamProvider = DEFAULT_STREAM_PROVIDER,
   options?: { season?: number; episode?: number; seek?: number }
 ): string | null {
   const mediaId = resolveMediaId(movie);

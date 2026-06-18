@@ -4,8 +4,8 @@ const path = require("path");
 const http = require("http");
 const fs = require("fs");
 const { setupAutoUpdater, checkForUpdates } = require("./updater");
-const { isBlockedAdUrl } = require("./block-ad-nav");
-const { EMBED_HOST_PATTERNS, getRandomUserAgent, getRandomReferrer } = require("./embed-headers");
+const { isBlockedAdUrl, isEmbedProviderUrl, shouldCancelNetworkRequest } = require("./block-ad-nav");
+const { EMBED_HOST_PATTERNS, getStableUserAgent, getRefererForUrl } = require("./embed-headers");
 
 const API_PORT = 5000;
 const WEB_PORT = 3000;
@@ -165,7 +165,8 @@ function isAllowedAppUrl(url) {
 
 function configureAdBlocking() {
   session.defaultSession.webRequest.onBeforeRequest({ urls: ["*://*/*"] }, (details, callback) => {
-    if (isBlockedAdUrl(details.url)) {
+    if (shouldCancelNetworkRequest(details)) {
+      console.warn("[CHITHRA] Blocked ad navigation:", details.url);
       callback({ cancel: true });
       return;
     }
@@ -178,8 +179,9 @@ function configureEmbedHeaders() {
     { urls: EMBED_HOST_PATTERNS },
     (details, callback) => {
       const headers = { ...details.requestHeaders };
-      headers["User-Agent"] = getRandomUserAgent();
-      headers["Referer"] = getRandomReferrer();
+      headers["User-Agent"] = getStableUserAgent();
+      headers["Referer"] = getRefererForUrl(details.url);
+      headers["Accept-Language"] = "en-US,en;q=0.9";
       callback({ requestHeaders: headers });
     }
   );
@@ -216,6 +218,9 @@ function attachWindowGuards(window) {
     if (isBlockedAdUrl(url)) {
       console.warn("[CHITHRA] Blocked ad popup:", url);
       return { action: "deny" };
+    }
+    if (isEmbedProviderUrl(url)) {
+      return { action: "allow" };
     }
     return { action: "deny" };
   });

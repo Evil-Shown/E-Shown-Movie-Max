@@ -1,48 +1,43 @@
-/** Shared embed request headers for Electron session rotation. */
-const USER_AGENTS = [
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
-];
-
-const REFERRERS = [
-  "https://www.google.com/",
-  "https://www.bing.com/",
-  "https://search.yahoo.com/",
-  "https://duckduckgo.com/",
-];
+/** Stable browser fingerprint — rotating UA/referrer triggers bot blocks. */
+const STABLE_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 const EMBED_HOST_PATTERNS = [
-  "*://vsembed.ru/*",
-  "*://*.vsembed.ru/*",
+  "*://vidfast.pro/*",
+  "*://*.vidfast.pro/*",
   "*://vidlink.pro/*",
   "*://*.vidlink.pro/*",
   "*://multiembed.mov/*",
   "*://*.multiembed.mov/*",
-  "*://embed.su/*",
-  "*://*.embed.su/*",
-  "*://vidsrc.me/*",
-  "*://*.vidsrc.me/*",
+  "*://autoembed.co/*",
+  "*://*.autoembed.co/*",
+  "*://vidsrc.pm/*",
+  "*://*.vidsrc.pm/*",
+  "*://vidsrc.cc/*",
+  "*://*.vidsrc.cc/*",
+  "*://vidsrc.in/*",
+  "*://*.vidsrc.in/*",
   "*://vidsrc.to/*",
   "*://*.vidsrc.to/*",
+  "*://2embed.skin/*",
+  "*://*.2embed.skin/*",
 ];
 
-function pickRandom(list) {
-  return list[Math.floor(Math.random() * list.length)];
+function getStableUserAgent() {
+  return STABLE_USER_AGENT;
 }
 
-function getRandomUserAgent() {
-  return pickRandom(USER_AGENTS);
-}
-
-function getRandomReferrer() {
-  return pickRandom(REFERRERS);
+/** Use the embed site's own origin as referer — looks like a normal in-player navigation. */
+function getRefererForUrl(url) {
+  try {
+    return `${new URL(url).origin}/`;
+  } catch {
+    return "https://www.google.com/";
+  }
 }
 
 module.exports = {
   EMBED_HOST_PATTERNS,
-  getRandomUserAgent,
-  getRandomReferrer,
+  getStableUserAgent,
+  getRefererForUrl,
 };

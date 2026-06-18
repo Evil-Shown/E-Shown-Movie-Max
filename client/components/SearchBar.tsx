@@ -26,15 +26,12 @@ export default function SearchBar({
   const [query, setQuery] = useState(defaultValue);
   const [focused, setFocused] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [placeholderVisible, setPlaceholderVisible] = useState(true);
 
   useEffect(() => {
     if (query) return;
     const interval = setInterval(() => {
-      setPlaceholderVisible(false);
       setTimeout(() => {
         setPlaceholderIndex((i) => (i + 1) % PLACEHOLDERS.length);
-        setPlaceholderVisible(true);
       }, 300);
     }, 3000);
     return () => clearInterval(interval);
