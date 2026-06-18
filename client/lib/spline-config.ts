@@ -46,3 +46,8 @@ export function desktopStartupTotalMs(includeSpline: boolean): number {
     SPLINE_STARTUP_FADE_MS
   );
 }
+
+/** 3D-only splash on repeat desktop launches (no cinema intro). */
+export function desktopSplineOnlyTotalMs(): number {
+  return SPLINE_STARTUP_DURATION_MS + SPLINE_STARTUP_FADE_MS;
+}

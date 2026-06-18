@@ -7,11 +7,6 @@ const { setupAutoUpdater, checkForUpdates } = require("./updater");
 const { isBlockedAdUrl, isEmbedProviderUrl, shouldCancelNetworkRequest } = require("./block-ad-nav");
 const { EMBED_HOST_PATTERNS, getStableUserAgent, getRefererForUrl } = require("./embed-headers");
 
-const launchId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-process.env.CHITHRA_APP_VERSION = app.getVersion();
-process.env.CHITHRA_LAUNCH_ID = launchId;
-process.env.CHITHRA_LAUNCH_DAY = new Date().toISOString().slice(0, 10);
-
 const API_PORT = 5000;
 const WEB_PORT = 3000;
 const API_URL = `http://127.0.0.1:${API_PORT}/api/health`;

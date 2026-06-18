@@ -3,6 +3,7 @@
 import InstantSearch from "@/components/InstantSearch";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { BRAND_NAME, BRAND_NAME_SINHALA } from "@/lib/brand";
+import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -29,22 +30,29 @@ function NavLink({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isBrowse = pathname === "/browse";
-  const isTv = searchParams.get("type") === "tv";
+  const afterHydration = useAfterHydration();
+  const [active, setActive] = useState(false);
 
-  let active = false;
-  if (href === "/") {
-    active = pathname === "/";
-  } else if (series) {
-    active = isBrowse && isTv;
-  } else if (href === "/browse") {
-    active = isBrowse && !isTv;
-  } else {
-    active = pathname === href || pathname.startsWith(`${href}/`);
-  }
+  useEffect(() => {
+    const isBrowse = pathname === "/browse";
+    const isTv = searchParams.get("type") === "tv";
+
+    if (href === "/") {
+      setActive(pathname === "/");
+    } else if (series) {
+      setActive(isBrowse && isTv);
+    } else if (href === "/browse") {
+      setActive(isBrowse && !isTv);
+    } else {
+      setActive(pathname === href || pathname.startsWith(`${href}/`));
+    }
+  }, [afterHydration, href, pathname, searchParams, series]);
 
   return (
-    <Link href={href} className={`${styles.navLink} ${active ? styles.navLinkActive : ""}`}>
+    <Link
+      href={href}
+      className={`${styles.navLink} ${afterHydration && active ? styles.navLinkActive : ""}`}
+    >
       {label}
     </Link>
   );
@@ -52,6 +60,7 @@ function NavLink({
 
 export default function Header() {
   const { watchlistCount } = useUserLibrary();
+  const afterHydration = useAfterHydration();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -162,7 +171,7 @@ export default function Header() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
-              {watchlistCount > 0 && (
+              {afterHydration && watchlistCount > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent-primary)] px-1 text-[9px] font-bold text-white">
                   {watchlistCount > 9 ? "9+" : watchlistCount}
                 </span>

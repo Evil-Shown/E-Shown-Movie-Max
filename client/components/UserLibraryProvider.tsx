@@ -41,6 +41,7 @@ interface Toast {
 }
 
 interface UserLibraryContextValue {
+  hydrated: boolean;
   watchlist: WatchlistItem[];
   watchlistCount: number;
   isWatchlisted: (id: string) => boolean;
@@ -211,9 +212,10 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
 
   const value = useMemo<UserLibraryContextValue>(
     () => ({
+      hydrated,
       watchlist: hydrated ? watchlist : [],
-      watchlistCount: watchlist.length,
-      isWatchlisted: (id) => watchlist.some((w) => w.id === id),
+      watchlistCount: hydrated ? watchlist.length : 0,
+      isWatchlisted: (id) => (hydrated ? watchlist : []).some((w) => w.id === id),
       toggleWatchlist,
       removeWatchlistItem,
       continueWatching: hydrated ? continueWatching : [],

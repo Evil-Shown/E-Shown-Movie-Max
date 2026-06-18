@@ -1,5 +1,5 @@
 # Builds CHITHRA - CINEMA Windows installer (Electron + NSIS)
-# Output: release/desktop/Chithra-Cinema-Setup-1.0.0.exe
+# Output: release/desktop/Chithra-Cinema-Setup-{version}.exe
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path $PSScriptRoot -Parent
@@ -171,9 +171,13 @@ npm run dist
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "electron-builder failed" }
 Pop-Location
 
+$desktopPackageJson = Get-Content (Join-Path $desktopShell "package.json") -Raw | ConvertFrom-Json
+$desktopVersion = $desktopPackageJson.version
+$installerName = "Chithra-Cinema-Setup-$desktopVersion.exe"
+
 Write-Host ""
 Write-Host "Done!" -ForegroundColor Green
-Write-Host "  Installer: $root\release\desktop\Chithra-Cinema-Setup-1.0.0.exe"
+Write-Host "  Installer: $root\release\desktop\$installerName"
 Write-Host ""
 Write-Host "Your friend can run the installer - no Node.js or .bat required."
 Write-Host ""

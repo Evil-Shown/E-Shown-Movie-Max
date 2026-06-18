@@ -3,12 +3,14 @@
 import PosterImage from "@/components/PosterImage";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { useVideoPlayer } from "@/components/VideoPlayerProvider";
+import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
 
 export default function ContinueWatchingRow() {
   const { continueWatching, removeContinueItem, clearContinueWatching } = useUserLibrary();
   const { openMovie } = useVideoPlayer();
+  const afterHydration = useAfterHydration();
 
-  if (!continueWatching.length) return null;
+  if (!afterHydration || !continueWatching.length) return null;
 
   return (
     <section className="section-elevated py-10">

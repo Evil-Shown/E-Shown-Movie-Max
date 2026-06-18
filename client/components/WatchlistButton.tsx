@@ -1,7 +1,8 @@
 "use client";
 
-import type { Movie } from "@/lib/types";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
+import type { Movie } from "@/lib/types";
 
 interface WatchlistButtonProps {
   movie: Movie;
@@ -10,7 +11,8 @@ interface WatchlistButtonProps {
 
 export default function WatchlistButton({ movie, className = "" }: WatchlistButtonProps) {
   const { isWatchlisted, toggleWatchlist } = useUserLibrary();
-  const active = isWatchlisted(movie.id);
+  const afterHydration = useAfterHydration();
+  const active = afterHydration && isWatchlisted(movie.id);
 
   return (
     <button
