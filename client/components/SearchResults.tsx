@@ -14,6 +14,7 @@ interface SearchResultsProps {
   source?: CatalogSource;
   totalResults?: number;
   mediaFilter?: SearchMediaFilter;
+  filtersActive?: boolean;
 }
 
 function sourceLabel(source?: CatalogSource) {
@@ -26,6 +27,7 @@ function sourceLabel(source?: CatalogSource) {
 function mediaLabel(filter: SearchMediaFilter = "movie") {
   if (filter === "tv") return "TV series";
   if (filter === "all") return "titles";
+  if (filter === "anime") return "anime titles";
   return "movies";
 }
 
@@ -38,12 +40,15 @@ export default function SearchResults({
   source,
   totalResults,
   mediaFilter = "movie",
+  filtersActive = false,
 }: SearchResultsProps) {
   const total = totalResults ?? movies.length;
   const label = mediaLabel(mediaFilter);
   const countLabel = query
     ? `Found ${total.toLocaleString()} ${label} via ${sourceLabel(source)}`
-    : `Popular ${label} from ${sourceLabel(source)} — search to explore the full library`;
+    : filtersActive
+      ? `${total.toLocaleString()} ${label} matching your filters via ${sourceLabel(source)}`
+      : `Popular ${label} from ${sourceLabel(source)} — search or filter to explore more`;
 
   return (
     <AnimatePresence mode="wait">

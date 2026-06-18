@@ -14,6 +14,8 @@ interface BrowseCatalogProps {
   sort: BrowseSort;
   source: CatalogSource;
   mediaType?: "movie" | "tv";
+  loadMorePath?: string;
+  loadMoreParams?: Record<string, string>;
 }
 
 function mergeMovies(existing: Movie[], incoming: Movie[]) {
@@ -36,6 +38,8 @@ export default function BrowseCatalog({
   sort,
   source,
   mediaType = "movie",
+  loadMorePath = "/api/browse",
+  loadMoreParams,
 }: BrowseCatalogProps) {
   const [movies, setMovies] = useState(initialMovies);
   const [loadedPage, setLoadedPage] = useState(lastLoadedPage);
@@ -60,12 +64,17 @@ export default function BrowseCatalog({
     try {
       const params = new URLSearchParams({
         page: String(loadedPage + 1),
-        sort,
       });
+      if (!loadMoreParams?.sort) params.set("sort", sort);
       if (genre) params.set("genre", genre);
       if (mediaType === "tv") params.set("type", "tv");
+      if (loadMoreParams) {
+        for (const [key, value] of Object.entries(loadMoreParams)) {
+          params.set(key, value);
+        }
+      }
 
-      const res = await fetch(`/api/browse?${params.toString()}`);
+      const res = await fetch(`${loadMorePath}?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to load more movies");
 
       const data = await res.json();
@@ -76,7 +85,7 @@ export default function BrowseCatalog({
     } finally {
       setLoading(false);
     }
-  }, [genre, hasMore, loadedPage, loading, sort, source, mediaType]);
+  }, [genre, hasMore, loadedPage, loading, sort, source, mediaType, loadMorePath, loadMoreParams]);
 
   useEffect(() => {
     if (!hasMore || source !== "tmdb") return;

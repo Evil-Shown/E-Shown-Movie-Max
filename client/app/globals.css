@@ -517,7 +517,12 @@ input,
   letter-spacing: -0.02em;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -55%);
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+
+.search-hero-core {
+  isolation: isolate;
 }
 
 .genre-pills-scroll,

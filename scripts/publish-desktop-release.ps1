@@ -13,15 +13,27 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path $PSScriptRoot -Parent
 $desktopPackage = Join-Path $PSScriptRoot "desktop-shell\package.json"
+$envFile = Join-Path $root ".env"
+
+if (-not $env:GH_TOKEN -and (Test-Path $envFile)) {
+  Get-Content $envFile | ForEach-Object {
+    $line = $_.Trim()
+    if ($line -and -not $line.StartsWith("#") -and $line -match "^GH_TOKEN\s*=\s*(.+)$") {
+      $env:GH_TOKEN = $matches[1].Trim().Trim('"').Trim("'")
+    }
+  }
+}
 
 if (-not $env:GH_TOKEN) {
   throw @"
 GH_TOKEN is not set.
 
-Create a GitHub token with access to Evil-Shown/E-Shown-Movie-Max, then run:
+Create a GitHub token with repo scope, then either:
 
-  `$env:GH_TOKEN = "your_token_here"
-  .\scripts\publish-desktop-release.ps1
+  1. Add GH_TOKEN=ghp_... to .env in the project root (copy from .env.example), or
+  2. Run: `$env:GH_TOKEN = "your_token_here"
+
+Then run: .\scripts\publish-desktop-release.ps1
 "@
 }
 
