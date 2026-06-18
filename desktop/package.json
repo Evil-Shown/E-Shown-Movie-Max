@@ -1,0 +1,87 @@
+{
+  "name": "chithra-cinema",
+  "productName": "CHITHRA - CINEMA",
+  "version": "1.0.0",
+  "description": "CHITHRA - CINEMA desktop app",
+  "main": "main.js",
+  "author": "CHITHRA - CINEMA",
+  "license": "UNLICENSED",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Evil-Shown/E-Shown-Movie-Max.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis",
+    "dist:dir": "electron-builder --win dir",
+    "publish": "electron-builder --win nsis --publish always"
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.chithra.cinema",
+    "productName": "CHITHRA - CINEMA",
+    "directories": {
+      "output": "../release/desktop"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "updater.js",
+      "block-ad-nav.js",
+      "embed-headers.js",
+      "splash.html",
+      "assets/**"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/app",
+        "to": "app",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "resources/server",
+        "to": "server",
+        "filter": ["**/*"]
+      }
+    ],
+    "asar": true,
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Evil-Shown",
+        "repo": "E-Shown-Movie-Max",
+        "releaseType": "release"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "Chithra-Cinema-Setup-${version}.${ext}",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CHITHRA - CINEMA",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico"
+    }
+  }
+}

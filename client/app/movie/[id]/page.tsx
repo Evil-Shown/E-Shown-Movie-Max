@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: MoviePageProps) {
   const movie = await resolveMovie(id);
   if (!movie) return { title: "Movie Not Found" };
   return {
-    title: `${movie.title} | E-Shown Movie Max`,
+    title: movie.title,
     description: movie.overview,
   };
 }

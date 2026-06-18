@@ -1,4 +1,6 @@
 import type { Movie } from "@/lib/types";
+import { buildEmbedUrl, DEFAULT_STREAM_PROVIDER, type StreamProvider } from "./providers";
+import { proxifyEmbedUrl } from "./embed-proxy";
 
 /** TMDB IDs for curated local slug-based movies */
 const LOCAL_TMDB_IDS: Record<string, string> = {
@@ -24,18 +26,75 @@ const LOCAL_TMDB_IDS: Record<string, string> = {
   "avatar-way-of-water": "76600",
 };
 
-function resolveTmdbId(movie: Movie): string | null {
+export function resolveTmdbId(movie: Movie): string | null {
   if (/^\d+$/.test(movie.id)) return movie.id;
+  if (movie.id.startsWith("tv-")) {
+    const id = movie.id.slice(3);
+    if (/^\d+$/.test(id)) return id;
+  }
   return LOCAL_TMDB_IDS[movie.id] ?? null;
 }
 
-export function getMovieEmbedUrl(movie: Movie): string | null {
-  const tmdbId = resolveTmdbId(movie);
-  if (tmdbId) {
-    return `https://vidsrc.cc/v2/embed/movie/${tmdbId}?autoPlay=true`;
-  }
-  if (movie.imdbId) {
-    return `https://vidsrc.cc/v2/embed/movie/${movie.imdbId}?autoPlay=true`;
-  }
+export function resolveImdbId(movie: Movie): string | null {
+  if (movie.imdbId) return movie.imdbId;
+  if (/^tt\d+$/.test(movie.id)) return movie.id;
   return null;
+}
+
+export function resolveMediaId(movie: Movie): string | null {
+  return resolveTmdbId(movie) ?? resolveImdbId(movie);
+}
+
+export function isTvShow(movie: Movie): boolean {
+  return movie.mediaType === "tv" || movie.id.startsWith("tv-");
+}
+
+export function getTvEmbedUrl(
+  provider: StreamProvider,
+  tmdbId: string,
+  season: number,
+  episode: number,
+  options?: { seek?: number }
+): string {
+  return proxifyEmbedUrl(
+    buildEmbedUrl(provider, tmdbId, "tv", season, episode, {
+      autoPlay: true,
+      seek: options?.seek,
+    })
+  );
+}
+
+export function getMovieEmbedUrl(
+  movie: Movie,
+  provider: StreamProvider = DEFAULT_STREAM_PROVIDER,
+  options?: { season?: number; episode?: number; seek?: number }
+): string | null {
+  const raw = getRawMovieEmbedUrl(movie, provider, options);
+  if (!raw) return null;
+  return proxifyEmbedUrl(raw);
+}
+
+/** Direct embed URL (never proxied) — use for opening in a browser tab. */
+export function getRawMovieEmbedUrl(
+  movie: Movie,
+  provider: StreamProvider = DEFAULT_STREAM_PROVIDER,
+  options?: { season?: number; episode?: number; seek?: number }
+): string | null {
+  const mediaId = resolveMediaId(movie);
+  if (!mediaId) return null;
+
+  const tv = isTvShow(movie);
+  if (tv) {
+    const season = options?.season ?? 1;
+    const episode = options?.episode ?? 1;
+    return buildEmbedUrl(provider, mediaId, "tv", season, episode, {
+      autoPlay: true,
+      seek: options?.seek,
+    });
+  }
+
+  return buildEmbedUrl(provider, mediaId, "movie", undefined, undefined, {
+    autoPlay: true,
+    seek: options?.seek,
+  });
 }

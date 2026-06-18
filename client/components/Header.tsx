@@ -1,19 +1,45 @@
 "use client";
 
+import InstantSearch from "@/components/InstantSearch";
+import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { BRAND_NAME, BRAND_NAME_SINHALA } from "@/lib/brand";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import styles from "./Header.module.css";
 
 const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/browse", label: "Browse" },
+  { href: "/browse", label: "Movies", series: false },
+  { href: "/browse?type=tv", label: "Series", series: true },
+  { href: "/watchlist", label: "Watchlist" },
   { href: "/search", label: "Search" },
 ];
 
-function NavLink({ href, label }: { href: string; label: string }) {
+function NavLink({
+  href,
+  label,
+  series,
+}: {
+  href: string;
+  label: string;
+  series?: boolean;
+}) {
   const pathname = usePathname();
-  const active = pathname === href || (href !== "/" && pathname.startsWith(href));
+  const searchParams = useSearchParams();
+  const isBrowse = pathname === "/browse";
+  const isTv = searchParams.get("type") === "tv";
+
+  let active = false;
+  if (href === "/") {
+    active = pathname === "/";
+  } else if (series) {
+    active = isBrowse && isTv;
+  } else if (href === "/browse") {
+    active = isBrowse && !isTv;
+  } else {
+    active = pathname === href || pathname.startsWith(`${href}/`);
+  }
 
   return (
     <Link href={href} className={`${styles.navLink} ${active ? styles.navLinkActive : ""}`}>
@@ -23,6 +49,7 @@ function NavLink({ href, label }: { href: string; label: string }) {
 }
 
 export default function Header() {
+  const { watchlistCount } = useUserLibrary();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -77,7 +104,7 @@ export default function Header() {
         <div className={styles.inner}>
           <nav className={styles.leftNav}>
             {navLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} label={link.label} />
+              <NavLink key={link.href} href={link.href} label={link.label} series={link.series} />
             ))}
           </nav>
 
@@ -92,7 +119,7 @@ export default function Header() {
             </svg>
           </button>
 
-          <Link href="/" className={styles.logo} aria-label="Chithra streaming platform home">
+          <Link href="/" className={styles.logo} aria-label={`${BRAND_NAME} home`}>
             <svg
               className={styles.logoVimana}
               width="120"
@@ -117,12 +144,30 @@ export default function Header() {
             <span className={styles.logoTitle}>
               CHITH<span>RA</span>
             </span>
-            <span className={styles.logoSubtitle}>චිත්‍ර · රේඛා</span>
-            <span className={styles.logoRegion}>Hela - Sri Lanka</span>
+            <span className={styles.logoSubtitle}>{BRAND_NAME_SINHALA}</span>
           </Link>
 
           <div className={styles.rightActions}>
-            <Link href="/search" aria-label="Search" className={styles.searchButton}>
+            <div className="hidden md:block">
+              <InstantSearch />
+            </div>
+
+            <Link href="/gods-eye" className={styles.tBoomButton}>
+              THE GOD&apos;S EYE
+            </Link>
+
+            <Link href="/watchlist" aria-label="Watchlist" className={`${styles.searchButton} relative`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+              {watchlistCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent-primary)] px-1 text-[9px] font-bold text-white">
+                  {watchlistCount > 9 ? "9+" : watchlistCount}
+                </span>
+              )}
+            </Link>
+
+            <Link href="/search" aria-label="Search" className={`${styles.searchButton} md:hidden`}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.3-4.3" />
@@ -148,6 +193,9 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
+          <Link href="/gods-eye" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
+            THE GOD&apos;S EYE
+          </Link>
           <Link href="/browse" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
             Watch Free
           </Link>

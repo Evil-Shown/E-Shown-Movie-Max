@@ -1,6 +1,9 @@
 import type { OmdbMovieResponse, OmdbSearchResponse } from "./types";
+import { buildCacheKey, cacheJson } from "@/lib/cache/request-cache";
 
 const OMDB_BASE = "https://www.omdbapi.com/";
+const OMDB_SEARCH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const OMDB_DETAIL_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 function getApiKey(): string | undefined {
   return process.env.OMDB_API_KEY;
@@ -18,48 +21,57 @@ function buildUrl(params: Record<string, string>): string {
   return `${OMDB_BASE}?${search.toString()}`;
 }
 
+function getCacheTtl(params: Record<string, string>): number {
+  if (params.i || params.t) return OMDB_DETAIL_TTL_MS;
+  return OMDB_SEARCH_TTL_MS;
+}
+
+async function omdbFetch<T>(params: Record<string, string>, cacheScope: string): Promise<T> {
+  const url = buildUrl(params);
+  const ttlMs = getCacheTtl(params);
+  const cacheKey = buildCacheKey("omdb", cacheScope, params);
+
+  return cacheJson(cacheKey, ttlMs, async () => {
+    const res = await fetch(url, {
+      cache: "force-cache",
+      next: { revalidate: Math.max(60, Math.floor(ttlMs / 1000)) },
+    });
+
+    if (!res.ok) throw new Error(`OMDb request failed (${res.status})`);
+    return res.json() as Promise<T>;
+  });
+}
+
 export async function searchOmdb(
   query: string,
   page = 1
 ): Promise<OmdbSearchResponse> {
-  const url = buildUrl({
+  return omdbFetch<OmdbSearchResponse>({
     s: query.trim(),
     type: "movie",
     page: String(page),
     r: "json",
-  });
-
-  const res = await fetch(url, { next: { revalidate: 3600 } });
-  if (!res.ok) throw new Error(`OMDb search failed (${res.status})`);
-  return res.json() as Promise<OmdbSearchResponse>;
+  }, "search.movie");
 }
 
 export async function searchOmdbSeries(
   query: string,
   page = 1
 ): Promise<OmdbSearchResponse> {
-  const url = buildUrl({
+  return omdbFetch<OmdbSearchResponse>({
     s: query.trim(),
     type: "series",
     page: String(page),
     r: "json",
-  });
-
-  const res = await fetch(url, { next: { revalidate: 3600 } });
-  if (!res.ok) throw new Error(`OMDb series search failed (${res.status})`);
-  return res.json() as Promise<OmdbSearchResponse>;
+  }, "search.series");
 }
 
 export async function fetchOmdbByImdbId(imdbId: string): Promise<OmdbMovieResponse> {
-  const url = buildUrl({
+  return omdbFetch<OmdbMovieResponse>({
     i: imdbId,
     plot: "full",
     r: "json",
-  });
-
-  const res = await fetch(url, { next: { revalidate: 86400 } });
-  if (!res.ok) throw new Error(`OMDb detail failed (${res.status})`);
-  return res.json() as Promise<OmdbMovieResponse>;
+  }, "detail.imdb");
 }
 
 export async function fetchOmdbByTitle(
@@ -72,9 +84,5 @@ export async function fetchOmdbByTitle(
     r: "json",
   };
   if (year) params.y = String(year);
-
-  const url = buildUrl(params);
-  const res = await fetch(url, { next: { revalidate: 86400 } });
-  if (!res.ok) throw new Error(`OMDb title lookup failed (${res.status})`);
-  return res.json() as Promise<OmdbMovieResponse>;
+  return omdbFetch<OmdbMovieResponse>(params, "detail.title");
 }

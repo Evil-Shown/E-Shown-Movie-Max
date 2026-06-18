@@ -2,11 +2,14 @@
 
 import type { Movie } from "@/lib/types";
 import PosterImage from "@/components/PosterImage";
+import RatingRing from "@/components/RatingRing";
+import WatchlistButton from "@/components/WatchlistButton";
 import { useQuickView } from "@/components/QuickViewProvider";
+import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./MovieCard.module.css";
 
 interface MovieCardProps {
@@ -19,10 +22,46 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
   const prefersReducedMotion = useReducedMotion();
   const { openMovie } = useVideoPlayer();
   const { openQuickView } = useQuickView();
+  const { continueWatching } = useUserLibrary();
   const [loaded, setLoaded] = useState(false);
+  const [externalRatings, setExternalRatings] = useState(movie.externalRatings ?? null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const progress = continueWatching.find((item) => item.id === movie.id)?.progress ?? 0;
+
+  useEffect(() => {
+    if (externalRatings || typeof window === "undefined") return;
+
+    const node = cardRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        observer.disconnect();
+
+        const params = new URLSearchParams({ title: movie.title });
+        if (movie.year > 0) params.set("year", String(movie.year));
+
+        fetch(`/api/tmdb/search?${params.toString()}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data?.externalRatings) {
+              setExternalRatings(data.externalRatings);
+            }
+          })
+          .catch(() => undefined);
+      },
+      { rootMargin: "250px" }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [externalRatings, movie.title, movie.year]);
 
   return (
     <motion.div
+      ref={cardRef}
       initial={false}
       whileHover={prefersReducedMotion ? undefined : { y: -2 }}
       transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
@@ -53,6 +92,10 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
           <div className={styles.poster}>
             {!loaded && <div className="skeleton absolute inset-0 z-[1]" />}
 
+            <div className="absolute right-2 top-2 z-[3]">
+              <WatchlistButton movie={movie} />
+            </div>
+
             <PosterImage
               posterPath={movie.posterPath}
               title={movie.title}
@@ -63,6 +106,11 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
 
             <div className={styles.posterOverlay} aria-hidden />
             <div className={styles.posterBar} aria-hidden />
+            {progress > 0 && (
+              <div className="absolute inset-x-0 bottom-0 z-[2] h-1 bg-black/35">
+                <div className="h-full bg-[var(--accent-warm)]" style={{ width: `${Math.max(progress, 4)}%` }} />
+              </div>
+            )}
 
             <button
               type="button"
@@ -87,8 +135,22 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
             </div>
             <div className={styles.statsRow}>
               <span className={styles.year}>{movie.year}</span>
-              <span className={styles.rating}>★ {movie.rating.toFixed(1)}</span>
+              <RatingRing rating={movie.rating} size={28} />
             </div>
+            {externalRatings ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {typeof externalRatings.imdb === "number" ? (
+                  <span className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                    IMDb {externalRatings.imdb.toFixed(1)}
+                  </span>
+                ) : null}
+                {typeof externalRatings.rottenTomatoes === "number" ? (
+                  <span className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                    RT {externalRatings.rottenTomatoes}%
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

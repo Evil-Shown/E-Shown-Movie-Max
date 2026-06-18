@@ -38,4 +38,9 @@ export interface Movie {
   newRelease?: boolean;
   trailerKey?: string;
   imdbId?: string;
+  externalRatings?: {
+    imdb?: number;
+    rottenTomatoes?: number;
+    metascore?: number;
+  };
 }

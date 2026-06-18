@@ -88,6 +88,7 @@ export function mapOmdbSearchItem(item: OmdbSearchItem): Movie {
 export function mapOmdbDetail(data: OmdbMovieResponse): Movie {
   const poster = parsePoster(data.Poster);
   const awards = data.Awards && data.Awards !== "N/A" ? data.Awards : "";
+  const rottenTomatoes = data.Ratings?.find((rating) => rating.Source === "Rotten Tomatoes")?.Value;
 
   return {
     id: data.imdbID,
@@ -103,5 +104,10 @@ export function mapOmdbDetail(data: OmdbMovieResponse): Movie {
     genres: parseGenres(data.Genre),
     director: parseDirector(data.Director),
     cast: parseCast(data.Actors),
+    externalRatings: {
+      imdb: parseRating(data.imdbRating) || undefined,
+      rottenTomatoes: rottenTomatoes ? Number.parseInt(rottenTomatoes, 10) || undefined : undefined,
+      metascore: parseRating(data.Metascore) || undefined,
+    },
   };
 }

@@ -2,12 +2,17 @@
 
 import type { Movie } from "@/lib/types";
 import { formatRuntime, posterUrl } from "@/lib/movies";
+import { isTvShow } from "@/lib/streaming";
 import FloatingCard from "@/components/3d/FloatingCard";
 import PlayButton from "@/components/PlayButton";
+import ProviderSwitcher from "@/components/ProviderSwitcher";
 import TrailerButton from "@/components/TrailerButton";
+import TvSeasonPicker from "@/components/TvSeasonPicker";
+import WatchlistButton from "@/components/WatchlistButton";
+import RatingRing from "@/components/RatingRing";
 import Link from "next/link";
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 interface MovieDetailClientProps {
   movie: Movie;
@@ -65,6 +70,9 @@ function RatingBar({ rating }: { rating: number }) {
 }
 
 export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
+  const [overviewExpanded, setOverviewExpanded] = useState(false);
+  const showTv = isTvShow(movie);
+
   return (
     <div
       className="relative pb-8"
@@ -125,18 +133,33 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
             </p>
 
             <div className="mt-8 flex flex-col items-center gap-2 lg:items-start">
-              <div className="flex items-end gap-3">
-                <span className="text-2xl text-[var(--accent-warm)]">★</span>
-                <span className="font-[var(--font-playfair)] text-6xl leading-none text-[var(--accent-warm)]">
-                  {movie.rating.toFixed(1)}
-                </span>
-              </div>
+              <RatingRing rating={movie.rating} size={72} />
               <AnimatedStarRating rating={movie.rating} />
               <RatingBar rating={movie.rating} />
               <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--text-dim)]">
-                IMDb Rating
+                TMDB Score
               </p>
             </div>
+
+            {movie.externalRatings ? (
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                {typeof movie.externalRatings.imdb === "number" ? (
+                  <div className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-2 text-xs text-[var(--text-secondary)]">
+                    <span className="font-semibold text-[var(--text-primary)]">IMDb</span> {movie.externalRatings.imdb.toFixed(1)}
+                  </div>
+                ) : null}
+                {typeof movie.externalRatings.rottenTomatoes === "number" ? (
+                  <div className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-2 text-xs text-[var(--text-secondary)]">
+                    <span className="font-semibold text-[var(--text-primary)]">Rotten Tomatoes</span> {movie.externalRatings.rottenTomatoes}%
+                  </div>
+                ) : null}
+                {typeof movie.externalRatings.metascore === "number" ? (
+                  <div className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-2 text-xs text-[var(--text-secondary)]">
+                    <span className="font-semibold text-[var(--text-primary)]">Metascore</span> {movie.externalRatings.metascore}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm lg:justify-start">
               <span className="text-[var(--text-secondary)]">{movie.year}</span>
@@ -165,15 +188,13 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
             </div>
 
             <div className="mt-8 flex flex-wrap justify-center gap-4 lg:justify-start">
-              <PlayButton movie={movie} label="Play Film" />
+              <PlayButton movie={movie} label={showTv ? "Play S1 E1" : "Play Film"} />
               <TrailerButton movie={movie} label="Watch Trailer" />
-              <button
-                type="button"
-                data-cursor="link"
-                className="inline-flex h-12 items-center rounded-md border border-[var(--border-strong)] bg-transparent px-10 text-sm font-medium uppercase tracking-[0.15em] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] active:scale-95"
-              >
-                + Collection
-              </button>
+              <WatchlistButton movie={movie} className="!h-12 !w-12" />
+            </div>
+
+            <div className="mt-6 max-w-xs">
+              <ProviderSwitcher />
             </div>
           </div>
         </div>
@@ -181,10 +202,21 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
 
       <div className="mt-10 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-[var(--shadow-sm)]">
         <h2 className="font-[var(--font-playfair)] text-xl text-[var(--text-primary)]">Synopsis</h2>
-        <p className="mt-4 text-base leading-relaxed text-[var(--text-secondary)]">
+        <p className={`mt-4 text-base leading-relaxed text-[var(--text-secondary)] ${overviewExpanded ? "" : "line-clamp-4"}`}>
           {movie.overview}
         </p>
+        {movie.overview.length > 220 && (
+          <button
+            type="button"
+            onClick={() => setOverviewExpanded((v) => !v)}
+            className="mt-2 text-sm font-medium text-[var(--accent-primary)] hover:underline"
+          >
+            {overviewExpanded ? "Show less" : "Read more"}
+          </button>
+        )}
       </div>
+
+      {showTv && <TvSeasonPicker movie={movie} />}
 
       <section className="mt-8 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] px-8 py-6 shadow-[var(--shadow-sm)]">
         <h2 className="border-l-2 border-[var(--accent-primary)] pl-4 font-[var(--font-playfair)] text-2xl text-[var(--text-primary)]">
