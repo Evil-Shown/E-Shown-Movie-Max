@@ -10,6 +10,7 @@ import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { recordPosterDwell } from "@/lib/storage/taste-signals";
+import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
 import { useEffect, useRef, useState } from "react";
 import styles from "./MovieCard.module.css";
 
@@ -24,13 +25,16 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
   const { openMovie } = useVideoPlayer();
   const { openQuickView } = useQuickView();
   const { continueWatching } = useUserLibrary();
+  const afterHydration = useAfterHydration();
   const [loaded, setLoaded] = useState(false);
   const [externalRatings, setExternalRatings] = useState(movie.externalRatings ?? null);
   const cardRef = useRef<HTMLDivElement>(null);
   const dwellStartRef = useRef<number | null>(null);
   const dwellRecordedRef = useRef(false);
 
-  const progress = continueWatching.find((item) => item.id === movie.id)?.progress ?? 0;
+  const progress = afterHydration
+    ? (continueWatching.find((item) => item.id === movie.id)?.progress ?? 0)
+    : 0;
 
   useEffect(() => {
     if (externalRatings || typeof window === "undefined") return;
