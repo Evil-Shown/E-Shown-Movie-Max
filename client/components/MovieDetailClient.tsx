@@ -141,6 +141,26 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
               </p>
             </div>
 
+            {movie.externalRatings ? (
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                {typeof movie.externalRatings.imdb === "number" ? (
+                  <div className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-2 text-xs text-[var(--text-secondary)]">
+                    <span className="font-semibold text-[var(--text-primary)]">IMDb</span> {movie.externalRatings.imdb.toFixed(1)}
+                  </div>
+                ) : null}
+                {typeof movie.externalRatings.rottenTomatoes === "number" ? (
+                  <div className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-2 text-xs text-[var(--text-secondary)]">
+                    <span className="font-semibold text-[var(--text-primary)]">Rotten Tomatoes</span> {movie.externalRatings.rottenTomatoes}%
+                  </div>
+                ) : null}
+                {typeof movie.externalRatings.metascore === "number" ? (
+                  <div className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-2 text-xs text-[var(--text-secondary)]">
+                    <span className="font-semibold text-[var(--text-primary)]">Metascore</span> {movie.externalRatings.metascore}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
             <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm lg:justify-start">
               <span className="text-[var(--text-secondary)]">{movie.year}</span>
               <span className="text-[var(--text-dim)]">·</span>

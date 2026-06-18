@@ -17,6 +17,7 @@ import {
   unmarkEpisodeWatched,
 } from "@/lib/storage/episode-progress";
 import { getPreferredProvider, setPreferredProvider } from "@/lib/storage/provider-pref";
+import { syncDesktopSession } from "@/lib/storage/desktop-session";
 import type { ContinueWatchingItem, WatchlistItem } from "@/lib/storage/types";
 import {
   getWatchlist,
@@ -96,6 +97,7 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    syncDesktopSession();
     setWatchlist(getWatchlist());
     setContinueWatching(getContinueWatching());
     setPreferredProviderState(getPreferredProvider());

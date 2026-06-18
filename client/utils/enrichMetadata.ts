@@ -39,7 +39,7 @@ export function enrichFromFilename(filename: string): EnrichedMetadata {
   const base = filename.replace(/\.(torrent|mkv|mp4|avi)$/i, "");
   const parts = base.split(/[.\-_]+/).filter(Boolean);
 
-  let titleParts: string[] = [];
+  const titleParts: string[] = [];
   let year: string | null = null;
   let quality: string | null = null;
   let source: string | null = null;
@@ -102,11 +102,6 @@ export async function enrichWithTmdb(
   title: string,
   year: string | null
 ): Promise<TmdbEnrichment | null> {
-  const key =
-    process.env.NEXT_PUBLIC_TMDB_KEY ??
-    process.env.TMDB_API_KEY;
-  if (!key) return null;
-
   const cacheKey = `tmdb_${title}_${year ?? ""}`;
   if (typeof sessionStorage !== "undefined") {
     const cached = sessionStorage.getItem(cacheKey);
@@ -119,27 +114,19 @@ export async function enrichWithTmdb(
     }
   }
 
-  const params = new URLSearchParams({ api_key: key, query: title });
-  if (year) params.set("year", year);
-
   try {
-    const res = await fetch(`https://api.themoviedb.org/3/search/movie?${params}`);
+    const params = new URLSearchParams({ title });
+    if (year) params.set("year", year);
+
+    const res = await fetch(`/api/tmdb/search?${params.toString()}`);
     if (!res.ok) return null;
     const data = await res.json();
-    const hit = data.results?.[0];
-    if (!hit) return null;
-
-    const enriched: TmdbEnrichment = {
-      poster_path: hit.poster_path ?? null,
-      overview: hit.overview ?? "",
-      vote_average: hit.vote_average ?? 0,
-      genres: []
-    };
+    if (!data) return null;
 
     if (typeof sessionStorage !== "undefined") {
-      sessionStorage.setItem(cacheKey, JSON.stringify(enriched));
+      sessionStorage.setItem(cacheKey, JSON.stringify(data));
     }
-    return enriched;
+    return data as TmdbEnrichment;
   } catch {
     return null;
   }

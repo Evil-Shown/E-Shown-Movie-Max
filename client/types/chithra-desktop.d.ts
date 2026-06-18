@@ -5,6 +5,9 @@ declare global {
     chithraDesktop?: {
       isDesktopApp?: boolean;
       platform?: string;
+      appVersion?: string;
+      launchId?: string;
+      launchDay?: string;
     };
   }
 }

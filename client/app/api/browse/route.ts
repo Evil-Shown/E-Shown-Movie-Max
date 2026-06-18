@@ -22,5 +22,9 @@ export async function GET(request: Request) {
     sort,
   });
 
-  return Response.json(result);
+  return Response.json(result, {
+    headers: {
+      "Cache-Control": "public, max-age=900, stale-while-revalidate=86400",
+    },
+  });
 }
