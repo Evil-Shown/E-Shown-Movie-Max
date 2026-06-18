@@ -11,6 +11,15 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Write-Utf8NoBom {
+  param(
+    [string]$Path,
+    [string]$Content
+  )
+  $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+  [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
+}
+
 $root = Split-Path $PSScriptRoot -Parent
 $desktopPackage = Join-Path $PSScriptRoot "desktop-shell\package.json"
 $envFile = Join-Path $root ".env"
@@ -40,7 +49,7 @@ Then run: .\scripts\publish-desktop-release.ps1
 if ($Version) {
   $text = Get-Content $desktopPackage -Raw
   $text = $text -replace '"version"\s*:\s*"[^"]+"', "`"version`": `"$Version`""
-  Set-Content -Path $desktopPackage -Value $text -Encoding UTF8 -NoNewline
+  Write-Utf8NoBom -Path $desktopPackage -Content $text
   Write-Host "Bumped desktop version to $Version" -ForegroundColor Cyan
 }
 
