@@ -71,12 +71,14 @@ export default function CinemaIntro() {
 
   useLayoutEffect(() => {
     if (process.env.NODE_ENV === "development") return;
+    if (isDesktopApp()) return;
     if (hasSeenIntro()) return;
     document.body.style.overflow = "hidden";
     setVisible(true);
   }, []);
 
   useEffect(() => {
+    if (isDesktopApp()) return undefined;
     if (!visible || hasSeenIntro()) return undefined;
 
     fetch("/intro-video.mp4", { method: "HEAD" })

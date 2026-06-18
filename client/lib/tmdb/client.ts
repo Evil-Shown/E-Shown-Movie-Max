@@ -72,18 +72,46 @@ export async function discoverTv(options: {
   page?: number;
   genre?: Genre;
   sortBy?: string;
+  sort?: DiscoverSort;
+  year?: number;
+  minRating?: number;
+  query?: string;
 }) {
   const params: Record<string, string> = {
     page: String(options.page ?? 1),
-    sort_by: options.sortBy ?? "popularity.desc",
+    sort_by: options.sortBy ?? discoverTvSortBy(options.sort),
     include_adult: "false",
   };
 
   if (options.genre) {
     params.with_genres = String(genreToTmdbId(options.genre));
   }
+  if (options.year) {
+    params.first_air_date_year = String(options.year);
+  }
+  if (options.minRating) {
+    params["vote_average.gte"] = String(options.minRating);
+  }
+  if (options.query?.trim()) {
+    params.with_text_query = options.query.trim();
+  }
+  if (options.sort === "top_rated" || options.sortBy === "vote_average.desc") {
+    params["vote_count.gte"] = params["vote_count.gte"] ?? "200";
+  }
 
   return tmdbFetch<TmdbPagedResponse<TmdbTvListItem>>("/discover/tv", params);
+}
+
+function discoverMovieSortBy(sort?: DiscoverSort): string {
+  if (sort === "top_rated") return "vote_average.desc";
+  if (sort === "newest") return "primary_release_date.desc";
+  return "popularity.desc";
+}
+
+function discoverTvSortBy(sort?: DiscoverSort): string {
+  if (sort === "top_rated") return "vote_average.desc";
+  if (sort === "newest") return "first_air_date.desc";
+  return "popularity.desc";
 }
 
 export async function fetchTvBrowsePage(
@@ -135,16 +163,32 @@ export async function discoverMovies(options: {
   page?: number;
   genre?: Genre;
   sortBy?: string;
+  sort?: DiscoverSort;
+  year?: number;
+  minRating?: number;
+  query?: string;
 }) {
   const params: Record<string, string> = {
     page: String(options.page ?? 1),
-    sort_by: options.sortBy ?? "popularity.desc",
+    sort_by: options.sortBy ?? discoverMovieSortBy(options.sort),
     include_adult: "false",
     include_video: "false",
   };
 
   if (options.genre) {
     params.with_genres = String(genreToTmdbId(options.genre));
+  }
+  if (options.year) {
+    params.primary_release_year = String(options.year);
+  }
+  if (options.minRating) {
+    params["vote_average.gte"] = String(options.minRating);
+  }
+  if (options.query?.trim()) {
+    params.with_text_query = options.query.trim();
+  }
+  if (options.sort === "top_rated" || options.sortBy === "vote_average.desc") {
+    params["vote_count.gte"] = params["vote_count.gte"] ?? "200";
   }
 
   return tmdbFetch<TmdbPagedResponse<TmdbMovieListItem>>("/discover/movie", params);
@@ -199,6 +243,109 @@ export async function fetchSimilarTv(id: number, page = 1) {
 }
 
 export type BrowseSort = "popular" | "top_rated" | "now_playing";
+
+export type DiscoverSort = "popular" | "top_rated" | "newest";
+
+/** TMDB Animation genre — used with Japanese language for anime discovery. */
+export const TMDB_ANIME_GENRE_ID = 16;
+export const TMDB_ANIME_LANGUAGE = "ja";
+
+export type AnimeSort = "popular" | "top_rated" | "trending";
+
+function animeDiscoverParams(options: {
+  page?: number;
+  sort: AnimeSort;
+  year?: number;
+  minRating?: number;
+  query?: string;
+  mediaType: "movie" | "tv";
+}) {
+  const params: Record<string, string> = {
+    page: String(options.page ?? 1),
+    with_genres: String(TMDB_ANIME_GENRE_ID),
+    with_original_language: TMDB_ANIME_LANGUAGE,
+    include_adult: "false",
+  };
+
+  if (options.sort === "top_rated") {
+    params.sort_by = "vote_average.desc";
+    params["vote_count.gte"] = "200";
+  } else if (options.sort === "trending") {
+    params.sort_by = "popularity.desc";
+  } else {
+    params.sort_by = "popularity.desc";
+  }
+
+  if (options.year) {
+    if (options.mediaType === "tv") {
+      params.first_air_date_year = String(options.year);
+    } else {
+      params.primary_release_year = String(options.year);
+    }
+  }
+  if (options.minRating) {
+    params["vote_average.gte"] = String(options.minRating);
+  }
+  if (options.query?.trim()) {
+    params.with_text_query = options.query.trim();
+  }
+
+  return params;
+}
+
+export async function discoverAnimeMovies(
+  options: { page?: number; sort?: AnimeSort; year?: number; minRating?: number; query?: string } = {}
+) {
+  const sort = options.sort ?? "popular";
+  const params = animeDiscoverParams({ ...options, sort, mediaType: "movie" });
+  params.include_video = "false";
+  return tmdbFetch<TmdbPagedResponse<TmdbMovieListItem>>("/discover/movie", params);
+}
+
+export async function discoverAnimeTv(
+  options: { page?: number; sort?: AnimeSort; year?: number; minRating?: number; query?: string } = {}
+) {
+  const sort = options.sort ?? "popular";
+  const params = animeDiscoverParams({ ...options, sort, mediaType: "tv" });
+  return tmdbFetch<TmdbPagedResponse<TmdbTvListItem>>("/discover/tv", params);
+}
+
+function isAnimeGenreIds(genreIds: number[] | undefined): boolean {
+  return (genreIds ?? []).includes(TMDB_ANIME_GENRE_ID);
+}
+
+export async function fetchAnimeTrending(page = 1) {
+  const [tv, movies] = await Promise.all([
+    fetchAnimeTrendingTv(page),
+    fetchAnimeTrendingMovies(page),
+  ]);
+
+  return {
+    tv: tv.results,
+    movies: movies.results,
+    total_pages: Math.max(tv.total_pages, movies.total_pages),
+  };
+}
+
+export async function fetchAnimeTrendingMovies(page = 1) {
+  const response = await tmdbFetch<TmdbPagedResponse<TmdbMovieListItem>>("/trending/movie/day", {
+    page: String(page),
+  });
+  return {
+    ...response,
+    results: response.results.filter((item) => isAnimeGenreIds(item.genre_ids)),
+  };
+}
+
+export async function fetchAnimeTrendingTv(page = 1) {
+  const response = await tmdbFetch<TmdbPagedResponse<TmdbTvListItem>>("/trending/tv/day", {
+    page: String(page),
+  });
+  return {
+    ...response,
+    results: response.results.filter((item) => isAnimeGenreIds(item.genre_ids)),
+  };
+}
 
 export async function fetchTrendingDay(page = 1) {
   return tmdbFetch<TmdbPagedResponse<TmdbMultiSearchItem>>("/trending/all/day", {

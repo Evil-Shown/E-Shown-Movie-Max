@@ -3,6 +3,7 @@ import { Cinzel, Inter, Noto_Sans_Sinhala, Playfair_Display } from "next/font/go
 import { Suspense } from "react";
 import BackToTop from "@/components/BackToTop";
 import CinemaIntroLoader from "@/components/CinemaIntroLoader";
+import StartupSplashLoader from "@/components/StartupSplashLoader";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import NavigationProgress from "@/components/NavigationProgress";
@@ -72,6 +73,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="anonymous" />
       </head>
       <body className="flex min-h-full flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
+        <StartupSplashLoader />
         <CinemaIntroLoader />
         <QueryProvider>
           <UserLibraryProvider>
