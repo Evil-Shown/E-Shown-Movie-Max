@@ -13,9 +13,9 @@ export const STREAM_PROVIDERS: StreamProvider[] = [
   "vidfast",
   "vidlink",
   "superembed",
-  "autoembed",
   "vidsrcpm",
   "vidsrc",
+  "autoembed",
 ];
 
 export const PROVIDER_LABELS: Record<StreamProvider, string> = {
@@ -89,9 +89,9 @@ export function buildEmbedUrl(
     }
     case "superembed": {
       if (type === "movie") {
-        return `https://multiembed.mov/directstream.php?video_id=${mediaId}&tmdb=1`;
+        return `https://multiembed.mov/?video_id=${mediaId}&tmdb=1`;
       }
-      return `https://multiembed.mov/directstream.php?video_id=${mediaId}&tmdb=1&s=${season}&e=${episode}`;
+      return `https://multiembed.mov/?video_id=${mediaId}&tmdb=1&s=${season}&e=${episode}`;
     }
     case "autoembed": {
       if (type === "movie") {
