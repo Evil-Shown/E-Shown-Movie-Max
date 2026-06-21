@@ -1,4 +1,5 @@
-import type { LiveTvCategory, LiveTvChannel, LiveTvCinematicStyle } from "./types";
+import type { LiveTvCategory, LiveTvChannel, LiveTvCinematicStyle, LiveTvStream } from "./types";
+import { getStreamForChannel } from "./streams";
 
 export const LIVE_TV_CATEGORY_LABELS: Record<LiveTvCategory, string> = {
   local: "Local",
@@ -80,9 +81,15 @@ function channel(
   id: string,
   name: string,
   category: LiveTvCategory,
-  options: Partial<Pick<LiveTvChannel, "isHd" | "isFeatured" | "logo" | "logoColor" | "logoInitials" | "description">> = {}
+  options: Partial<
+    Pick<
+      LiveTvChannel,
+      "isHd" | "isFeatured" | "logo" | "logoColor" | "logoInitials" | "description" | "stream"
+    >
+  > & { region?: LiveTvChannel["region"] } = {}
 ): LiveTvChannel {
-  const region = category === "local" ? "local" : "international";
+  const region =
+    options.region ?? (category === "local" ? "local" : "international");
   const initials =
     options.logoInitials ??
     name
@@ -106,6 +113,7 @@ function channel(
       options.description ??
       `Watch ${name} live — ${LIVE_TV_CATEGORY_LABELS[category]} channel on CHITHRA Cinema.`,
     cinematicStyle: getCinematicStyle(id, category),
+    stream: options.stream ?? getStreamForChannel(id),
   };
 }
 
@@ -131,6 +139,14 @@ export const LIVE_TV_CHANNELS: LiveTvChannel[] = [
   channel("shakthi-tv", "Shakthi TV", "local", { logo: "https://img.logo.dev/shakthitv.lk", logoColor: "#ea580c" }),
   channel("vasantham-tv", "Vasantham TV", "local", { logo: "https://img.logo.dev/vasantham.lk", logoColor: "#16a34a" }),
   channel("supreme-tv", "Supreme TV", "local", { logo: "https://img.logo.dev/supremetv.lk", logoColor: "#9333ea" }),
+  channel("asia-tv", "Asia TV", "local", { logoColor: "#0d9488", description: "Sri Lankan general entertainment channel." }),
+  channel("siyatha-tv", "Siyatha TV", "local", { logoColor: "#dc2626" }),
+  channel("monara-tv", "Monara TV", "local", { logoColor: "#7c3aed" }),
+  channel("ndtv-lanka", "NDTV Lanka", "local", { logoColor: "#2563eb" }),
+  channel("talent-tv", "Talent TV", "local", { logoColor: "#ca8a04" }),
+  channel("imai-tv", "Imai TV", "local", { logoColor: "#0891b2" }),
+  channel("verbum-tv", "Verbum TV", "local", { logoColor: "#4f46e5" }),
+  channel("star-tamil-tv", "Star Tamil TV", "local", { logoColor: "#be123c" }),
 
   // Sports
   channel("espn", "ESPN", "sports", {
@@ -144,6 +160,13 @@ export const LIVE_TV_CHANNELS: LiveTvChannel[] = [
   channel("sony-sports", "Sony Sports", "sports", { logo: "https://img.logo.dev/sonypicturesnetworks.com", logoColor: "#0f766e" }),
   channel("eurosport", "Eurosport", "sports", { logo: "https://img.logo.dev/eurosport.com", logoColor: "#475569" }),
   channel("bein-sports", "beIN Sports", "sports", { logo: "https://img.logo.dev/beinsports.com", logoColor: "#7c2d12" }),
+  channel("espn2", "ESPN 2", "sports", { logoColor: "#dc2626" }),
+  channel("espnu", "ESPNU", "sports", { logoColor: "#b91c1c" }),
+  channel("espn-deportes", "ESPN Deportes", "sports", { logoColor: "#991b1b" }),
+  channel("fox-sports", "Fox Sports", "sports", { logoColor: "#1d4ed8" }),
+  channel("red-bull-tv", "Red Bull TV", "sports", { logoColor: "#dc2626", isFeatured: true, description: "Free sports, music, and culture live streams." }),
+  channel("motogp", "MotoGP", "sports", { logoColor: "#eab308" }),
+  channel("wwe", "WWE", "sports", { logoColor: "#1c1917" }),
 
   // Entertainment
   channel("hbo", "HBO", "entertainment", {
@@ -156,6 +179,10 @@ export const LIVE_TV_CHANNELS: LiveTvChannel[] = [
   channel("warner-tv", "Warner TV", "entertainment", { logo: "https://img.logo.dev/warnertv.com", logoColor: "#1e40af" }),
   channel("mtv", "MTV", "entertainment", { logo: "https://img.logo.dev/mtv.com", logoColor: "#c96a2b" }),
   channel("comedy-central", "Comedy Central", "entertainment", { logo: "https://img.logo.dev/cc.com", logoColor: "#ca8a04" }),
+  channel("pluto-tv-comedy", "Pluto TV Comedy", "entertainment", { logoColor: "#f97316", description: "Free comedy channel from Pluto TV." }),
+  channel("pluto-tv-movies", "Pluto TV Movies", "entertainment", { logoColor: "#6366f1" }),
+  channel("filmrise", "FilmRise Classic", "entertainment", { logoColor: "#78716c" }),
+  channel("stingray-classica", "Stingray Classica", "entertainment", { logoColor: "#a855f7" }),
 
   // News
   channel("cnn", "CNN", "news", {
@@ -168,6 +195,20 @@ export const LIVE_TV_CHANNELS: LiveTvChannel[] = [
   channel("al-jazeera", "Al Jazeera", "news", { logo: "https://img.logo.dev/aljazeera.com", logoColor: "#b45309" }),
   channel("france-24", "France 24", "news", { logo: "https://img.logo.dev/france24.com", logoColor: "#1d4ed8" }),
   channel("dw", "DW", "news", { logo: "https://img.logo.dev/dw.com", logoColor: "#0369a1" }),
+  channel("cnn-international", "CNN International", "news", { logoColor: "#dc2626" }),
+  channel("euronews", "Euronews", "news", { logoColor: "#1e40af" }),
+  channel("sky-news", "Sky News", "news", { logoColor: "#dc2626" }),
+  channel("fox-news", "Fox News", "news", { logoColor: "#1d4ed8" }),
+  channel("bloomberg", "Bloomberg TV", "news", { logoColor: "#7c3aed", isFeatured: true }),
+  channel("cgtn", "CGTN", "news", { logoColor: "#dc2626" }),
+  channel("nhk-world", "NHK World", "news", { logoColor: "#991b1b" }),
+  channel("rt-news", "RT News", "news", { logoColor: "#059669" }),
+  channel("wion", "WION", "news", { logoColor: "#2563eb" }),
+  channel("abc-news", "ABC News", "news", { logoColor: "#1d4ed8" }),
+  channel("cbs-news", "CBS News", "news", { logoColor: "#1e40af" }),
+  channel("nbc-news", "NBC News", "news", { logoColor: "#dc2626" }),
+  channel("france-24-arabic", "France 24 Arabic", "news", { logoColor: "#1d4ed8" }),
+  channel("dw-deutsch", "DW Deutsch", "news", { logoColor: "#0284c7" }),
 
   // Documentary
   channel("discovery-channel", "Discovery Channel", "documentary", {
@@ -179,12 +220,21 @@ export const LIVE_TV_CHANNELS: LiveTvChannel[] = [
   channel("national-geographic", "National Geographic", "documentary", { logo: "https://img.logo.dev/nationalgeographic.com", logoColor: "#ca8a04" }),
   channel("animal-planet", "Animal Planet", "documentary", { logo: "https://img.logo.dev/animalplanet.com", logoColor: "#15803d" }),
   channel("history-channel", "History Channel", "documentary", { logo: "https://img.logo.dev/history.com", logoColor: "#78716c" }),
+  channel("nasa-tv", "NASA TV", "documentary", { logoColor: "#1e40af", isFeatured: true, description: "Live space missions, launches, and NASA programming." }),
+  channel("nasa-tv-media", "NASA TV Media", "documentary", { logoColor: "#2563eb" }),
+  channel("smithsonian", "Smithsonian Channel", "documentary", { logoColor: "#b45309" }),
+  channel("love-nature", "Love Nature", "documentary", { logoColor: "#15803d" }),
+  channel("outdoor-channel", "Outdoor Channel", "documentary", { logoColor: "#166534" }),
+  channel("cgtn-documentary", "CGTN Documentary", "documentary", { logoColor: "#0369a1" }),
 
   // Kids
   channel("cartoon-network", "Cartoon Network", "kids", { logo: "https://img.logo.dev/cartoonnetwork.com", logoColor: "#0ea5e9" }),
   channel("nickelodeon", "Nickelodeon", "kids", { logo: "https://img.logo.dev/nick.com", logoColor: "#f97316" }),
   channel("disney-channel", "Disney Channel", "kids", { logo: "https://img.logo.dev/disneynow.com", logoColor: "#2563eb" }),
   channel("boomerang", "Boomerang", "kids", { logoColor: "#eab308" }),
+  channel("pbs-kids", "PBS Kids", "kids", { logoColor: "#0ea5e9", isFeatured: true }),
+  channel("duck-tv", "Duck TV", "kids", { logoColor: "#f59e0b" }),
+  channel("baby-tv", "Baby TV", "kids", { logoColor: "#ec4899" }),
 ];
 
 export const LIVE_TV_CHANNEL_MAP = new Map(LIVE_TV_CHANNELS.map((ch) => [ch.id, ch]));
@@ -195,4 +245,8 @@ export function getChannelById(id: string): LiveTvChannel | undefined {
 
 export function getFeaturedChannels(): LiveTvChannel[] {
   return LIVE_TV_CHANNELS.filter((ch) => ch.isFeatured);
+}
+
+export function getStreamableChannelCount(): number {
+  return LIVE_TV_CHANNELS.filter((ch) => ch.stream ?? getStreamForChannel(ch.id)).length;
 }

@@ -1,32 +1,30 @@
-export default function LiveTvSkeletonGrid({ count = 10 }: { count?: number }) {
+export function LiveTvSkeletonPlayer() {
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4"
-        >
-          <div className="mb-3 flex items-start justify-between">
-            <div className="skeleton h-14 w-14 rounded-xl" />
-            <div className="skeleton h-5 w-12 rounded-full" />
-          </div>
-          <div className="skeleton h-5 w-3/4 rounded" />
-          <div className="skeleton mt-2 h-3 w-1/2 rounded" />
-        </div>
-      ))}
+    <div className="overflow-hidden rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.08]">
+      <div className="skeleton aspect-video w-full bg-[#111]" />
+      <div className="space-y-3 bg-gradient-to-r from-[#111] to-[#0d0d0d] p-5">
+        <div className="skeleton h-5 w-40 rounded bg-white/10" />
+        <div className="skeleton h-3 w-24 rounded bg-white/5" />
+      </div>
     </div>
   );
 }
 
-export function LiveTvSkeletonPlayer() {
+export default function LiveTvSkeletonGrid({ count = 12 }: { count?: number }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)]">
-      <div className="skeleton aspect-video w-full" />
-      <div className="space-y-3 p-6">
-        <div className="skeleton h-4 w-24 rounded" />
-        <div className="skeleton h-8 w-2/3 rounded" />
-        <div className="skeleton h-4 w-full rounded" />
-      </div>
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]"
+        >
+          <div className="skeleton aspect-[16/9] w-full" />
+          <div className="space-y-2 p-3">
+            <div className="skeleton h-4 w-3/4 rounded" />
+            <div className="skeleton h-3 w-1/2 rounded" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

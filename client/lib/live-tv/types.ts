@@ -18,6 +18,25 @@ export interface LiveTvCinematicStyle {
   hoverEffect: string;
 }
 
+export interface LiveTvStream {
+  type: "hls" | "iframe" | "youtube";
+  url: string;
+  fallbacks?: string[];
+  referer?: string;
+  origin?: string;
+  poster?: string;
+  /** iptv-org channel id for dynamic stream lookup */
+  iptvChannelId?: string;
+  /** Broadcaster embed page when HLS fallbacks fail */
+  embedFallback?: string;
+}
+
+export interface StreamSource {
+  url: string;
+  referer?: string;
+  origin?: string;
+}
+
 export interface LiveTvChannel {
   id: string;
   name: string;
@@ -30,6 +49,7 @@ export interface LiveTvChannel {
   logoInitials: string;
   description: string;
   cinematicStyle?: LiveTvCinematicStyle;
+  stream?: LiveTvStream;
 }
 
 export type LiveTvCategoryFilter = "all" | LiveTvCategory;

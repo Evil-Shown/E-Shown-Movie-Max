@@ -49,14 +49,11 @@ export function getRecentEntries(): LiveTvRecentEntry[] {
 }
 
 export function getRecentlyViewedChannels(): LiveTvChannel[] {
-  return getRecentEntries()
-    .map((entry) => getChannelById(entry.channelId))
-    .filter((ch): ch is LiveTvChannel => Boolean(ch));
+  return getContinueWatchingChannels();
 }
 
 export function recordRecentlyViewed(channelId: string) {
-  const entries = getRecentEntries().filter((entry) => entry.channelId !== channelId);
-  writeJson(RECENT_KEY, [{ channelId, viewedAt: Date.now() }, ...entries].slice(0, MAX_RECENT));
+  upsertContinueWatching(channelId);
 }
 
 export function getContinueEntries(): LiveTvContinueEntry[] {

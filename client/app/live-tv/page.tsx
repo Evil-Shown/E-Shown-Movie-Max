@@ -8,5 +8,13 @@ export const metadata: Metadata = {
 };
 
 export default function LiveTvPage() {
-  return <LiveTvPageClient />;
+  return (
+    <>
+      <link rel="preconnect" href="https://www.google.com" />
+      <link rel="dns-prefetch" href="https://i.imgur.com" />
+      <link rel="dns-prefetch" href="https://iptv-org.github.io" />
+      <link rel="dns-prefetch" href="https://tv.hiruhost.com" />
+      <LiveTvPageClient />
+    </>
+  );
 }

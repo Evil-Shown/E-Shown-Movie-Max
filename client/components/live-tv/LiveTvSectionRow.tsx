@@ -45,9 +45,9 @@ export default function LiveTvSectionRow({
         </span>
       </div>
 
-      <div className="-mx-1 flex gap-4 sm:gap-6 overflow-x-auto px-1 pb-6 pt-2 scrollbar-thin">
+      <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-4 pt-1 scrollbar-thin sm:gap-4">
         {channels.map((channel) => (
-          <div key={channel.id} className="w-[180px] shrink-0 sm:w-[240px]">
+          <div key={channel.id} className="w-[132px] shrink-0 sm:w-[148px]">
             <LiveTvChannelCard
               channel={channel}
               compact

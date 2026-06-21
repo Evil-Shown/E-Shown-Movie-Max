@@ -1,65 +1,119 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { useState } from "react";
+import { getLogoCandidates } from "@/lib/live-tv/logos";
 import type { LiveTvChannel } from "@/lib/live-tv/types";
 
 interface ChannelLogoProps {
   channel: LiveTvChannel;
   className?: string;
+  variant?: "clean" | "cinematic" | "tile";
+  priority?: boolean;
 }
 
-export default function ChannelLogo({ channel, className = "" }: ChannelLogoProps) {
-  // 0: Remote (if available)
-  // 1: Local
-  // 2: Initials
-  const [errorLevel, setErrorLevel] = useState(0);
+export default function ChannelLogo({
+  channel,
+  className = "",
+  variant = "cinematic",
+  priority = false,
+}: ChannelLogoProps) {
+  const candidates = useMemo(
+    () => getLogoCandidates(channel.id, channel.logo),
+    [channel.id, channel.logo]
+  );
 
-  const hasRemote = Boolean(channel.logo);
-  const currentLevel = hasRemote ? errorLevel : Math.max(errorLevel, 1);
+  const [candidateIndex, setCandidateIndex] = useState(0);
 
-  const LOGO_DEV_TOKEN = "pk_CvtKnlevScSGAPFV3KyoLA";
-  const src = currentLevel === 0 ? `${channel.logo}?token=${LOGO_DEV_TOKEN}` : `/channels/${channel.id}.png`;
+  useEffect(() => {
+    setCandidateIndex(0);
+  }, [channel.id, candidates]);
 
   const style = channel.cinematicStyle;
+  const isClean = variant === "clean" || variant === "tile";
+  const isTile = variant === "tile";
+  const showInitials = candidateIndex >= candidates.length;
+
+  const handleError = () => {
+    setCandidateIndex((prev) => prev + 1);
+  };
 
   return (
     <div
-      className={`relative h-full w-full overflow-hidden group transition-all duration-500 ${style?.hoverEffect || ""} ${className}`}
-      style={{ backgroundColor: channel.logoColor }}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden ${
+        isTile ? "" : "h-full w-full"
+      } ${isClean ? "" : "group transition-all duration-500"} ${!isClean && style?.hoverEffect ? style.hoverEffect : ""} ${className}`}
+      style={{
+        backgroundColor: isTile ? "transparent" : channel.logoColor,
+      }}
     >
-      {/* Base Layer: Either Texture Image or Initials Badge */}
-      {currentLevel >= 2 ? (
-        <div className="flex h-full w-full items-center justify-center font-bold text-white z-0">
-          {channel.logoInitials}
+      {showInitials ? (
+        <div
+          className={`flex items-center justify-center font-bold ${
+            isTile
+              ? "size-full text-[11px] sm:text-xs"
+              : "h-full w-full text-sm tracking-wide text-white"
+          }`}
+          style={{
+            background: isTile
+              ? "transparent"
+              : `linear-gradient(135deg, ${channel.logoColor} 0%, color-mix(in srgb, ${channel.logoColor} 70%, black) 100%)`,
+          }}
+        >
+          <span
+            className="flex items-center justify-center"
+            style={
+              isTile
+                ? { color: channel.logoColor }
+                : {
+                    color: channel.logoColor,
+                    textShadow: "0 0 20px rgba(255,255,255,0.15)",
+                  }
+            }
+          >
+            {channel.logoInitials}
+          </span>
         </div>
+      ) : isTile || isClean ? (
+        <img
+          src={candidates[candidateIndex]}
+          alt={channel.name}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          fetchPriority={priority ? "high" : "auto"}
+          onError={handleError}
+          className={
+            isTile
+              ? "max-h-full max-w-full object-contain drop-shadow-[0_1px_3px_rgba(28,25,23,0.12)]"
+              : "mx-auto h-full w-full max-h-full object-contain p-2"
+          }
+        />
       ) : (
         <Image
-          src={src}
+          src={candidates[candidateIndex]}
           alt={channel.name}
           fill
-          className="object-cover transition-all duration-500 z-0"
-          sizes="100px"
-          onError={() => setErrorLevel((prev) => prev + 1)}
-          style={style ? { filter: `contrast(${style.contrast}) brightness(0.9)` } : {}}
+          priority={priority}
+          className="z-0 object-cover transition-all duration-500"
+          sizes="120px"
+          onError={handleError}
+          unoptimized
+          style={
+            style ? { filter: `contrast(${style.contrast}) brightness(0.9)` } : undefined
+          }
         />
       )}
 
-      {/* Cinematic Depth & Lighting Overlays (Applies to both image and fallback) */}
-      {style && (
+      {!isClean && style && (
         <>
-          {/* Ambient & Primary Glow */}
           <div
-            className="absolute inset-0 mix-blend-overlay opacity-80 transition-opacity duration-500 group-hover:opacity-100 z-10"
+            className="absolute inset-0 z-10 mix-blend-overlay opacity-80 transition-opacity duration-500 group-hover:opacity-100"
             style={{ background: style.overlayGradient }}
           />
-          {/* Vignette Edge Darkening */}
           <div
             className="pointer-events-none absolute inset-0 z-20"
             style={{ background: style.vignette }}
           />
-          {/* Animated Light Sweep on Hover */}
-          <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-1000 ease-out group-hover:translate-x-full z-30" />
         </>
       )}
     </div>
