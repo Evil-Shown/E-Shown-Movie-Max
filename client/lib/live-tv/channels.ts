@@ -143,7 +143,10 @@ export const LIVE_TV_CHANNELS: LiveTvChannel[] = [
   channel("siyatha-tv", "Siyatha TV", "local", { logoColor: "#dc2626" }),
   channel("monara-tv", "Monara TV", "local", { logoColor: "#7c3aed" }),
   channel("ndtv-lanka", "NDTV Lanka", "local", { logoColor: "#2563eb" }),
-  channel("talent-tv", "Talent TV", "local", { logoColor: "#ca8a04" }),
+  channel("talent-tv", "Talent TV", "local", {
+    logoColor: "#ca8a04",
+    description: "Sri Lankan sports channel — live on talenttv.lk during scheduled events.",
+  }),
   channel("imai-tv", "Imai TV", "local", { logoColor: "#0891b2" }),
   channel("verbum-tv", "Verbum TV", "local", { logoColor: "#4f46e5" }),
   channel("star-tamil-tv", "Star Tamil TV", "local", { logoColor: "#be123c" }),

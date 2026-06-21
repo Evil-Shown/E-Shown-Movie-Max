@@ -1,51 +1,44 @@
 import type { HlsConfig } from "hls.js";
 
-/** Fast-start HLS profile — tuned for live TV (values in correct hls.js units) */
+/** Fast-start HLS profile — tuned for proxied live TV */
 export const FAST_START_HLS_CONFIG: Partial<HlsConfig> = {
   enableWorker: true,
-  lowLatencyMode: true,
+  lowLatencyMode: false,
 
-  // Buffer — small initial buffer = faster first frame (seconds, not ms)
-  maxBufferLength: 10,
+  maxBufferLength: 12,
   maxMaxBufferLength: 30,
   backBufferLength: 20,
-  maxBufferSize: 30 * 1000 * 1000, // 30 MB
+  maxBufferSize: 30 * 1000 * 1000,
   maxBufferHole: 0.5,
 
-  // Start at lowest quality, upgrade after playback begins
   startLevel: 0,
   capLevelToPlayerSize: true,
   testBandwidth: false,
   startFragPrefetch: true,
-  initialLiveManifestSize: 1,
 
-  // Faster timeouts + limited retries → quicker fallback chain
-  manifestLoadingTimeOut: 6000,
-  manifestLoadingMaxRetry: 1,
-  manifestLoadingRetryDelay: 400,
-  levelLoadingTimeOut: 6000,
-  levelLoadingMaxRetry: 1,
-  fragLoadingTimeOut: 8000,
-  fragLoadingMaxRetry: 2,
-  fragLoadingRetryDelay: 400,
+  // Avoid hammering /api/live-tv/stream with manifest polls every second
+  initialLiveManifestSize: 2,
+  liveSyncDurationCount: 3,
+  liveMaxLatencyDurationCount: 6,
 
-  // ABR — ramp quality up quickly once playing
+  manifestLoadingTimeOut: 8000,
+  manifestLoadingMaxRetry: 2,
+  manifestLoadingRetryDelay: 500,
+  levelLoadingTimeOut: 8000,
+  levelLoadingMaxRetry: 2,
+  fragLoadingTimeOut: 10000,
+  fragLoadingMaxRetry: 3,
+  fragLoadingRetryDelay: 500,
+
   abrEwmaDefaultEstimate: 500000,
   abrBandWidthFactor: 0.85,
   abrBandWidthUpFactor: 0.7,
-  maxLiveSyncPlaybackRate: 1.15,
+  maxLiveSyncPlaybackRate: 1.1,
 };
 
-export function createHlsConfig(referer?: string): Partial<HlsConfig> {
-  return {
-    ...FAST_START_HLS_CONFIG,
-    xhrSetup: (xhr, url) => {
-      if (referer && !url.includes("/api/live-tv/stream")) {
-        xhr.setRequestHeader("Referer", referer);
-      }
-    },
-  };
+/** Referer/origin are applied server-side via /api/live-tv/stream */
+export function createHlsConfig(): Partial<HlsConfig> {
+  return { ...FAST_START_HLS_CONFIG };
 }
 
-/** Milliseconds before trying next fallback URL (proxy can be slow on cold start) */
 export const STREAM_ATTEMPT_TIMEOUT_MS = 12_000;

@@ -29,6 +29,13 @@ function isBinaryStreamUrl(url: string, contentType: string | null): boolean {
   );
 }
 
+function isOfflineHlsManifest(body: string): boolean {
+  const trimmed = body.trim();
+  if (!trimmed.startsWith("#EXTM3U")) return false;
+  if (trimmed.includes("#EXT-X-ERROR")) return true;
+  return trimmed.includes("#EXT-X-ENDLIST") && !trimmed.includes("#EXTINF");
+}
+
 function isManifestContent(url: string, contentType: string | null, peek: string): boolean {
   if (url.includes(".m3u8")) return true;
   if (contentType?.includes("mpegurl")) return true;
@@ -104,6 +111,10 @@ export async function GET(request: Request) {
     }
 
     const body = await upstream.text();
+
+    if (isManifestContent(rawUrl, contentType, body) && isOfflineHlsManifest(body)) {
+      return new Response("Stream offline or not broadcasting", { status: 503 });
+    }
 
     if (!isManifestContent(rawUrl, contentType, body)) {
       return new Response(body, {

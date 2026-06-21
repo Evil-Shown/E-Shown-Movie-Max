@@ -20,6 +20,7 @@ export const BROADCASTER_PAGES: Record<string, { pageUrl: string; referer?: stri
   "shakthi-tv": { pageUrl: "https://shakthitv.lk/live", referer: "https://shakthitv.lk/" },
   "channel-eye": { pageUrl: "https://www.channeleye.lk/live", referer: "https://www.channeleye.lk/" },
   "hiru-tv": { pageUrl: "https://www.hirutv.lk/live", referer: "https://www.hirutv.lk/" },
+  "talent-tv": { pageUrl: "https://talenttv.lk/", referer: "https://talenttv.lk/" },
 };
 
 const M3U8_PATTERN = /https?:\/\/[^\s"'<>\\]+?\.m3u8[^\s"'<>\\]*/gi;
@@ -103,6 +104,33 @@ export function getProviderStreamCandidates(channelId: string): string[] {
   return buildPeotvStreamUrls(channelId);
 }
 
+/** Pull current cast URL from Talent TV's Angular app bundle */
+export async function scrapeTalentTvAppBundle(): Promise<string[]> {
+  try {
+    const home = await fetchStreamResource("https://talenttv.lk/", {
+      referer: "https://talenttv.lk/",
+      mode: "document",
+      retries: 2,
+    });
+    if (!home.ok) return [];
+
+    const html = await home.text();
+    const mainBundle = html.match(/main-[A-Z0-9]+\.js/)?.[0];
+    if (!mainBundle) return [];
+
+    const bundle = await fetchStreamResource(`https://talenttv.lk/${mainBundle}`, {
+      referer: "https://talenttv.lk/",
+      mode: "manifest",
+      retries: 2,
+    });
+    if (!bundle.ok) return [];
+
+    return extractStreamUrlsFromContent(await bundle.text());
+  } catch {
+    return [];
+  }
+}
+
 /** Scrape broadcaster + PEOTV / Dialog provider pages for a channel */
 export async function scrapeChannelStreams(channelId: string): Promise<string[]> {
   const providerUrls = getProviderStreamCandidates(channelId);
@@ -121,8 +149,11 @@ export async function scrapeChannelStreams(channelId: string): Promise<string[]>
     }
   }
 
+  const talentBundle =
+    channelId === "talent-tv" ? await scrapeTalentTvAppBundle() : [];
+
   const scraped = await Promise.all(targets.map((t) => scrapePage(t)));
-  return [...new Set([...providerUrls, ...scraped.flat()])];
+  return [...new Set([...providerUrls, ...talentBundle, ...scraped.flat()])];
 }
 
 export function getScrapeReferer(channelId: string): string | undefined {
