@@ -10,8 +10,13 @@ export function urlStabilityScore(url: string): number {
   if (u.includes("getaj.net") || u.includes("thehlive.com")) return 84;
   if (u.includes("cgtn.com")) return 84;
   if (u.includes("foxnews.com") || u.includes("pbs.org")) return 82;
+  if (u.includes("live.peotv.com")) return 80;
+  if (u.includes("hiruhost.com") || u.includes("jayatv.lk")) return 78;
+  if (u.includes("voaplus.com") || u.includes("talenttv.lk")) return 76;
+  if (u.includes("5centscdn.com") || u.includes("streamerr.co") || u.includes("bozztv.com")) return 74;
   if (u.includes("frequency.stream")) return 75;
   if (u.includes("samsung.wurl.tv") || u.includes("amagi.tv")) return 25;
+  if (u.includes("yuppcdn.net")) return 40;
   if (u.startsWith("http://") && /\d+\.\d+\.\d+\.\d+/.test(u)) return 35;
   return 55;
 }

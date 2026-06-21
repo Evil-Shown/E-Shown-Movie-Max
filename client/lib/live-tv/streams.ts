@@ -1,68 +1,119 @@
 import type { LiveTvStream, StreamSource } from "./types";
 import { inferRefererFromUrl } from "./stream-fetch";
 import { needsSidProxy } from "./proxy-store";
+import { peotvStreamConfig } from "./stream-providers";
 
 /** Curated free/public stream sources — iptv-org, official CDNs, broadcaster embeds */
 export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   // ── Sri Lanka (Local) ──────────────────────────────────────────────
-  "hiru-tv": {
-    type: "hls",
-    url: "https://tv.hiruhost.com:1936/8012/8012/playlist.m3u8",
+  "hiru-tv": peotvStreamConfig(["019", "307"], {
+    primaryUrl: "https://tv.hiruhost.com:1936/8012/8012/playlist.m3u8",
+    fallbacks: ["https://dc2.serverse.com:19360/hirutv/hirutv.m3u8"],
+    embedFallback: "https://www.hirutv.lk/live",
     iptvChannelId: "HiruTV.lk@SD",
-  },
-  "tv-derana": {
-    type: "iframe",
-    url: "https://www.derana.lk/live",
-  },
-  "sirasa-tv": {
-    type: "iframe",
-    url: "https://www.sirasatv.lk/live",
-  },
-  "itn": {
-    type: "iframe",
-    url: "https://itn.lk/live/",
-  },
-  "swarnavahini": {
-    type: "iframe",
-    url: "https://swarnavahini.lk/live",
-  },
-  "rupavahini": {
-    type: "iframe",
-    url: "https://www.rupavahini.lk/live-tv",
-  },
-  "vasantham-tv": {
-    type: "iframe",
-    url: "https://vasantham.lk/",
-  },
-  "supreme-tv": {
-    type: "iframe",
-    url: "https://tvsupreme.lk/live/",
-  },
+  }),
+  "tv-derana": peotvStreamConfig(["004", "304"], {
+    embedFallback: "https://www.derana.lk/live",
+    iptvChannelId: "TVDerana.lk@SD",
+  }),
+  "sirasa-tv": peotvStreamConfig(["010", "306"], {
+    embedFallback: "https://www.sirasatv.lk/live",
+    iptvChannelId: "SirasaTV.lk@SD",
+  }),
+  "itn": peotvStreamConfig(["003", "303"], {
+    embedFallback: "https://itn.lk/live/",
+    iptvChannelId: "ITN.lk@SD",
+  }),
+  "swarnavahini": peotvStreamConfig(["006"], {
+    embedFallback: "https://swarnavahini.lk/live",
+  }),
+  "rupavahini": peotvStreamConfig(["001", "301"], {
+    embedFallback: "https://www.rupavahini.lk/live-tv",
+    iptvChannelId: "Rupavahini.lk@SD",
+  }),
+  "vasantham-tv": peotvStreamConfig(["007"], {
+    embedFallback: "https://vasantham.lk/",
+    iptvChannelId: "VasanthamTV.lk@SD",
+  }),
+  "supreme-tv": peotvStreamConfig(["013"], {
+    fallbacks: [
+      "https://live-par-2-abr-ln.livepush.io/live_abr/emeH2sLDBLZbHw3Lx/tracks-v3a1/mono.m3u8",
+    ],
+    embedFallback: "https://tvsupreme.lk/live/",
+  }),
+  "shakthi-tv": peotvStreamConfig(["011"], {
+    embedFallback: "https://shakthitv.lk/live",
+    iptvChannelId: "ShakthiTV.lk@SD",
+  }),
+  "channel-eye": peotvStreamConfig(["119"], {
+    embedFallback: "https://www.channeleye.lk/live",
+  }),
+  "ada-derana-24": peotvStreamConfig(["014"], {
+    embedFallback: "https://www.adaderana.lk/",
+  }),
+  "jaya-tv": peotvStreamConfig(["094"], {
+    primaryUrl: "https://live.jayatv.lk/hls/stream.m3u8",
+    embedFallback: "https://jayatv.lk/",
+    iptvChannelId: "JayaTV.lk@SD",
+  }),
+  "shraddha-tv": peotvStreamConfig(["099"], {
+    fallbacks: [
+      "https://edge3-moblive.yuppcdn.net/drm1/smil:shraddhatvdrm.smil/index.m3u8",
+    ],
+    embedFallback: "https://shraddha.lk/",
+    iptvChannelId: "ShraddhaTV.lk@SD",
+  }),
+  "charana-tv": peotvStreamConfig(["005", "305"], {
+    primaryUrl: "https://edge3-moblive.yuppcdn.net/transhd2/smil:chtv05.smil/index.m3u8",
+    iptvChannelId: "CharanaTV.lk@SD",
+  }),
+  "the-buddhist": peotvStreamConfig(["096"], {
+    fallbacks: [
+      "https://edge3-moblive.yuppcdn.net/drm1/smil:thebuddhistdrm.smil/index.m3u8",
+    ],
+    iptvChannelId: "TheBuddhist.lk@SD",
+  }),
+  "tv1": peotvStreamConfig(["012"], {
+    iptvChannelId: "TV1.lk@SD",
+  }),
+  "art-tv": peotvStreamConfig(["017"], {
+    iptvChannelId: "ARTTelevision.lk@SD",
+  }),
+  "rangiri-tv": peotvStreamConfig(["022"]),
+  "haritha-tv": peotvStreamConfig(["009"]),
+  "tv-didula": peotvStreamConfig(["117"], {
+    iptvChannelId: "TVDidula.lk@SD",
+  }),
+  "damsathara-tv": peotvStreamConfig(["126"], {
+    iptvChannelId: "DamsatharaTV.lk@SD",
+  }),
   "asia-tv": {
     type: "hls",
     url: "https://stream.asiatvnet.com/1/live/master.m3u8",
     iptvChannelId: "AsiaTV.lk@HD",
   },
-  "siyatha-tv": {
-    type: "hls",
-    url: "https://rtmp01.voaplus.com/hls/6x6ik312qk4grfxocfcv.m3u8",
+  "siyatha-tv": peotvStreamConfig(["008", "300"], {
+    primaryUrl: "https://rtmp01.voaplus.com/hls/6x6ik312qk4grfxocfcv.m3u8",
     iptvChannelId: "SiyathaTV.lk@SD",
-  },
-  "monara-tv": {
-    type: "hls",
-    url: "https://jk3lz8xklw79-hls-live.5centscdn.com/lpl/d0dbe915091d400bd8ee7f27f0791303.sdp/playlist.m3u8",
+  }),
+  "monara-tv": peotvStreamConfig(["104"], {
+    primaryUrl:
+      "https://jk3lz8xklw79-hls-live.5centscdn.com/lpl/d0dbe915091d400bd8ee7f27f0791303.sdp/playlist.m3u8",
     iptvChannelId: "MonaraTV.lk@SD",
-  },
+  }),
   "ndtv-lanka": {
     type: "hls",
     url: "https://g4wlkqqwl23a-hls-live.5centscdn.com/NDTVLANKA/1ff5fa54d14c3ff6c6bd3918bbb7db5d.sdp/playlist.m3u8",
     iptvChannelId: "NDTVLANKA.lk@SD",
   },
   "talent-tv": {
-    type: "iframe",
-    url: "https://talenttv.lk/",
+    type: "hls",
+    url: "http://live.talenttv.lk:8080/hls/x8kd5n3tm8e8lsv/index.m3u8",
     referer: "https://talenttv.lk/",
-    fallbacks: ["https://cast.talenttv.lk/hls/mcrlo1ygwpu8x4bj/index.m3u8"],
+    fallbacks: [
+      "https://cast.talenttv.lk/hls/mcrlo1ygwpu8x4bj/index.m3u8",
+    ],
+    embedFallback: "https://talenttv.lk/",
     iptvChannelId: "TalentTV.lk@HD",
   },
   "imai-tv": {
@@ -70,24 +121,18 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
     url: "https://live20.bozztv.com/akamaissh101/ssh101/imaitv/playlist.m3u8",
     iptvChannelId: "ImaiTV.lk@SD",
   },
-  "verbum-tv": {
-    type: "hls",
-    url: "https://samson.streamerr.co:8081/verbumtv/index.m3u8",
+  "verbum-tv": peotvStreamConfig(["093"], {
+    primaryUrl: "https://samson.streamerr.co:8081/verbumtv/index.m3u8",
+    fallbacks: [
+      "https://edge3-moblive.yuppcdn.net/drm1/smil:verbumtvdrm.smil/index.m3u8",
+    ],
     iptvChannelId: "VerbumTV.lk@SD",
-  },
-  "star-tamil-tv": {
-    type: "hls",
-    url: "https://edge4-moblive.yuppcdn.net/trans1sd/smil:strtml19.smil/playlist.m3u8",
+  }),
+  "star-tamil-tv": peotvStreamConfig(["021"], {
+    primaryUrl:
+      "https://edge4-moblive.yuppcdn.net/trans1sd/smil:strtml19.smil/playlist.m3u8",
     iptvChannelId: "StarTamilTelevision.lk@SD",
-  },
-  "shakthi-tv": {
-    type: "iframe",
-    url: "https://shakthitv.lk/live",
-  },
-  "channel-eye": {
-    type: "iframe",
-    url: "https://www.channeleye.lk/live",
-  },
+  }),
 
   // ── News (International) ───────────────────────────────────────────
   "cnn": {
