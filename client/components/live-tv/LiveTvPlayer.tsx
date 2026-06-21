@@ -56,6 +56,34 @@ export default function LiveTvPlayer({ channel, isFavorite = false, onToggleFavo
                 poster="/channels/hiru-tv.png"
                 className="absolute left-0 top-0 h-full w-full"
               />
+            ) : channel.id === "tv-derana" ? (
+              <iframe
+                src="https://www.derana.lk/"
+                className="absolute left-0 top-0 h-full w-full border-0"
+                allowFullScreen
+                title="TV Derana Live Stream"
+              />
+            ) : channel.id === "itn" ? (
+              <iframe
+                src="https://itn.lk/live/"
+                className="absolute left-0 top-0 h-full w-full border-0"
+                allowFullScreen
+                title="ITN Live Stream"
+              />
+            ) : channel.id === "vasantham-tv" ? (
+              <iframe
+                src="https://vasantham.lk/"
+                className="absolute left-0 top-0 h-full w-full border-0"
+                allowFullScreen
+                title="Vasantham TV Live Stream"
+              />
+            ) : channel.id === "supreme-tv" ? (
+              <iframe
+                src="https://tvsupreme.lk/live/"
+                className="absolute left-0 top-0 h-full w-full border-0"
+                allowFullScreen
+                title="Supreme TV Live Stream"
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-sm text-[var(--text-secondary)]">
                 Stream not available for this channel
