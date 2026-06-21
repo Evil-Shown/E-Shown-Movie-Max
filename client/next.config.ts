@@ -20,6 +20,11 @@ const nextConfig: NextConfig = {
         destination: "/gods-eye",
         permanent: true,
       },
+      {
+        source: "/LiveTV",
+        destination: "/live-tv",
+        permanent: true,
+      },
     ];
   },
   images: {
@@ -37,6 +42,26 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "img.omdbapi.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "i.imgur.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "upload.wikimedia.org",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.google.com",
+        pathname: "/s2/favicons/**",
+      },
+      {
+        protocol: "https",
+        hostname: "img.logo.dev",
         pathname: "/**",
       },
     ],

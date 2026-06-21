@@ -24,7 +24,19 @@ function Write-Utf8NoBom {
 }
 
 function Sync-DesktopShell {
-  $required = @("package.json", "main.js", "preload.js", "updater.js", "block-ad-nav.js", "embed-headers.js", "splash.html")
+  $required = @(
+    "package.json",
+    "main.js",
+    "preload.js",
+    "updater.js",
+    "update-dialog.js",
+    "update-dialog.html",
+    "update-dialog-preload.js",
+    "release-notes.js",
+    "block-ad-nav.js",
+    "embed-headers.js",
+    "splash.html"
+  )
   if (-not (Test-Path $desktopShell)) {
     throw "Missing $desktopShell - Electron shell templates are required."
   }
