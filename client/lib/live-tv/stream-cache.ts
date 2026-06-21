@@ -1,6 +1,4 @@
-import { getChannelById } from "@/lib/live-tv/channels";
 import { CHANNEL_LOGO_DOMAINS } from "@/lib/live-tv/logos";
-import { getStreamForChannel } from "@/lib/live-tv/streams";
 import type { LiveTvStream } from "@/lib/live-tv/types";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -12,12 +10,6 @@ interface CacheEntry {
 
 const streamCache = new Map<string, CacheEntry>();
 const inflight = new Map<string, Promise<LiveTvStream | null>>();
-
-function resolveLocalStream(channelId: string): LiveTvStream | null {
-  const channel = getChannelById(channelId);
-  if (!channel) return null;
-  return channel.stream ?? getStreamForChannel(channelId) ?? null;
-}
 
 function setCache(channelId: string, stream: LiveTvStream) {
   streamCache.set(channelId, { stream, cachedAt: Date.now() });
@@ -38,17 +30,8 @@ export function clearChannelStreamCache(channelId: string): void {
   inflight.delete(channelId);
 }
 
-/** Warm stream config — instant for registry channels, fetch for others */
-export function prefetchChannelStream(channelId: string): void {
-  const local = resolveLocalStream(channelId);
-  if (local) {
-    setCache(channelId, local);
-    return;
-  }
-
-  if (getCachedChannelStream(channelId) || inflight.has(channelId)) return;
-
-  const promise = fetch(`/api/live-tv/resolve?id=${encodeURIComponent(channelId)}`)
+function fetchResolvedStream(channelId: string): Promise<LiveTvStream | null> {
+  return fetch(`/api/live-tv/resolve?id=${encodeURIComponent(channelId)}`)
     .then((res) => (res.ok ? res.json() : null))
     .then((data) => {
       const stream = (data?.stream as LiveTvStream | undefined) ?? null;
@@ -59,25 +42,24 @@ export function prefetchChannelStream(channelId: string): void {
     .finally(() => {
       inflight.delete(channelId);
     });
+}
 
-  inflight.set(channelId, promise);
+/** Warm stream config — always resolves via API for validated fallbacks */
+export function prefetchChannelStream(channelId: string): void {
+  if (getCachedChannelStream(channelId) || inflight.has(channelId)) return;
+  inflight.set(channelId, fetchResolvedStream(channelId));
 }
 
 export async function resolveChannelStreamClient(channelId: string): Promise<LiveTvStream | null> {
-  const local = resolveLocalStream(channelId);
-  if (local) {
-    setCache(channelId, local);
-    return local;
-  }
-
   const cached = getCachedChannelStream(channelId);
   if (cached) return cached;
 
   const pending = inflight.get(channelId);
   if (pending) return pending;
 
-  prefetchChannelStream(channelId);
-  return inflight.get(channelId) ?? Promise.resolve(null);
+  const promise = fetchResolvedStream(channelId);
+  inflight.set(channelId, promise);
+  return promise;
 }
 
 /** Preload logo images for visible channels */

@@ -1,8 +1,12 @@
 import { getChannelById } from "@/lib/live-tv/channels";
+import { isBrowserScraperEnabled } from "@/lib/live-tv/stream-browser-scraper";
+import { isHeaderRotationEnabled } from "@/lib/live-tv/stream-headers";
 import { resolveChannelStream } from "@/lib/live-tv/stream-resolver";
 import {
   getProviderStreamCandidates,
+  getScrapeTargets,
   scrapeChannelStreams,
+  scrapePeotvApis,
 } from "@/lib/live-tv/stream-scraper";
 
 export async function GET(request: Request) {
@@ -18,10 +22,11 @@ export async function GET(request: Request) {
     return Response.json({ error: "Channel not found" }, { status: 404 });
   }
 
-  const [stream, scraped, providerCandidates] = await Promise.all([
+  const [stream, scraped, providerCandidates, apiUrls] = await Promise.all([
     resolveChannelStream(channelId),
     scrapeChannelStreams(channelId),
     Promise.resolve(getProviderStreamCandidates(channelId)),
+    scrapePeotvApis(channelId),
   ]);
 
   return Response.json(
@@ -31,6 +36,10 @@ export async function GET(request: Request) {
       stream,
       providerCandidates,
       scrapedUrls: scraped,
+      peotvApiUrls: apiUrls,
+      scrapeTargets: getScrapeTargets(channelId).map((t) => t.pageUrl),
+      browserScraperEnabled: isBrowserScraperEnabled(),
+      headerRotationEnabled: isHeaderRotationEnabled(),
     },
     {
       headers: { "Cache-Control": "public, max-age=120" },

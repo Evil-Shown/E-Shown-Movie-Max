@@ -2,9 +2,18 @@ import { getChannelById } from "@/lib/live-tv/channels";
 import { resolveAllStreamsFromIptvOrg } from "@/lib/live-tv/iptv-org";
 import { scrapeChannelStreams, getScrapeReferer, getScrapeOrigin } from "@/lib/live-tv/stream-scraper";
 import { getStreamForChannel } from "@/lib/live-tv/streams";
+import { pickWorkingStreamUrls } from "@/lib/live-tv/stream-validator";
+import { sortByStability } from "@/lib/live-tv/stream-stability";
 import type { LiveTvStream } from "@/lib/live-tv/types";
 
 const UNRELIABLE_HOSTS = ["allinonereborn", "149.71.34.166", "free.fullspeed.tv"];
+const INTERNATIONAL_SKIP_SCRAPE = new Set([
+  "animal-planet", "discovery-channel", "national-geographic", "history-channel",
+  "smithsonian", "cartoon-network", "nickelodeon", "disney-channel", "boomerang",
+  "pbs-kids", "duck-tv", "baby-tv", "cnn", "cnn-international", "bbc-world-news",
+  "fox-news", "espn", "espn2", "eurosport", "mtv", "comedy-central", "warner-tv",
+  "axn", "nasa-tv", "euronews", "dw", "nhk-world", "sky-news", "al-jazeera",
+]);
 
 function isReliableUrl(url: string): boolean {
   return !UNRELIABLE_HOSTS.some((host) => url.includes(host));
@@ -25,53 +34,68 @@ export async function resolveChannelStream(channelId: string): Promise<LiveTvStr
 
   const registry = channel.stream ?? getStreamForChannel(channelId) ?? null;
 
-  const iptvEntries = await resolveAllStreamsFromIptvOrg(
-    registry?.iptvChannelId,
-    channel.name,
-    8
-  );
+  const [iptvEntries, scrapedUrls] = await Promise.all([
+    resolveAllStreamsFromIptvOrg(registry?.iptvChannelId, channel.name, 10),
+    INTERNATIONAL_SKIP_SCRAPE.has(channelId)
+      ? Promise.resolve([])
+      : scrapeChannelStreams(channelId),
+  ]);
 
-  const iptvUrls = iptvEntries.map((s) => s.url).filter(isReliableUrl).filter(isHlsManifestUrl);
-
-  const scrapedUrls = (await scrapeChannelStreams(channelId))
+  const iptvUrls = iptvEntries
+    .map((s) => s.url)
     .filter(isReliableUrl)
-    .filter(isHlsManifestUrl);
+    .filter(isHlsManifestUrl)
+    .filter((u) => !u.includes("jmp2.uk"));
+
+  const scraped = scrapedUrls.filter(isReliableUrl).filter(isHlsManifestUrl);
 
   const scrapeReferer = getScrapeReferer(channelId);
   const scrapeOrigin = getScrapeOrigin(channelId);
 
-  if (!registry && iptvUrls.length === 0 && scrapedUrls.length === 0) {
+  const referer =
+    registry?.referer ?? scrapeReferer ?? iptvEntries[0]?.referer;
+  const origin = registry?.origin ?? scrapeOrigin;
+
+  const candidateUrls = sortByStability(
+    dedupeUrls([
+      ...(registry ? [registry.url, ...(registry.fallbacks ?? [])] : []),
+      ...iptvUrls,
+      ...scraped,
+    ])
+      .filter(isReliableUrl)
+      .filter(isHlsManifestUrl)
+  );
+
+  if (candidateUrls.length === 0) {
+    if (registry?.type === "iframe" || registry?.type === "youtube") return registry;
     return null;
   }
 
-  // Keep iframe/youtube embed as primary — scraped PEOTV URLs are often geo-blocked
-  const primary =
-    registry?.url ?? scrapedUrls[0] ?? iptvUrls[0];
+  const ordered = await pickWorkingStreamUrls(candidateUrls, referer, origin);
+  const primary = ordered[0];
+  const stablePrimary = !primary.includes("jmp2.uk");
+  const fallbacks = ordered
+    .slice(1)
+    .filter((u) => !stablePrimary || !u.includes("jmp2.uk"));
 
-  const hlsExtras = dedupeUrls([
-    ...scrapedUrls,
-    ...iptvUrls,
-    ...(registry?.fallbacks ?? []),
-  ]).filter((u) => u !== primary && isHlsManifestUrl(u));
+  const streamType = registry?.type === "iframe" || registry?.type === "youtube"
+    ? registry.type
+    : "hls";
 
-  const fallbacks = dedupeUrls([
-    ...(registry?.fallbacks ?? []).filter(isHlsManifestUrl),
-    ...hlsExtras,
-  ]).filter(isReliableUrl);
-
-  const streamType = registry?.type ?? "hls";
+  if (streamType !== "hls") {
+    return registry;
+  }
 
   return {
-    type: streamType,
+    type: "hls",
     url: primary,
-    fallbacks: streamType === "hls" ? fallbacks : hlsExtras.length ? hlsExtras : fallbacks,
-    referer:
-      registry?.referer ??
-      scrapeReferer ??
-      iptvEntries[0]?.referer,
-    origin: registry?.origin ?? scrapeOrigin,
+    fallbacks,
+    referer,
+    origin,
     poster: registry?.poster,
     iptvChannelId: registry?.iptvChannelId,
-    embedFallback: registry?.type === "iframe" ? registry.url : undefined,
+    embedFallback:
+      registry?.embedFallback ??
+      (registry?.type === "iframe" ? registry.url : undefined),
   };
 }

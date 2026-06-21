@@ -1,4 +1,10 @@
 import { fetchStreamResource } from "@/lib/live-tv/stream-fetch";
+import { isEphemeralManifest, rewriteHlsManifest } from "@/lib/live-tv/manifest-proxy";
+import {
+  buildSidProxyUrl,
+  lookupProxyTarget,
+  registerProxyTarget,
+} from "@/lib/live-tv/proxy-store";
 
 const ALLOWED_PROTOCOLS = ["http:", "https:"];
 const BLOCKED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "[::1]"];
@@ -42,100 +48,139 @@ function isManifestContent(url: string, contentType: string | null, peek: string
   return peek.trimStart().startsWith("#EXTM3U");
 }
 
-function rewriteManifest(
-  content: string,
-  baseUrl: URL,
-  proxyBase: string,
-  referer?: string,
-  origin?: string
-): string {
-  return content
-    .split("\n")
-    .map((line) => {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) return line;
-      try {
-        const resolved = trimmed.startsWith("http")
-          ? trimmed
-          : new URL(trimmed, baseUrl).toString();
-        const params = new URLSearchParams({ url: resolved });
-        if (referer) params.set("referer", referer);
-        if (origin) params.set("origin", origin);
-        return `${proxyBase}?${params.toString()}`;
-      } catch {
-        return line;
-      }
-    })
-    .join("\n");
-}
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const rawUrl = searchParams.get("url");
-  const referer = searchParams.get("referer") ?? undefined;
-  const origin = searchParams.get("origin") ?? undefined;
-
-  if (!rawUrl) {
-    return new Response("Missing url parameter", { status: 400 });
+function resolveProxyRequest(searchParams: URLSearchParams): {
+  rawUrl: string | null;
+  referer?: string;
+  origin?: string;
+} {
+  const sid = searchParams.get("sid");
+  if (sid) {
+    const entry = lookupProxyTarget(sid);
+    if (!entry) return { rawUrl: null };
+    return {
+      rawUrl: entry.url,
+      referer: entry.referer,
+      origin: entry.origin,
+    };
   }
 
+  return {
+    rawUrl: searchParams.get("url"),
+    referer: searchParams.get("referer") ?? undefined,
+    origin: searchParams.get("origin") ?? undefined,
+  };
+}
+
+async function proxyUpstream(
+  request: Request,
+  rawUrl: string,
+  referer?: string,
+  origin?: string
+): Promise<Response> {
   const target = isAllowedUrl(rawUrl);
   if (!target) {
     return new Response("Invalid or blocked URL", { status: 400 });
   }
 
-  try {
-    const upstream = await fetchStreamResource(target.toString(), {
-      referer,
-      origin,
-      retries: 3,
-      mode: "manifest",
-    });
+  const upstream = await fetchStreamResource(target.toString(), {
+    referer,
+    origin,
+    retries: 3,
+    mode: "manifest",
+  });
 
-    if (!upstream.ok) {
-      return new Response(`Upstream error: ${upstream.status}`, { status: upstream.status });
-    }
+  if (!upstream.ok) {
+    return new Response(`Upstream error: ${upstream.status}`, { status: upstream.status });
+  }
 
-    const contentType = upstream.headers.get("content-type");
+  const contentType = upstream.headers.get("content-type");
 
-    // Binary segments must not be read as UTF-8 text
-    if (isBinaryStreamUrl(rawUrl, contentType)) {
-      const buffer = await upstream.arrayBuffer();
-      return new Response(buffer, {
-        headers: {
-          "Content-Type": contentType ?? "video/mp2t",
-          "Cache-Control": "public, max-age=30",
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
-    }
-
-    const body = await upstream.text();
-
-    if (isManifestContent(rawUrl, contentType, body) && isOfflineHlsManifest(body)) {
-      return new Response("Stream offline or not broadcasting", { status: 503 });
-    }
-
-    if (!isManifestContent(rawUrl, contentType, body)) {
-      return new Response(body, {
-        headers: {
-          "Content-Type": contentType ?? "application/octet-stream",
-          "Cache-Control": "public, max-age=30",
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
-    }
-
-    const proxyBase = new URL("/api/live-tv/stream", request.url).toString();
-    const output = rewriteManifest(body, target, proxyBase, referer, origin);
-
-    return new Response(output, {
+  if (isBinaryStreamUrl(rawUrl, contentType)) {
+    const buffer = await upstream.arrayBuffer();
+    return new Response(buffer, {
       headers: {
-        "Content-Type": "application/vnd.apple.mpegurl",
-        "Cache-Control": "public, max-age=15, stale-while-revalidate=60",
+        "Content-Type": contentType ?? "video/mp2t",
+        "Cache-Control": "public, max-age=30",
         "Access-Control-Allow-Origin": "*",
       },
     });
+  }
+
+  const body = await upstream.text();
+
+  if (isManifestContent(rawUrl, contentType, body) && isOfflineHlsManifest(body)) {
+    return new Response("Stream offline or not broadcasting", { status: 503 });
+  }
+
+  if (!isManifestContent(rawUrl, contentType, body)) {
+    return new Response(body, {
+      headers: {
+        "Content-Type": contentType ?? "application/octet-stream",
+        "Cache-Control": "public, max-age=30",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  }
+
+  const proxyBase = new URL("/api/live-tv/stream", request.url).toString();
+  const output = rewriteHlsManifest(body, target, proxyBase, referer, origin);
+  const ephemeral = isEphemeralManifest(rawUrl, body);
+
+  return new Response(output, {
+    headers: {
+      "Content-Type": "application/vnd.apple.mpegurl",
+      "Cache-Control": ephemeral
+        ? "no-store, no-cache, must-revalidate"
+        : "public, max-age=8, stale-while-revalidate=30",
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
+}
+
+/** Register a long upstream URL and return a short ?sid= playback path */
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json()) as {
+      url?: string;
+      referer?: string;
+      origin?: string;
+    };
+
+    if (!body.url) {
+      return Response.json({ error: "Missing url" }, { status: 400 });
+    }
+
+    const target = isAllowedUrl(body.url);
+    if (!target) {
+      return Response.json({ error: "Invalid or blocked URL" }, { status: 400 });
+    }
+
+    const sid = registerProxyTarget(body.url, body.referer, body.origin);
+    const proxyBase = new URL("/api/live-tv/stream", request.url).toString();
+
+    return Response.json({
+      sid,
+      playbackUrl: buildSidProxyUrl(proxyBase, sid),
+    });
+  } catch {
+    return Response.json({ error: "Invalid request body" }, { status: 400 });
+  }
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const { rawUrl, referer, origin } = resolveProxyRequest(searchParams);
+
+  if (!rawUrl) {
+    const sid = searchParams.get("sid");
+    if (sid) {
+      return new Response("Proxy session expired — reload channel", { status: 410 });
+    }
+    return new Response("Missing url or sid parameter", { status: 400 });
+  }
+
+  try {
+    return await proxyUpstream(request, rawUrl, referer, origin);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Proxy fetch failed";
     return new Response(message, { status: 502 });

@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     { channelId, stream },
     {
       headers: {
-        "Cache-Control": "public, max-age=300, stale-while-revalidate=3600",
+        "Cache-Control": "public, max-age=600, stale-while-revalidate=1800",
       },
     }
   );

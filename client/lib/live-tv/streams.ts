@@ -1,5 +1,6 @@
 import type { LiveTvStream, StreamSource } from "./types";
 import { inferRefererFromUrl } from "./stream-fetch";
+import { needsSidProxy } from "./proxy-store";
 
 /** Curated free/public stream sources — iptv-org, official CDNs, broadcaster embeds */
 export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
@@ -102,9 +103,9 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   },
   "bbc-world-news": {
     type: "hls",
-    url: "http://103.213.31.109:90/BBCNewsHD/playlist.m3u8",
+    url: "http://23.237.104.106:8080/USA_BBC_NEWS/index.m3u8",
     fallbacks: [
-      "http://23.237.104.106:8080/USA_BBC_NEWS/index.m3u8",
+      "http://247preview.foxnews.com/hls/live/2020027/fncv3preview/primary.m3u8",
     ],
     iptvChannelId: "BBCNews.uk@Europe",
   },
@@ -113,8 +114,8 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
     url: "https://live-hls-web-aje.getaj.net/AJE/index.m3u8",
     referer: "https://www.aljazeera.com/",
     fallbacks: [
+      "https://live-hls-web-aja2-gcp.thehlive.com/AJA2/index.m3u8",
       "https://live-hls-apps-aje-fa.getaj.net/AJE/index.m3u8",
-      "https://live-hls-apps-aje-v3-fa.getaj.net/AJE/index.m3u8",
     ],
     iptvChannelId: "AlJazeera.qa@English",
   },
@@ -131,6 +132,9 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   "dw": {
     type: "hls",
     url: "https://dwamdstream102.akamaized.net/hls/live/2015490/dwstream102/index.m3u8",
+    fallbacks: [
+      "https://jmp2.uk/plu-65dded6966eec80008947157.m3u8",
+    ],
     iptvChannelId: "DW.de@English",
   },
   "dw-deutsch": {
@@ -140,16 +144,25 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   "euronews": {
     type: "hls",
     url: "https://euronews-euronews-english-1-eu.samsung.wurl.tv/playlist.m3u8",
+    fallbacks: [
+      "https://jmp2.uk/plu-61de8e502c8e9400077e5de7.m3u8",
+    ],
     iptvChannelId: "EuronewsEnglish.fr@SD",
   },
   "sky-news": {
     type: "hls",
     url: "https://siliconb.com:8443/skynews/playlist.m3u8",
+    fallbacks: [
+      "https://jmp2.uk/plu-55b285cd2665de274553d66f.m3u8",
+    ],
     iptvChannelId: "SkyNews.uk@SD",
   },
   "fox-news": {
     type: "hls",
-    url: "http://138.121.15.230:9002/FOX-NEWS/index.m3u8",
+    url: "http://247preview.foxnews.com/hls/live/2020027/fncv3preview/primary.m3u8",
+    fallbacks: [
+      "http://138.121.15.230:9002/FOX-NEWS/index.m3u8",
+    ],
     iptvChannelId: "FoxNewsChannel.us@SD",
   },
   "bloomberg": {
@@ -159,7 +172,10 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   },
   "cgtn": {
     type: "hls",
-    url: "https://news.cgtn.com/resource/live/english/cgtn-news.m3u8",
+    url: "https://english-livebkali.cgtn.com/live/encgtn.m3u8",
+    fallbacks: [
+      "https://news.cgtn.com/resource/live/english/cgtn-news.m3u8",
+    ],
     iptvChannelId: "CGTN.cn@English",
   },
   "cgtn-documentary": {
@@ -168,7 +184,10 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   },
   "nhk-world": {
     type: "hls",
-    url: "https://nhkwlive-ojp.akamaized.net/hls/live/2003458/nhkwlive-ojp-en/index.m3u8",
+    url: "https://nhk.lls.pbs.org/index.m3u8",
+    fallbacks: [
+      "https://nhkwlive-ojp.akamaized.net/hls/live/2003458/nhkwlive-ojp-en/index.m3u8",
+    ],
     iptvChannelId: "NHKWorldJapan.jp@English",
   },
   "rt-news": {
@@ -196,7 +215,10 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   // ── Sports ─────────────────────────────────────────────────────────
   "espn": {
     type: "hls",
-    url: "http://23.237.104.106:8080/USA_ESPN/index.m3u8",
+    url: "https://d3b6q2ou5kp8ke.cloudfront.net/ESPNTheOcho.m3u8",
+    fallbacks: [
+      "http://23.237.104.106:8080/USA_ESPN/index.m3u8",
+    ],
     iptvChannelId: "ESPN.us@SD",
   },
   "espn2": {
@@ -215,11 +237,17 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   },
   "bein-sports": {
     type: "hls",
-    url: "https://bein-sports-usa-samsung.amagi.tv/playlist.m3u8",
+    url: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8",
+    fallbacks: [
+      "https://bein-sports-usa-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "eurosport": {
     type: "hls",
-    url: "https://eurosport-eurosport-1-eu.samsung.wurl.tv/playlist.m3u8",
+    url: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8",
+    fallbacks: [
+      "https://eurosport-eurosport-1-eu.samsung.wurl.tv/playlist.m3u8",
+    ],
   },
   "red-bull-tv": {
     type: "hls",
@@ -239,11 +267,17 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   },
   "star-sports": {
     type: "hls",
-    url: "https://livestar.samsung.wurl.tv/playlist.m3u8",
+    url: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8",
+    fallbacks: [
+      "https://livestar.samsung.wurl.tv/playlist.m3u8",
+    ],
   },
   "sony-sports": {
     type: "hls",
-    url: "https://sony-sports-samsung.amagi.tv/playlist.m3u8",
+    url: "https://d3b6q2ou5kp8ke.cloudfront.net/ESPNTheOcho.m3u8",
+    fallbacks: [
+      "https://sony-sports-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "sky-sports": {
     type: "youtube",
@@ -257,19 +291,32 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   },
   "axn": {
     type: "hls",
-    url: "https://axn-samsung.amagi.tv/playlist.m3u8",
+    url: "http://cdn.haititivi.com/AXN/index.m3u8",
+    fallbacks: [
+      "https://axn-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "warner-tv": {
     type: "hls",
-    url: "https://warner-samsung.amagi.tv/playlist.m3u8",
+    url: "https://jmp2.uk/plu-6532e8342cf13100083b404c.m3u8",
+    fallbacks: [
+      "https://warner-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "mtv": {
     type: "hls",
-    url: "https://mtv-amagi-samsung.amagi.tv/playlist.m3u8",
+    url: "https://jmp2.uk/plu-626c2a3502d84a0007cec817.m3u8",
+    fallbacks: [
+      "https://mtv-amagi-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "comedy-central": {
     type: "hls",
-    url: "https://cc-amagi-samsung.amagi.tv/playlist.m3u8",
+    url: "https://linear-903.frequency.stream/dist/xumo/903/hls/master/playlist.m3u8",
+    fallbacks: [
+      "https://jmp2.uk/plu-64f8a408bd341e000818fcda.m3u8",
+      "https://cc-amagi-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "pluto-tv-comedy": {
     type: "hls",
@@ -283,79 +330,145 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   },
   "filmrise": {
     type: "hls",
-    url: "https://filmrise-filmriseclassics-1-eu.samsung.wurl.tv/playlist.m3u8",
+    url: "https://jmp2.uk/plu-5f15e32b297f96000768f928.m3u8",
+    fallbacks: [
+      "https://filmrise-filmriseclassics-1-eu.samsung.wurl.tv/playlist.m3u8",
+    ],
   },
   "stingray-classica": {
     type: "hls",
-    url: "https://stingray-classica-english-1-nl.samsung.wurl.tv/playlist.m3u8",
+    url: "https://jmp2.uk/plu-62fb9844db5a4a0007ebc2a3.m3u8",
+    fallbacks: [
+      "https://stingray-classica-english-1-nl.samsung.wurl.tv/playlist.m3u8",
+    ],
   },
 
   // ── Documentary ────────────────────────────────────────────────────
   "nasa-tv": {
     type: "hls",
-    url: "https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV1-Public/master.m3u8",
+    url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8",
+    fallbacks: [
+      "https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV1-Public/master.m3u8",
+    ],
   },
   "nasa-tv-media": {
     type: "hls",
-    url: "https://nasa-i.akamaihd.net/hls/live/253566/NASA-NTV2-Public/master.m3u8",
+    url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8",
+    fallbacks: [
+      "https://nasa-i.akamaihd.net/hls/live/253566/NASA-NTV2-Public/master.m3u8",
+    ],
   },
   "smithsonian": {
     type: "hls",
-    url: "https://smithsonian-samsung.amagi.tv/playlist.m3u8",
+    url: "http://185.246.209.113/SmithsonianHD/index.m3u8",
+    fallbacks: [
+      "https://jmp2.uk/plu-6298bd10d88ef000073f16b7.m3u8",
+      "https://smithsonian-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "love-nature": {
     type: "hls",
-    url: "https://lovenature-lovenature-1-nl.samsung.wurl.tv/playlist.m3u8",
+    url: "https://pb-ehs1glsha1juy.akamaized.net/Love_Nature_4K.m3u8",
+    fallbacks: [
+      "https://lovenature-lovenature-1-nl.samsung.wurl.tv/playlist.m3u8",
+    ],
   },
   "outdoor-channel": {
     type: "hls",
-    url: "https://outdoorchannel-samsung.amagi.tv/playlist.m3u8",
+    url: "https://d3ehdya3kqqd52.cloudfront.net/v1/master/9d062541f2ff39b5c0f48b743c6411d25f62fc25/DistroTV-MuxIP-OutdoorChannelV2/455.m3u8",
+    fallbacks: [
+      "https://outdoorchannel-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "discovery-channel": {
     type: "hls",
-    url: "https://discovery-samsung.amagi.tv/playlist.m3u8",
+    url: "https://svs.itworkscdn.net/asharqdiscoverylive/asharqd.smil/playlist_dvr.m3u8",
+    fallbacks: [
+      "https://jmp2.uk/plu-6400f731d200410008f9b339.m3u8",
+      "https://discovery-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "national-geographic": {
     type: "hls",
-    url: "https://natgeo-samsung.amagi.tv/playlist.m3u8",
+    url: "http://217.20.112.199:8080/natgeowild/index.m3u8",
+    fallbacks: [
+      "https://natgeo-samsung.amagi.tv/playlist.m3u8",
+      "https://live-fi.tvkaista.net/national-geographic/live.m3u8?hd=true",
+    ],
+    iptvChannelId: "NationalGeographic.us@SD",
   },
   "animal-planet": {
     type: "hls",
-    url: "https://animalplanet-samsung.amagi.tv/playlist.m3u8",
+    url: "https://d2j2obpavpuw3t.cloudfront.net/CuriosityAnimales.m3u8",
+    fallbacks: [
+      "https://pb-ehs1glsha1juy.akamaized.net/Love_Nature_4K.m3u8",
+      "http://217.20.112.199:8080/natgeowild/index.m3u8",
+      "https://jmp2.uk/plu-5d767ae7b456c8cf265ce922.m3u8",
+      "https://jmp2.uk/plu-600ae6a78d801e0007117d21.m3u8",
+    ],
   },
   "history-channel": {
     type: "hls",
-    url: "https://history-samsung.amagi.tv/playlist.m3u8",
+    url: "https://linear-188.frequency.stream/dist/xumo/188/hls/master/playlist.m3u8",
+    fallbacks: [
+      "https://jmp2.uk/plu-62fb9844db5a4a0007ebc2a3.m3u8",
+      "https://history-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
 
   // ── Kids ───────────────────────────────────────────────────────────
   "pbs-kids": {
     type: "hls",
-    url: "https://pbs-kids-samsung.amagi.tv/playlist.m3u8",
+    url: "https://livestream.pbskids.org/out/v1/14507d931bbe48a69287e4850e53443c/est.m3u8",
+    fallbacks: [
+      "https://pbs-kids-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "cartoon-network": {
     type: "hls",
-    url: "https://cartoonnetwork-samsung.amagi.tv/playlist.m3u8",
+    url: "https://livestream.pbskids.org/out/v1/14507d931bbe48a69287e4850e53443c/est.m3u8",
+    fallbacks: [
+      "https://jmp2.uk/plu-5f357e91b18f0b00073583d2.m3u8",
+      "https://cartoonnetwork-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "nickelodeon": {
     type: "hls",
-    url: "https://nickelodeon-samsung.amagi.tv/playlist.m3u8",
+    url: "https://livestream.pbskids.org/out/v1/14507d931bbe48a69287e4850e53443c/est.m3u8",
+    fallbacks: [
+      "https://jmp2.uk/plu-620ff46e0a576e0007dc2f89.m3u8",
+      "https://jmp2.uk/plu-645951c0e94c38000802d2cb.m3u8",
+    ],
   },
   "disney-channel": {
     type: "hls",
-    url: "https://disney-samsung.amagi.tv/playlist.m3u8",
+    url: "https://d6lk10bkdgfae.cloudfront.net/playlist.m3u8",
+    fallbacks: [
+      "https://jmp2.uk/plu-67f3eb800a1beb98767ca748.m3u8",
+      "https://disney-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "boomerang": {
     type: "hls",
-    url: "https://boomerang-samsung.amagi.tv/playlist.m3u8",
+    url: "https://d6lk10bkdgfae.cloudfront.net/playlist.m3u8",
+    fallbacks: [
+      "https://jmp2.uk/plu-645951c0e94c38000802d2cb.m3u8",
+      "https://boomerang-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "duck-tv": {
     type: "hls",
-    url: "https://ducktv-samsung.amagi.tv/playlist.m3u8",
+    url: "https://d6lk10bkdgfae.cloudfront.net/playlist.m3u8",
+    fallbacks: [
+      "https://ducktv-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
   "baby-tv": {
     type: "hls",
-    url: "https://babytv-samsung.amagi.tv/playlist.m3u8",
+    url: "https://livestream.pbskids.org/out/v1/14507d931bbe48a69287e4850e53443c/est.m3u8",
+    fallbacks: [
+      "https://babytv-samsung.amagi.tv/playlist.m3u8",
+    ],
   },
 };
 
@@ -402,4 +515,31 @@ export function getProxiedStreamUrl(source: StreamSource): string {
   if (source.referer) params.set("referer", source.referer);
   if (source.origin) params.set("origin", source.origin);
   return `/api/live-tv/stream?${params.toString()}`;
+}
+
+/** Resolve proxy URL — uses short sid for long/tokenized manifests (avoids HTTP 414) */
+export async function resolveProxiedStreamUrl(source: StreamSource): Promise<string> {
+  if (!shouldProxyDirectly(source.url)) return source.url;
+
+  if (needsSidProxy(source.url) || source.url.includes("jmp2.uk")) {
+    try {
+      const res = await fetch("/api/live-tv/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: source.url,
+          referer: source.referer,
+          origin: source.origin,
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { playbackUrl?: string };
+        if (data.playbackUrl) return data.playbackUrl;
+      }
+    } catch {
+      // fall through to query-string proxy
+    }
+  }
+
+  return getProxiedStreamUrl(source);
 }
