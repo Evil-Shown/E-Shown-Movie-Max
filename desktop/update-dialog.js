@@ -34,8 +34,10 @@ function showUpdateDialog(options) {
       options.parent && !options.parent.isDestroyed() ? options.parent : null;
 
     const dialogWindow = new BrowserWindow({
-      parent: parent || undefined,
-      // modal + frameless windows drop clicks on Windows; block parent manually instead.
+      // Do NOT set parent: this avoids the Electron bug where a frameless
+      // non-modal child window still fails to receive clicks on Windows when
+      // its owner is set. alwaysOnTop keeps the dialog visible without
+      // needing to disable the parent window.
       modal: false,
       alwaysOnTop: true,
       width: 500,
@@ -62,9 +64,7 @@ function showUpdateDialog(options) {
     let settled = false;
 
     const releaseParent = () => {
-      if (parent && !parent.isDestroyed()) {
-        parent.setEnabled(true);
-      }
+      // No-op: parent is never disabled (see comment below).
     };
 
     const finish = (action) => {
@@ -83,9 +83,8 @@ function showUpdateDialog(options) {
 
     ipcMain.on("update-dialog:respond", onRespond);
 
-    if (parent) {
-      parent.setEnabled(false);
-    }
+    // Do not disable the parent — disabling the owner window on Windows
+    // also prevents the frameless child window from receiving mouse input.
 
     dialogWindow.on("closed", () => {
       releaseParent();
