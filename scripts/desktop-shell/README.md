@@ -52,3 +52,11 @@ npm start
 ```
 
 Auto-update is disabled when running from source (`electron .`).
+
+---
+
+## ⚖️ License & Restrictive Notice
+
+**Copyright © 2026 CHITHRA — CINEMA. All rights reserved.**
+
+This desktop wrapper, build logic, and associated scripts are proprietary code. Under no circumstances may this be copied, modified, reverse engineered, or redistributed without prior written consent.
