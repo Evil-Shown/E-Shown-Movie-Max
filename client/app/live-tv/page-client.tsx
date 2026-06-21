@@ -88,16 +88,20 @@ export default function LiveTvPageClient() {
         <div className="mx-auto max-w-[1280px]">
           <LiveTvHero />
 
-          <div className="mt-6 space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-sm)] sm:p-6">
-            <LiveTvSearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              resultCount={filteredChannels.length}
-            />
-            <LiveTvCategoryTabs
-              activeCategory={activeCategory}
-              onCategoryChange={setActiveCategory}
-            />
+          <div className="mt-8 flex flex-col gap-6 rounded-[24px] border border-white/60 bg-white/40 p-6 shadow-[0_8px_30px_rgba(0,0,0,0.03)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-8">
+            <div className="w-full max-w-xl shrink-0">
+              <LiveTvSearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                resultCount={filteredChannels.length}
+              />
+            </div>
+            <div className="flex-1 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
+              <LiveTvCategoryTabs
+                activeCategory={activeCategory}
+                onCategoryChange={setActiveCategory}
+              />
+            </div>
           </div>
         </div>
       </section>
