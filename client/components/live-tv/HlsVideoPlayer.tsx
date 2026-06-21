@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import LiveTvPlayerChrome from "@/components/live-tv/LiveTvPlayerChrome";
+import LiveTvPlayerLoading, { type LiveTvLoadingPhase } from "@/components/live-tv/LiveTvPlayerLoading";
 import { createHlsConfig, STREAM_ATTEMPT_TIMEOUT_MS } from "@/lib/live-tv/hls-config";
 import { getStreamSources, getProxiedStreamUrl, shouldProxyDirectly } from "@/lib/live-tv/streams";
 import type { LiveTvChannel, LiveTvStream, StreamSource } from "@/lib/live-tv/types";
@@ -44,8 +45,16 @@ export default function HlsVideoPlayer({
   const [seekProgress, setSeekProgress] = useState(1);
   const [seekStart, setSeekStart] = useState(0);
   const [seekEnd, setSeekEnd] = useState(0);
+  const [buffering, setBuffering] = useState(false);
 
   const sources = getStreamSources(stream);
+
+  const loadingPhase: LiveTvLoadingPhase = (() => {
+    if (buffering && urlIndex === 0) return "buffer";
+    if (urlIndex > 0) return "fallback";
+    if (useProxy) return "proxy";
+    return "connect";
+  })();
 
   useEffect(() => {
     if (sources.length === 0) {
@@ -71,6 +80,7 @@ export default function HlsVideoPlayer({
     if (startedRef.current) return;
     startedRef.current = true;
     clearLoadTimeout();
+    setBuffering(false);
     setIsLoading(false);
     onStatusChange?.("playing");
   }, [clearLoadTimeout, onStatusChange]);
@@ -134,9 +144,10 @@ export default function HlsVideoPlayer({
       }
 
       clearLoadTimeout();
-      startedRef.current = false;
-      setIsLoading(true);
-      onStatusChange?.("loading");
+    startedRef.current = false;
+    setIsLoading(true);
+    setBuffering(false);
+    onStatusChange?.("loading");
 
       const source = sources[index];
       const src = getPlaybackUrl(source, proxied);
@@ -165,6 +176,7 @@ export default function HlsVideoPlayer({
         });
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          setBuffering(true);
           video.play().catch(() => {});
         });
 
@@ -317,8 +329,13 @@ export default function HlsVideoPlayer({
       />
 
       {isLoading && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[var(--accent-primary)]" />
+        <div className="absolute inset-0 z-20">
+          <LiveTvPlayerLoading
+            channel={channel}
+            phase={loadingPhase}
+            overlay
+            className="h-full"
+          />
         </div>
       )}
 

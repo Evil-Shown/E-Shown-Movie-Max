@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import HlsVideoPlayer from "@/components/live-tv/HlsVideoPlayer";
+import LiveTvPlayerLoading from "@/components/live-tv/LiveTvPlayerLoading";
 import YouTubeLivePlayer from "@/components/live-tv/YouTubeLivePlayer";
 import ChannelLogo from "@/components/live-tv/ChannelLogo";
 import {
@@ -36,9 +37,11 @@ export default function LiveTvStreamPlayer({ channel, className = "" }: LiveTvSt
   const [needsResolve, setNeedsResolve] = useState(() => !resolveStream(channel));
   const [retryKey, setRetryKey] = useState(0);
   const [useEmbedFallback, setUseEmbedFallback] = useState(false);
+  const [embedLoading, setEmbedLoading] = useState(true);
 
   useEffect(() => {
     setUseEmbedFallback(false);
+    setEmbedLoading(true);
     const immediate = resolveStream(channel);
     if (immediate) {
       setStream(immediate);
@@ -74,22 +77,23 @@ export default function LiveTvStreamPlayer({ channel, className = "" }: LiveTvSt
 
   if (needsResolve) {
     return (
-      <div className={`flex h-full w-full items-center justify-center bg-[#050505] ${className}`}>
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[var(--accent-primary)]" />
-      </div>
+      <LiveTvPlayerLoading channel={channel} phase="resolve" className={className} />
     );
   }
 
   if (!stream || (status === "error" && !embedUrl)) {
     return (
       <div className={`flex h-full w-full flex-col items-center justify-center gap-4 bg-[#050505] px-6 text-center ${className}`}>
-        <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white shadow-md">
-          <ChannelLogo channel={channel} variant="tile" priority className="h-full w-full" />
+        <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white shadow-md">
+          <ChannelLogo channel={channel} variant="tile" priority className="size-11" />
+          <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500/90 text-[10px] font-bold text-white">
+            !
+          </span>
         </div>
         <div>
-          <p className="font-medium text-white/80">Unable to connect</p>
-          <p className="mt-1 text-sm text-white/45">
-            Stream may be offline, geo-blocked, or needs the broadcaster embed.
+          <p className="font-medium text-white/80">Couldn&apos;t connect to {channel.name}</p>
+          <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/45">
+            The stream may be offline, geo-blocked, or only available on the broadcaster&apos;s website.
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -124,13 +128,26 @@ export default function LiveTvStreamPlayer({ channel, className = "" }: LiveTvSt
 
   if (useEmbedFallback && embedUrl) {
     return (
-      <iframe
-        src={embedUrl}
-        className={`absolute inset-0 h-full w-full border-0 bg-black ${className}`}
-        allowFullScreen
-        title={`${channel.name} Live Stream`}
-        onLoad={() => setStatus("playing")}
-      />
+      <div className={`relative h-full w-full ${className}`}>
+        {embedLoading && (
+          <LiveTvPlayerLoading
+            channel={channel}
+            phase="embed"
+            overlay
+            className="absolute inset-0 z-10"
+          />
+        )}
+        <iframe
+          src={embedUrl}
+          className="absolute inset-0 h-full w-full border-0 bg-black"
+          allowFullScreen
+          title={`${channel.name} Live Stream`}
+          onLoad={() => {
+            setEmbedLoading(false);
+            setStatus("playing");
+          }}
+        />
+      </div>
     );
   }
 
@@ -140,13 +157,26 @@ export default function LiveTvStreamPlayer({ channel, className = "" }: LiveTvSt
 
   if (stream.type === "iframe") {
     return (
-      <iframe
-        src={stream.url}
-        className={`absolute inset-0 h-full w-full border-0 bg-black ${className}`}
-        allowFullScreen
-        title={`${channel.name} Live Stream`}
-        onLoad={() => setStatus("playing")}
-      />
+      <div className={`relative h-full w-full ${className}`}>
+        {embedLoading && (
+          <LiveTvPlayerLoading
+            channel={channel}
+            phase="embed"
+            overlay
+            className="absolute inset-0 z-10"
+          />
+        )}
+        <iframe
+          src={stream.url}
+          className="absolute inset-0 h-full w-full border-0 bg-black"
+          allowFullScreen
+          title={`${channel.name} Live Stream`}
+          onLoad={() => {
+            setEmbedLoading(false);
+            setStatus("playing");
+          }}
+        />
+      </div>
     );
   }
 
