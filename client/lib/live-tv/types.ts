@@ -8,6 +8,16 @@ export type LiveTvCategory =
   | "documentary"
   | "kids";
 
+export interface LiveTvCinematicStyle {
+  mood: string;
+  primaryLight: string;
+  secondaryLight: string;
+  contrast: string;
+  vignette: string;
+  overlayGradient: string;
+  hoverEffect: string;
+}
+
 export interface LiveTvChannel {
   id: string;
   name: string;
@@ -19,6 +29,7 @@ export interface LiveTvChannel {
   logoColor: string;
   logoInitials: string;
   description: string;
+  cinematicStyle?: LiveTvCinematicStyle;
 }
 
 export type LiveTvCategoryFilter = "all" | LiveTvCategory;
