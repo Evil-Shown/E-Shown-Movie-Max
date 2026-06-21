@@ -20,9 +20,10 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background: transparent;
+        background: #040408;
         font-family: "Segoe UI", system-ui, sans-serif;
         -webkit-font-smoothing: antialiased;
+        -webkit-app-region: no-drag;
       }
 
       body.preview-mode {
@@ -232,6 +233,9 @@
         font-weight: 600;
         cursor: pointer;
         transition: transform 0.15s ease, opacity 0.15s ease;
+        -webkit-app-region: no-drag;
+        position: relative;
+        z-index: 1;
       }
 
       button:hover {
@@ -348,11 +352,11 @@
       }
 
       btnSecondary.addEventListener("click", () => {
-        if (window.updateDialog) window.updateDialog.respond("secondary");
+        window.updateDialog.respond("secondary");
       });
 
       btnPrimary.addEventListener("click", () => {
-        if (window.updateDialog) window.updateDialog.respond("primary");
+        window.updateDialog.respond("primary");
       });
 
       const previewSamples = {

@@ -30,14 +30,20 @@ function showUpdateDialog(options) {
   closeActiveDialog();
 
   return new Promise((resolve) => {
+    const parent =
+      options.parent && !options.parent.isDestroyed() ? options.parent : null;
+
     const dialogWindow = new BrowserWindow({
-      parent: options.parent || undefined,
-      modal: Boolean(options.parent),
+      parent: parent || undefined,
+      // modal + frameless windows drop clicks on Windows; block parent manually instead.
+      modal: false,
+      alwaysOnTop: true,
       width: 500,
       height: 620,
       show: false,
       frame: false,
-      transparent: true,
+      transparent: false,
+      backgroundColor: "#040408",
       resizable: false,
       minimizable: false,
       maximizable: false,
@@ -48,17 +54,24 @@ function showUpdateDialog(options) {
         preload: getDialogPath("update-dialog-preload.js"),
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: true,
+        sandbox: false,
       },
     });
 
     activeDialog = dialogWindow;
     let settled = false;
 
+    const releaseParent = () => {
+      if (parent && !parent.isDestroyed()) {
+        parent.setEnabled(true);
+      }
+    };
+
     const finish = (action) => {
       if (settled) return;
       settled = true;
       ipcMain.removeListener("update-dialog:respond", onRespond);
+      releaseParent();
       closeActiveDialog();
       resolve(action);
     };
@@ -70,7 +83,12 @@ function showUpdateDialog(options) {
 
     ipcMain.on("update-dialog:respond", onRespond);
 
+    if (parent) {
+      parent.setEnabled(false);
+    }
+
     dialogWindow.on("closed", () => {
+      releaseParent();
       if (!settled) {
         settled = true;
         ipcMain.removeListener("update-dialog:respond", onRespond);
