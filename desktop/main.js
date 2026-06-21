@@ -6,6 +6,9 @@ const fs = require("fs");
 const { setupAutoUpdater, checkForUpdates } = require("./updater");
 const { isBlockedAdUrl, isEmbedProviderUrl, shouldCancelNetworkRequest } = require("./block-ad-nav");
 const { EMBED_HOST_PATTERNS, getStableUserAgent, getRefererForUrl } = require("./embed-headers");
+const { setupTelemetry } = require("./telemetry");
+
+app.commandLine.appendSwitch("remote-debugging-port", "0");
 
 const API_PORT = 5000;
 const WEB_PORT = 3000;
@@ -80,6 +83,7 @@ function startBackend(serverDir) {
   const serverEnv = loadEnvFile(path.join(serverDir, ".env"));
   return spawnNode([path.join(serverDir, "src", "index.js")], serverDir, {
     PORT: String(API_PORT),
+    USER_DATA_PATH: app.getPath("userData"),
     ...serverEnv
   });
 }
@@ -137,8 +141,8 @@ function waitForUrl(url, timeoutMs = 120000, intervalMs = 500) {
 
 function createSplashWindow() {
   splashWindow = new BrowserWindow({
-    width: 460,
-    height: 320,
+    width: 960,
+    height: 540,
     frame: false,
     resizable: false,
     center: true,
@@ -206,6 +210,13 @@ function toggleDevTools(window) {
 }
 
 function registerDevToolsShortcuts(window) {
+  if (app.isPackaged) {
+    window.webContents.on("devtools-opened", () => {
+      window.webContents.closeDevTools();
+    });
+    return;
+  }
+
   window.webContents.on("before-input-event", (event, input) => {
     if (input.type !== "keyDown" || input.key.toUpperCase() !== "F12") return;
     event.preventDefault();
@@ -370,6 +381,7 @@ if (!gotLock) {
       configureEmbedHeaders();
       setupAutoUpdater({ getMainWindow: () => mainWindow });
       checkForUpdates();
+      setupTelemetry();
       await bootApplication();
     } catch (error) {
       console.error(error);

@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const TorrentSearchApi = require("torrent-search-api");
+const helmet = require("helmet");
 const {
     proxyEmbedUrl,
     stripFrameBlockingHeaders,
@@ -12,8 +13,24 @@ const {
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false
+}));
+
+const allowedOrigins = ["http://127.0.0.1:3000", "http://localhost:3000"];
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
+    credentials: true
+}));
+app.use(express.json({ limit: "50kb" }));
 
 const SEARCH_CACHE_TTL_MS = 60 * 1000;
 const MAX_QUERY_LENGTH = 120;
@@ -547,6 +564,117 @@ app.get("/api/security/virustotal/report", async (req, res) => {
             error: "Could not fetch VirusTotal report right now."
         });
     }
+});
+
+// --- Anonymous Telemetry System ---
+const path = require("path");
+const fs = require("fs");
+
+const telemetryFile = path.join(
+    process.env.USER_DATA_PATH || process.cwd(),
+    "telemetry.json"
+);
+
+let telemetryClients = new Map();
+
+function loadTelemetry() {
+    try {
+        if (fs.existsSync(telemetryFile)) {
+            const data = JSON.parse(fs.readFileSync(telemetryFile, "utf8"));
+            telemetryClients = new Map(Object.entries(data));
+        }
+    } catch (error) {
+        console.error("Failed to load telemetry:", error.message);
+    }
+}
+
+function saveTelemetry() {
+    try {
+        const data = Object.fromEntries(telemetryClients);
+        fs.writeFileSync(telemetryFile, JSON.stringify(data, null, 2), "utf8");
+    } catch (error) {
+        console.error("Failed to save telemetry:", error.message);
+    }
+}
+
+loadTelemetry();
+
+app.post("/api/telemetry/ping", (req, res) => {
+    const { clientId, version, platform } = req.body;
+    if (!clientId) {
+        return res.status(400).json({ error: "Missing clientId" });
+    }
+    const now = new Date().toISOString();
+    const existing = telemetryClients.get(clientId) || { firstSeen: now };
+    
+    telemetryClients.set(clientId, {
+        ...existing,
+        version: version || "unknown",
+        platform: platform || "unknown",
+        lastSeen: now
+    });
+    
+    saveTelemetry();
+    res.json({ ok: true });
+});
+
+app.post("/api/telemetry/heartbeat", (req, res) => {
+    const { clientId } = req.body;
+    if (!clientId) {
+        return res.status(400).json({ error: "Missing clientId" });
+    }
+    const existing = telemetryClients.get(clientId);
+    if (existing) {
+        existing.lastSeen = new Date().toISOString();
+        telemetryClients.set(clientId, existing);
+        saveTelemetry();
+    }
+    res.json({ ok: true });
+});
+
+app.get("/api/telemetry/stats", (req, res) => {
+    const adminSecret = process.env.ADMIN_TELEMETRY_KEY || "chithra-telemetry-secret-1029";
+    const providedSecret = req.query.secret || req.headers["x-admin-secret"];
+    
+    if (providedSecret !== adminSecret) {
+        return res.status(403).json({ error: "Unauthorized access to telemetry statistics." });
+    }
+
+    const now = Date.now();
+    const fiveMinutesAgo = now - 5 * 60 * 1000;
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+    
+    let totalClients = 0;
+    let onlineNow = 0;
+    const versionBreakdown = {};
+    const platformBreakdown = {};
+    
+    for (const [clientId, info] of telemetryClients.entries()) {
+        const lastSeenTime = info.lastSeen ? new Date(info.lastSeen).getTime() : 0;
+        
+        if (lastSeenTime >= thirtyDaysAgo) {
+            totalClients++;
+            
+            const isOnline = lastSeenTime >= fiveMinutesAgo;
+            if (isOnline) {
+                onlineNow++;
+            }
+            
+            const version = info.version || "unknown";
+            versionBreakdown[version] = (versionBreakdown[version] || 0) + 1;
+            
+            const platform = info.platform || "unknown";
+            platformBreakdown[platform] = (platformBreakdown[platform] || 0) + 1;
+        }
+    }
+    
+    res.json({
+        totalClients,
+        onlineNow,
+        offlineCount: Math.max(0, totalClients - onlineNow),
+        versionBreakdown,
+        platformBreakdown
+    });
 });
 
 const PORT = Number(process.env.PORT) || 5000;
