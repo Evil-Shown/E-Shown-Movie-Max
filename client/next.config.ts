@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["framer-motion", "@react-three/fiber", "@react-three/drei"],
   },
   // Prevent native torrent deps from entering the server/client SSR graph if referenced elsewhere.
-  serverExternalPackages: ["webtorrent", "node-datachannel"],
+  serverExternalPackages: ["webtorrent", "node-datachannel", "puppeteer"],
   async redirects() {
     return [
       {

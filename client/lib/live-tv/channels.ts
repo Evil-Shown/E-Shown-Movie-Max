@@ -1,4 +1,4 @@
-import type { LiveTvCategory, LiveTvChannel, LiveTvCinematicStyle, LiveTvStream } from "./types";
+import type { LiveTvCategory, LiveTvChannel, LiveTvCinematicStyle } from "./types";
 import { getStreamForChannel } from "./streams";
 
 export const LIVE_TV_CATEGORY_LABELS: Record<LiveTvCategory, string> = {
@@ -82,7 +82,7 @@ function channel(
   name: string,
   category: LiveTvCategory,
   options: Partial<
-    Pick<
+  Pick<
       LiveTvChannel,
       "isHd" | "isFeatured" | "logo" | "logoColor" | "logoInitials" | "description" | "stream"
     >
@@ -136,8 +136,14 @@ export const LIVE_TV_CHANNELS: LiveTvChannel[] = [
   channel("itn", "ITN", "local", { logo: "https://img.logo.dev/itn.lk", logoColor: "#0891b2" }),
   channel("rupavahini", "Rupavahini", "local", { logo: "https://img.logo.dev/rupavahini.lk", logoColor: "#be123c" }),
   channel("channel-eye", "Channel Eye", "local", { logo: "https://img.logo.dev/channeleye.lk", logoColor: "#4a7c8e" }),
-  channel("shakthi-tv", "Shakthi TV", "local", { logo: "https://img.logo.dev/shakthitv.lk", logoColor: "#ea580c" }),
-  channel("vasantham-tv", "Vasantham TV", "local", { logo: "https://img.logo.dev/vasantham.lk", logoColor: "#16a34a" }),
+  channel("shakthi-tv", "Shakthi TV", "local", {
+    logo: "https://img.logo.dev/shakthitv.lk",
+    logoColor: "#ea580c",
+  }),
+  channel("vasantham-tv", "Vasantham TV", "local", {
+    logo: "https://img.logo.dev/vasantham.lk",
+    logoColor: "#16a34a",
+  }),
   channel("supreme-tv", "Supreme TV", "local", { logo: "https://img.logo.dev/supremetv.lk", logoColor: "#9333ea" }),
   channel("ada-derana-24", "Ada Derana 24x7", "local", {
     logo: "https://img.logo.dev/adaderana.lk",
