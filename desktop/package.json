@@ -1,7 +1,7 @@
-﻿{
+{
   "name": "chithra-cinema",
   "productName": "CHITHRA - CINEMA",
-  "version": "2.1.2",
+  "version": "2.2.4",
   "description": "CHITHRA - CINEMA desktop app",
   "main": "main.js",
   "author": "CHITHRA - CINEMA",
@@ -34,9 +34,14 @@
       "main.js",
       "preload.js",
       "updater.js",
+      "update-dialog.js",
+      "update-dialog.html",
+      "update-dialog-preload.js",
+      "release-notes.js",
       "block-ad-nav.js",
       "embed-headers.js",
       "splash.html",
+      "telemetry.js",
       "assets/**"
     ],
     "extraResources": [

@@ -98,6 +98,21 @@ body::before {
     radial-gradient(ellipse 80% 50% at 10% -10%, rgba(232, 164, 74, 0.1) 0%, transparent 55%),
     radial-gradient(ellipse 60% 40% at 90% 100%, rgba(74, 124, 142, 0.06) 0%, transparent 50%),
     var(--bg-primary);
+  animation: ambientDrift 22s ease-in-out infinite alternate;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.22;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(201, 106, 43, 0.08), transparent 24%),
+    radial-gradient(circle at 80% 30%, rgba(74, 124, 142, 0.08), transparent 22%),
+    radial-gradient(circle at 50% 80%, rgba(232, 164, 74, 0.06), transparent 28%);
+  animation: ambientGlowShift 18s ease-in-out infinite alternate;
 }
 
 .font-cinzel {
@@ -337,7 +352,12 @@ body::before {
 }
 
 .browse-hero-bg {
-  background: var(--bg-primary);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(232, 164, 74, 0.12), transparent 18%),
+    radial-gradient(circle at 82% 12%, rgba(74, 124, 142, 0.08), transparent 16%),
+    linear-gradient(135deg, rgba(247, 244, 239, 0.98) 0%, rgba(244, 239, 231, 0.96) 52%, rgba(247, 244, 239, 0.98) 100%);
+  background-size: 140% 140%;
+  animation: browseHeroDrift 20s ease-in-out infinite alternate;
 }
 
 * {
@@ -398,6 +418,35 @@ input,
   50% {
     opacity: 0.34;
     transform: translateX(18%);
+  }
+}
+
+@keyframes ambientDrift {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    transform: scale(1.03) translate3d(0, -0.5%, 0);
+    filter: hue-rotate(8deg);
+  }
+}
+
+@keyframes ambientGlowShift {
+  0% {
+    transform: translate3d(-1.5%, -1%, 0);
+  }
+  100% {
+    transform: translate3d(1.5%, 1%, 0);
+  }
+}
+
+@keyframes browseHeroDrift {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
   }
 }
 
@@ -642,4 +691,43 @@ input,
 
 .font-sinhala {
   font-family: var(--font-sinhala), var(--font-inter), system-ui, sans-serif;
+}
+
+/* Live TV player — custom seek bar (no native time display) */
+.live-tv-seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--accent-primary);
+  box-shadow: 0 0 8px rgba(201, 106, 43, 0.5);
+  cursor: pointer;
+}
+
+.live-tv-seek::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--accent-primary);
+  box-shadow: 0 0 8px rgba(201, 106, 43, 0.5);
+  cursor: pointer;
+}
+
+.theme-cinema-ambient {
+  position: relative;
+}
+
+.theme-cinema-ambient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(201, 106, 43, 0.08), transparent 22%),
+    radial-gradient(circle at 80% 10%, rgba(74, 124, 142, 0.06), transparent 20%);
+  opacity: 0.65;
+  animation: ambientGlowShift 14s ease-in-out infinite alternate;
 }

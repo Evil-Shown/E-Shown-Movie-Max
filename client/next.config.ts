@@ -12,12 +12,17 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["framer-motion", "@react-three/fiber", "@react-three/drei"],
   },
   // Prevent native torrent deps from entering the server/client SSR graph if referenced elsewhere.
-  serverExternalPackages: ["webtorrent", "node-datachannel"],
+  serverExternalPackages: ["webtorrent", "node-datachannel", "puppeteer"],
   async redirects() {
     return [
       {
         source: "/t-boom",
         destination: "/gods-eye",
+        permanent: true,
+      },
+      {
+        source: "/LiveTV",
+        destination: "/live-tv",
         permanent: true,
       },
     ];
@@ -37,6 +42,26 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "img.omdbapi.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "i.imgur.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "upload.wikimedia.org",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.google.com",
+        pathname: "/s2/favicons/**",
+      },
+      {
+        protocol: "https",
+        hostname: "img.logo.dev",
         pathname: "/**",
       },
     ],

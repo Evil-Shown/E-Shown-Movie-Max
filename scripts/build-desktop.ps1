@@ -14,8 +14,30 @@ $iconSource = Join-Path $client "app/favicon.ico"
 $iconDest = Join-Path $desktop "assets/icon.ico"
 $desktopShell = Join-Path $PSScriptRoot "desktop-shell"
 
+function Write-Utf8NoBom {
+  param(
+    [string]$Path,
+    [string]$Content
+  )
+  $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+  [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
+}
+
 function Sync-DesktopShell {
-  $required = @("package.json", "main.js", "preload.js", "updater.js", "block-ad-nav.js", "embed-headers.js", "splash.html")
+  $required = @(
+    "package.json",
+    "main.js",
+    "preload.js",
+    "updater.js",
+    "update-dialog.js",
+    "update-dialog.html",
+    "update-dialog-preload.js",
+    "release-notes.js",
+    "block-ad-nav.js",
+    "embed-headers.js",
+    "splash.html",
+    "telemetry.js"
+  )
   if (-not (Test-Path $desktopShell)) {
     throw "Missing $desktopShell - Electron shell templates are required."
   }
@@ -25,7 +47,12 @@ function Sync-DesktopShell {
       throw "Missing $src"
     }
     New-Item -ItemType Directory -Path $desktop -Force | Out-Null
-    Copy-Item $src (Join-Path $desktop $name) -Force
+    $dest = Join-Path $desktop $name
+    if ($name -eq "package.json") {
+      Write-Utf8NoBom -Path $dest -Content (Get-Content $src -Raw)
+    } else {
+      Copy-Item $src $dest -Force
+    }
   }
 }
 
