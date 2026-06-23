@@ -5,7 +5,6 @@ const FAVORITES_KEY = "chithra-live-tv-favorites";
 const RECENT_KEY = "chithra-live-tv-recent";
 const CONTINUE_KEY = "chithra-live-tv-continue";
 
-const MAX_RECENT = 12;
 const MAX_CONTINUE = 8;
 
 function readJson<T>(key: string): T[] {

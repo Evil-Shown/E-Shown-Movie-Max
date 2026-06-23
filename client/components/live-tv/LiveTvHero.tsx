@@ -1,18 +1,17 @@
 "use client";
 
-import { getFeaturedChannels, getStreamableChannelCount } from "@/lib/live-tv/channels";
+import { getStreamableChannelCount } from "@/lib/live-tv/channels";
+import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { fadeUpVariant } from "@/lib/motion";
-import ChannelLogo from "@/components/live-tv/ChannelLogo";
 
 export default function LiveTvHero() {
   const prefersReducedMotion = useReducedMotion();
-  const featured = getFeaturedChannels().slice(0, 6);
   const streamableCount = getStreamableChannelCount();
 
   return (
     <section
-      className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-sm)]"
+      className="theme-cinema-ambient relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-sm)]"
       aria-labelledby="live-tv-title"
     >
       <div
@@ -20,6 +19,28 @@ export default function LiveTvHero() {
         style={{
           background:
             "radial-gradient(circle at 12% 30%, rgba(201, 106, 43, 0.12), transparent 40%), radial-gradient(circle at 88% 20%, rgba(201, 106, 43, 0.06), transparent 35%)",
+        }}
+      />
+
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        animate={
+          prefersReducedMotion
+            ? undefined
+            : {
+                opacity: [0.28, 0.45, 0.3],
+                scale: [1, 1.02, 1],
+              }
+        }
+        transition={
+          prefersReducedMotion
+            ? undefined
+            : { duration: 12, repeat: Infinity, ease: "easeInOut" }
+        }
+        style={{
+          background:
+            "radial-gradient(circle at 18% 16%, rgba(232, 164, 74, 0.12), transparent 20%), radial-gradient(circle at 82% 20%, rgba(74, 124, 142, 0.08), transparent 22%), radial-gradient(circle at 50% 90%, rgba(201, 106, 43, 0.08), transparent 26%)",
         }}
       />
 
@@ -86,16 +107,60 @@ export default function LiveTvHero() {
           className="hidden lg:block"
           aria-hidden
         >
-          <div className="grid grid-cols-3 gap-3">
-            {featured.map((channel) => (
+          <motion.div
+            className="overflow-hidden rounded-2xl"
+            animate={
+              prefersReducedMotion
+                ? undefined
+                : {
+                    y: [0, -6, 0],
+                    scale: [1, 1.015, 1],
+                  }
+            }
+            transition={
+              prefersReducedMotion
+                ? undefined
+                : { duration: 8.5, repeat: Infinity, ease: "easeInOut" }
+            }
+          >
+            <div className="relative h-[240px] w-[460px]">
+              <motion.div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 z-10"
+                animate={
+                  prefersReducedMotion
+                    ? undefined
+                    : { opacity: [0.18, 0.3, 0.2], x: [-8, 8, -8] }
+                }
+                transition={
+                  prefersReducedMotion
+                    ? undefined
+                    : { duration: 10, repeat: Infinity, ease: "easeInOut" }
+                }
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(201, 106, 43, 0.18) 0%, rgba(232, 164, 74, 0.08) 28%, transparent 56%, rgba(74, 124, 142, 0.1) 100%)",
+                  mixBlendMode: "screen",
+                }}
+              />
               <div
-                key={channel.id}
-                className="flex h-[72px] w-[96px] items-center justify-center overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-2 shadow-sm"
-              >
-                <ChannelLogo channel={channel} variant="clean" className="h-full w-full" />
-              </div>
-            ))}
-          </div>
+                aria-hidden
+                className="pointer-events-none absolute inset-0 z-20"
+                style={{
+                  background:
+                    "linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 32%, rgba(2,6,23,0.14) 100%)",
+                }}
+              />
+              <Image
+                src="/Allchaneels.png"
+                alt=""
+                fill
+                priority
+                className="object-contain object-center"
+                sizes="460px"
+              />
+            </div>
+          </motion.div>
         </motion.div>
       </div>
     </section>

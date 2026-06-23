@@ -89,49 +89,38 @@ export const CHANNEL_LOGO_DOMAINS: Record<string, string> = {
   "baby-tv": "babytv.com",
 };
 
+/** Local logo files bundled in /public/channels/logos */
+const CHANNEL_LOCAL_LOGO_FILES: Record<string, string[]> = {
+  "shakthi-tv": ["shakthi-tv.png"],
+  "rangiri-tv": ["rangiri-tv.png"],
+  "damsathara-tv": ["damsathara-tv.png"],
+  "boomerang": ["boomerang.png"],
+  "cartoon-network": ["cartoonNeywork-tv.png"],
+  "star-tamil-tv": ["startamil-tv.png"],
+};
+
 /** Known-good direct logo URLs — highest priority (no Clearbit — service discontinued) */
 export const CHANNEL_LOGO_URLS: Record<string, string> = {
   "hiru-tv": "https://i.imgur.com/M66UqPB.png",
-  "tv-derana": "https://www.google.com/s2/favicons?domain=derana.lk&sz=256",
-  "sirasa-tv": "https://www.google.com/s2/favicons?domain=sirasatv.lk&sz=256",
-  "swarnavahini": "https://www.google.com/s2/favicons?domain=swarnavahini.lk&sz=256",
   "itn": "https://i.imgur.com/NLu3guG.png",
-  "rupavahini": "https://www.google.com/s2/favicons?domain=rupavahini.lk&sz=256",
-  "vasantham-tv": "https://www.google.com/s2/favicons?domain=vasantham.lk&sz=256",
-  "supreme-tv": "https://www.google.com/s2/favicons?domain=tvsupreme.lk&sz=256",
-  "asia-tv": "https://www.google.com/s2/favicons?domain=asiatvnet.com&sz=256",
   "siyatha-tv": "https://i.imgur.com/9Zc8G7i.png",
   "monara-tv": "https://i.imgur.com/EB99mzR.png",
+  "vasantham-tv": "https://upload.wikimedia.org/wikipedia/en/1/18/Vasanthamtv_channel.jpg",
+  "charana-tv": "https://www.peomobile.com/logo-2.png",
+  "art-tv": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/ART_Television_%28Sri_Lanka%29_%28logo%29.png/250px-ART_Television_%28Sri_Lanka%29_%28logo%29.png",
+  "rangiri-tv": "https://www.rangirisrilanka.lk/img/cc.jpg",
+  "haritha-tv": "https://cdn.newsfirst.lk/english-uploads/2021/03/9284892e-new-project.jpg",
+  "tv-didula": "https://tvdidula.lk/wp-content/uploads/2023/05/didula-logo.webp",
+  "verbum-tv": "https://static.wixstatic.com/media/21e4ab_572471a6e34b413b93bf92c6f8aee9c8~mv2.png/v1/fill/w_701%2Ch_995%2Cal_c%2Cq_90%2Cusm_0.66_1.00_0.01%2Cenc_avif%2Cquality_auto/21e4ab_572471a6e34b413b93bf92c6f8aee9c8~mv2.png",
+  "star-tamil-tv": "https://voa.lk/demo/wp-content/uploads/2017/09/Artboard-1-copy-2.jpg",
   "ndtv-lanka": "https://i.imgur.com/5cyTVRJ.png",
   "imai-tv": "https://i.imgur.com/9tODclu.png",
-  "shakthi-tv": "https://www.google.com/s2/favicons?domain=shakthitv.lk&sz=256",
-  "channel-eye": "https://www.google.com/s2/favicons?domain=channeleye.lk&sz=256",
   "al-jazeera": "https://i.imgur.com/7bRVpnu.png",
   "france-24": "https://upload.wikimedia.org/wikipedia/commons/8/8a/France24.png",
   "fox-news": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Fox_News_Channel_logo.svg/512px-Fox_News_Channel_logo.svg.png",
   "espn": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/ESPN_wordmark.svg/512px-ESPN_wordmark.svg.png",
-  "bbc-world-news": "https://www.google.com/s2/favicons?domain=bbc.com&sz=256",
-  "cnn": "https://www.google.com/s2/favicons?domain=cnn.com&sz=256",
-  "dw": "https://www.google.com/s2/favicons?domain=dw.com&sz=256",
   "nasa-tv": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/512px-NASA_logo.svg.png",
-  "discovery-channel": "https://www.google.com/s2/favicons?domain=discovery.com&sz=256",
-  "national-geographic": "https://www.google.com/s2/favicons?domain=nationalgeographic.com&sz=256",
-  "cartoon-network": "https://www.google.com/s2/favicons?domain=cartoonnetwork.com&sz=256",
-  "nickelodeon": "https://www.google.com/s2/favicons?domain=nick.com&sz=256",
-  "disney-channel": "https://www.google.com/s2/favicons?domain=disney.com&sz=256",
-  "hbo": "https://www.google.com/s2/favicons?domain=hbo.com&sz=256",
-  "mtv": "https://www.google.com/s2/favicons?domain=mtv.com&sz=256",
-  "bein-sports": "https://www.google.com/s2/favicons?domain=beinsports.com&sz=256",
-  "sky-sports": "https://www.google.com/s2/favicons?domain=skysports.com&sz=256",
-  "bloomberg": "https://www.google.com/s2/favicons?domain=bloomberg.com&sz=256",
-  "euronews": "https://www.google.com/s2/favicons?domain=euronews.com&sz=256",
-  "red-bull-tv": "https://www.google.com/s2/favicons?domain=redbull.com&sz=256",
-  "pbs-kids": "https://www.google.com/s2/favicons?domain=pbskids.org&sz=256",
 };
-
-export function getFaviconUrl(domain: string, size = 128): string {
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
-}
 
 export function getLogoCandidates(channelId: string, logoDevUrl?: string): string[] {
   const candidates: string[] = [];
@@ -143,22 +132,39 @@ export function getLogoCandidates(channelId: string, logoDevUrl?: string): strin
     candidates.push(url);
   };
 
+  // 1. Try bundled local logo assets first
+  add(`/channels/logos/${channelId}.png`);
+  for (const fileName of CHANNEL_LOCAL_LOGO_FILES[channelId] ?? []) {
+    add(`/channels/logos/${fileName}`);
+  }
+
+  // (Keep explicitly mapped known-good URLs)
   if (CHANNEL_LOGO_URLS[channelId]) {
     add(CHANNEL_LOGO_URLS[channelId]);
   }
 
   const domain = CHANNEL_LOGO_DOMAINS[channelId];
-  if (domain) {
-    add(getFaviconUrl(domain, 256));
-    add(getFaviconUrl(domain, 128));
-    add(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
-  }
 
+  // 2. Logo.dev
   if (logoDevUrl) {
     add(`${logoDevUrl}?token=pk_CvtKnlevScSGAPFV3KyoLA`);
+  } else if (domain) {
+    add(`https://img.logo.dev/${domain}?token=pk_CvtKnlevScSGAPFV3KyoLA`);
   }
 
-  add(`/channels/${channelId}.png`);
+  if (domain) {
+    // 3. Google favicon
+    add(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
+
+    // 4. Brandfetch
+    add(`https://icon.brandfetch.io/${domain}`);
+
+    // 5. Clearbit
+    add(`https://logo.clearbit.com/${domain}`);
+
+    // 6. DuckDuckGo
+    add(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
+  }
 
   return candidates;
 }
