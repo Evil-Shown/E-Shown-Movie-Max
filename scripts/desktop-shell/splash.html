@@ -1319,8 +1319,8 @@
                 document.body.classList.add('launch-complete');
 
                 // Emit event for Electron/main app integration
-                if (window.electronAPI && window.electronAPI.onBootComplete) {
-                    window.electronAPI.onBootComplete();
+                if (window.chithraDesktop && window.chithraDesktop.signalSplashReady) {
+                    window.chithraDesktop.signalSplashReady();
                 }
 
                 // Custom event for other listeners

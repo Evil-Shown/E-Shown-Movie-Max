@@ -10,4 +10,5 @@ contextBridge.exposeInMainWorld("chithraDesktop", {
   appVersion: pkg.version,
   launchId,
   launchDay,
+  signalSplashReady: () => ipcRenderer.send("splash-ready"),
 });

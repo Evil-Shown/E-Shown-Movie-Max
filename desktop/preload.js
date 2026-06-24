@@ -1,4 +1,4 @@
-const { contextBridge } = require("electron");
+const { contextBridge, ipcRenderer } = require("electron");
 const pkg = require("./package.json");
 
 const launchDay = new Date().toISOString().slice(0, 10);
@@ -10,4 +10,5 @@ contextBridge.exposeInMainWorld("chithraDesktop", {
   appVersion: pkg.version,
   launchId,
   launchDay,
+  signalSplashReady: () => ipcRenderer.send("splash-ready"),
 });

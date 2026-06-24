@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, nativeImage, shell, session } = require("electron");
+const { app, BrowserWindow, Menu, Tray, nativeImage, shell, session, ipcMain } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const http = require("http");
@@ -141,19 +141,36 @@ function waitForUrl(url, timeoutMs = 120000, intervalMs = 500) {
 
 function createSplashWindow() {
   splashWindow = new BrowserWindow({
-    width: 460,
-    height: 320,
+    width: 1280,
+    height: 720,
+    minWidth: 1100,
+    minHeight: 620,
     frame: false,
     resizable: false,
     center: true,
     show: false,
     backgroundColor: "#0a0a0f",
-    icon: path.join(__dirname, "assets", "icon.ico")
+    icon: path.join(__dirname, "assets", "icon.ico"),
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    }
   });
 
   splashWindow.loadFile(path.join(__dirname, "splash.html"));
   splashWindow.once("ready-to-show", () => splashWindow?.show());
 }
+
+ipcMain.on("splash-ready", () => {
+  setTimeout(() => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+      splashWindow = null;
+    }
+  }, 1500);
+});
 
 function isAllowedAppUrl(url) {
   try {
@@ -380,9 +397,9 @@ if (!gotLock) {
       configureAdBlocking();
       configureEmbedHeaders();
       setupAutoUpdater({ getMainWindow: () => mainWindow });
-      checkForUpdates();
       setupTelemetry();
       await bootApplication();
+      checkForUpdates();
     } catch (error) {
       console.error(error);
       app.exit(1);

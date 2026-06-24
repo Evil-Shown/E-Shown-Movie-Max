@@ -49,17 +49,29 @@ export function isTvShow(movie: Movie): boolean {
   return movie.mediaType === "tv" || movie.id.startsWith("tv-");
 }
 
+export interface StreamEmbedOptions {
+  season?: number;
+  episode?: number;
+  seek?: number;
+  subtitleLang?: string;
+  subtitleFile?: string;
+  subtitleLabel?: string;
+}
+
 export function getTvEmbedUrl(
   provider: StreamProvider,
   tmdbId: string,
   season: number,
   episode: number,
-  options?: { seek?: number }
+  options?: StreamEmbedOptions
 ): string {
   return proxifyEmbedUrl(
     buildEmbedUrl(provider, tmdbId, "tv", season, episode, {
       autoPlay: true,
       seek: options?.seek,
+      subtitleLang: options?.subtitleLang,
+      subtitleFile: options?.subtitleFile,
+      subtitleLabel: options?.subtitleLabel,
     })
   );
 }
@@ -67,7 +79,7 @@ export function getTvEmbedUrl(
 export function getMovieEmbedUrl(
   movie: Movie,
   provider: StreamProvider = DEFAULT_STREAM_PROVIDER,
-  options?: { season?: number; episode?: number; seek?: number }
+  options?: StreamEmbedOptions
 ): string | null {
   const raw = getRawMovieEmbedUrl(movie, provider, options);
   if (!raw) return null;
@@ -78,23 +90,25 @@ export function getMovieEmbedUrl(
 export function getRawMovieEmbedUrl(
   movie: Movie,
   provider: StreamProvider = DEFAULT_STREAM_PROVIDER,
-  options?: { season?: number; episode?: number; seek?: number }
+  options?: StreamEmbedOptions
 ): string | null {
   const mediaId = resolveMediaId(movie);
   if (!mediaId) return null;
+
+  const embedOptions = {
+    autoPlay: true as const,
+    seek: options?.seek,
+    subtitleLang: options?.subtitleLang,
+    subtitleFile: options?.subtitleFile,
+    subtitleLabel: options?.subtitleLabel,
+  };
 
   const tv = isTvShow(movie);
   if (tv) {
     const season = options?.season ?? 1;
     const episode = options?.episode ?? 1;
-    return buildEmbedUrl(provider, mediaId, "tv", season, episode, {
-      autoPlay: true,
-      seek: options?.seek,
-    });
+    return buildEmbedUrl(provider, mediaId, "tv", season, episode, embedOptions);
   }
 
-  return buildEmbedUrl(provider, mediaId, "movie", undefined, undefined, {
-    autoPlay: true,
-    seek: options?.seek,
-  });
+  return buildEmbedUrl(provider, mediaId, "movie", undefined, undefined, embedOptions);
 }
