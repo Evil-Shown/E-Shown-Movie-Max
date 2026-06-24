@@ -40,8 +40,10 @@ function showUpdateDialog(options) {
       // needing to disable the parent window.
       modal: false,
       alwaysOnTop: true,
-      width: 500,
-      height: 620,
+      width: 640,
+      height: 760,
+      minWidth: 620,
+      minHeight: 720,
       show: false,
       frame: false,
       transparent: false,

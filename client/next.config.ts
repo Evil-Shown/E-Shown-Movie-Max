@@ -64,6 +64,21 @@ const nextConfig: NextConfig = {
         hostname: "img.logo.dev",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "icon.brandfetch.io",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "logo.clearbit.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "icons.duckduckgo.com",
+        pathname: "/**",
+      },
     ],
   },
 };

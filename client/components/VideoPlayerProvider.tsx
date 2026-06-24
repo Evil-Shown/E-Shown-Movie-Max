@@ -14,10 +14,36 @@ import {
   isEmbedPlaybackMessage,
   warmStreamProviders,
 } from "@/lib/stream-optimizer";
-import { getMovieEmbedUrl, getRawMovieEmbedUrl, isTvShow } from "@/lib/streaming";
+import { getMovieEmbedUrl, getRawMovieEmbedUrl, isTvShow, resolveImdbId, resolveTmdbId } from "@/lib/streaming";
 import PlayerTvSelector from "@/components/PlayerTvSelector";
+import PlayerNextEpisodeOverlay from "@/components/PlayerNextEpisodeOverlay";
+import PlayerSubtitlePicker from "@/components/PlayerSubtitlePicker";
 import { getTrailerId } from "@/lib/trailers";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
+import {
+  isEmbedNearEnd,
+  isEmbedPlaybackEnded,
+} from "@/lib/embed-events";
+import {
+  exitAnyFullscreen,
+  getActiveFullscreenElement,
+  requestElementFullscreen,
+} from "@/lib/fullscreen";
+import {
+  fetchSubtitleText,
+  parseSubtitleCues,
+  proxifySubtitleUrl,
+  resolveSubtitleForLanguage,
+  searchSubtitleTracks,
+  type SubtitleCue,
+  type SubtitleTrackResult,
+} from "@/lib/subtitles-client";
+import {
+  getEpisodeSummary,
+  getNextEpisodeTarget,
+  type TvEpisodeSummary,
+  type TvSeasonSummary,
+} from "@/lib/tv-episodes";
 import { AnimatePresence, motion } from "framer-motion";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
@@ -38,14 +64,7 @@ interface VideoPlayerContextValue {
 
 const VideoPlayerContext = createContext<VideoPlayerContextValue | null>(null);
 
-async function safeExitFullscreen() {
-  if (!document.fullscreenElement) return;
-  try {
-    await document.exitFullscreen();
-  } catch {
-    // Tab/window inactive, embed-owned fullscreen, or already exited.
-  }
-}
+const NEXT_EPISODE_COUNTDOWN_SECONDS = 5;
 
 export function useVideoPlayer() {
   const ctx = useContext(VideoPlayerContext);
@@ -211,16 +230,35 @@ function VideoPlayerModal({
   const [showKeyboardHint, setShowKeyboardHint] = useState(false);
   const [autoSwitchMessage, setAutoSwitchMessage] = useState<string | null>(null);
   const [playerEngaged, setPlayerEngaged] = useState(false);
+  const [subtitleLang, setSubtitleLang] = useState("off");
+  const [subtitleFile, setSubtitleFile] = useState<string | undefined>();
+  const [subtitleLabel, setSubtitleLabel] = useState<string | undefined>();
+  const [subtitleLoading, setSubtitleLoading] = useState(false);
+  const [subtitleTranslationAvailable, setSubtitleTranslationAvailable] = useState(false);
+  const [subtitleTracks, setSubtitleTracks] = useState<SubtitleTrackResult[]>([]);
+  const [subtitleCues, setSubtitleCues] = useState<SubtitleCue[]>([]);
+  const [playbackTime, setPlaybackTime] = useState(0);
+  const [showNextEpisode, setShowNextEpisode] = useState(false);
+  const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState(NEXT_EPISODE_COUNTDOWN_SECONDS);
+  const [nextEpisodeProgress, setNextEpisodeProgress] = useState(0);
+  const [tvSeasons, setTvSeasons] = useState<TvSeasonSummary[]>([]);
+  const [episodesBySeason, setEpisodesBySeason] = useState<Map<number, TvEpisodeSummary[]>>(new Map());
   const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playbackWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadStartedAtRef = useRef(Date.now());
   const failoverAttemptsRef = useRef(0);
   const playbackConfirmedRef = useRef(false);
   const playerEngagedRef = useRef(false);
+  const nextEpisodeTriggeredRef = useRef(false);
+  const subtitleLangRef = useRef(subtitleLang);
   const stageRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const stabilityTip = getStabilityTip();
   const trailerId = movie.trailerKey ?? getTrailerId(movie.id);
+  const autoSinhalaAvailable =
+    subtitleTranslationAvailable &&
+    (subtitleTracks.some((track) => track.language === "en") ||
+      subtitleTracks.some((track) => track.language === "si"));
 
   const movieEmbedUrl = isTrailer
     ? null
@@ -228,6 +266,9 @@ function VideoPlayerModal({
         season,
         episode,
         seek: resumeSeconds,
+        subtitleLang: subtitleLang !== "off" ? subtitleLang : undefined,
+        subtitleFile,
+        subtitleLabel,
       });
 
   const rawEmbedUrl = isTrailer
@@ -236,6 +277,9 @@ function VideoPlayerModal({
         season,
         episode,
         seek: resumeSeconds,
+        subtitleLang: subtitleLang !== "off" ? subtitleLang : undefined,
+        subtitleFile,
+        subtitleLabel,
       });
 
   const iframeSrc = isTrailer
@@ -249,6 +293,19 @@ function VideoPlayerModal({
   const posterImage = posterUrl(movie.posterPath);
   const episodeLabel =
     season && episode ? `S${season} · E${episode}` : null;
+
+  const nextEpisodeTarget =
+    isTvPlayer && season && episode
+      ? getNextEpisodeTarget(tvSeasons, episodesBySeason, season, episode)
+      : null;
+
+  const nextEpisodeSummary = nextEpisodeTarget
+    ? getEpisodeSummary(episodesBySeason, nextEpisodeTarget.season, nextEpisodeTarget.episode)
+    : null;
+  const currentEpisodeSummary =
+    season && episode ? getEpisodeSummary(episodesBySeason, season, episode) : null;
+  const activeSubtitleCue =
+    subtitleCues.find((cue) => playbackTime >= cue.start && playbackTime <= cue.end) ?? null;
 
   const clearPlaybackWatchdog = useCallback(() => {
     if (playbackWatchdogRef.current) {
@@ -284,6 +341,131 @@ function VideoPlayerModal({
     }, getPlaybackConfirmTimeoutMs());
   }, [clearPlaybackWatchdog, switchToNextProvider]);
 
+  const loadSeasonEpisodes = useCallback(
+    async (seasonNumber: number) => {
+      if (!seasonNumber) return;
+      let alreadyLoaded = false;
+      setEpisodesBySeason((current) => {
+        alreadyLoaded = current.has(seasonNumber);
+        return current;
+      });
+      if (alreadyLoaded) return;
+
+      try {
+        const res = await fetch(`/api/tv/${movie.id}/seasons`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ season: seasonNumber }),
+        });
+        const data = (await res.json()) as { episodes: TvEpisodeSummary[] };
+        setEpisodesBySeason((current) => {
+          const next = new Map(current);
+          next.set(seasonNumber, data.episodes ?? []);
+          return next;
+        });
+      } catch {
+        // Episode metadata is optional for playback.
+      }
+    },
+    [movie.id]
+  );
+
+  const playNextEpisode = useCallback(() => {
+    if (!nextEpisodeTarget) return;
+    setShowNextEpisode(false);
+    nextEpisodeTriggeredRef.current = false;
+    setNextEpisodeCountdown(NEXT_EPISODE_COUNTDOWN_SECONDS);
+    setNextEpisodeProgress(0);
+    onSeasonEpisodeChange(nextEpisodeTarget.season, nextEpisodeTarget.episode);
+  }, [nextEpisodeTarget, onSeasonEpisodeChange]);
+
+  const dismissNextEpisode = useCallback(() => {
+    setShowNextEpisode(false);
+    nextEpisodeTriggeredRef.current = true;
+    setNextEpisodeCountdown(NEXT_EPISODE_COUNTDOWN_SECONDS);
+    setNextEpisodeProgress(0);
+  }, []);
+
+  const openNextEpisodeOverlay = useCallback(() => {
+    if (!isTvPlayer || !nextEpisodeTarget || nextEpisodeTriggeredRef.current || showNextEpisode) {
+      return;
+    }
+    nextEpisodeTriggeredRef.current = true;
+    setNextEpisodeCountdown(NEXT_EPISODE_COUNTDOWN_SECONDS);
+    setNextEpisodeProgress(0);
+    setShowNextEpisode(true);
+    void loadSeasonEpisodes(nextEpisodeTarget.season);
+  }, [isTvPlayer, loadSeasonEpisodes, nextEpisodeTarget, showNextEpisode]);
+
+  const handleSubtitleChange = useCallback(
+    async (languageCode: string) => {
+      setSubtitleLoading(true);
+      try {
+        const existing = subtitleTracks.find((t) => t.language === languageCode);
+        if (existing?.url) {
+          setSubtitleLang(languageCode);
+          setSubtitleFile(existing.url.startsWith("/api/") ? existing.url : proxifySubtitleUrl(existing.url));
+          setSubtitleLabel(existing.label);
+          return;
+        }
+        const resolved = await resolveSubtitleForLanguage({
+          tmdbId: resolveTmdbId(movie),
+          imdbId: resolveImdbId(movie),
+          season,
+          episode,
+          language: languageCode,
+        });
+        setSubtitleLang(resolved.lang);
+        setSubtitleFile(resolved.file);
+        setSubtitleLabel(resolved.label);
+      } finally {
+        setSubtitleLoading(false);
+      }
+    },
+    [episode, movie, season, subtitleTracks]
+  );
+
+  const refreshSubtitleTracks = useCallback(async () => {
+    setSubtitleLoading(true);
+    try {
+      const search = await searchSubtitleTracks({
+      tmdbId: resolveTmdbId(movie),
+      imdbId: resolveImdbId(movie),
+      season,
+      episode,
+      });
+      const ranked = [...search.tracks].sort((a, b) => {
+        const score = (track: SubtitleTrackResult) => {
+          if (track.language === "si") return 0;
+          if (track.language === "en") return 1;
+          if (track.language === "ta") return 2;
+          return 3;
+        };
+        return score(a) - score(b);
+      });
+      setSubtitleTracks(ranked);
+      setSubtitleTranslationAvailable(search.translationAvailable);
+    } finally {
+      setSubtitleLoading(false);
+    }
+  }, [episode, movie, season]);
+
+  useEffect(() => {
+    if (!isTvPlayer || !nextEpisodeTarget || showNextEpisode) return;
+
+    const currentEpisode =
+      episodesBySeason.get(season ?? 0)?.find((item) => item.episode_number === (episode ?? 0)) ?? null;
+    const durationSeconds = currentEpisode?.runtime ?? movie.runtime ?? 0;
+    const fallbackSeconds = Math.max(0, durationSeconds - 60);
+    if (!fallbackSeconds) return;
+
+    const timer = window.setTimeout(() => {
+      openNextEpisodeOverlay();
+    }, fallbackSeconds * 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [episode, episodesBySeason, isTvPlayer, movie.runtime, nextEpisodeTarget, openNextEpisodeOverlay, season, showNextEpisode]);
+
   useEffect(() => {
     playerEngagedRef.current = playerEngaged;
   }, [playerEngaged]);
@@ -297,6 +479,169 @@ function VideoPlayerModal({
   }, [movie.id, mode]);
 
   useEffect(() => {
+    if (!isTvPlayer) return;
+
+    let cancelled = false;
+    async function loadSeasons() {
+      try {
+        const res = await fetch(`/api/tv/${movie.id}/seasons`);
+        const data = (await res.json()) as { seasons: TvSeasonSummary[] };
+        if (!cancelled) setTvSeasons(data.seasons ?? []);
+      } catch {
+        if (!cancelled) setTvSeasons([]);
+      }
+    }
+
+    loadSeasons();
+    return () => {
+      cancelled = true;
+    };
+  }, [isTvPlayer, movie.id]);
+
+  useEffect(() => {
+    if (!isTvPlayer || !season) return;
+    void loadSeasonEpisodes(season);
+  }, [isTvPlayer, loadSeasonEpisodes, season]);
+
+  useEffect(() => {
+    void refreshSubtitleTracks();
+  }, [refreshSubtitleTracks]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSubtitleCues() {
+      if (!subtitleFile || subtitleLang === "off") {
+        setSubtitleCues([]);
+        return;
+      }
+
+      try {
+        const text = await fetchSubtitleText(subtitleFile);
+        if (cancelled) return;
+        setSubtitleCues(parseSubtitleCues(text));
+      } catch {
+        if (!cancelled) setSubtitleCues([]);
+      }
+    }
+
+    void loadSubtitleCues();
+    return () => {
+      cancelled = true;
+    };
+  }, [subtitleFile, subtitleLang]);
+
+  useEffect(() => {
+    if (!nextEpisodeTarget) return;
+    void loadSeasonEpisodes(nextEpisodeTarget.season);
+  }, [loadSeasonEpisodes, nextEpisodeTarget]);
+
+  useEffect(() => {
+    setShowNextEpisode(false);
+    nextEpisodeTriggeredRef.current = false;
+    setNextEpisodeCountdown(NEXT_EPISODE_COUNTDOWN_SECONDS);
+  }, [season, episode]);
+
+  useEffect(() => {
+    setTvSeasons([]);
+    setEpisodesBySeason(new Map());
+    setSubtitleLang("off");
+    setSubtitleFile(undefined);
+    setSubtitleLabel(undefined);
+    setSubtitleTracks([]);
+    setSubtitleTranslationAvailable(false);
+    setSubtitleCues([]);
+    setPlaybackTime(0);
+    setPlaybackDuration(0);
+  }, [movie.id]);
+
+  useEffect(() => {
+    subtitleLangRef.current = subtitleLang;
+  }, [subtitleLang]);
+
+  useEffect(() => {
+    if (!isTvPlayer) return;
+    const language = subtitleLangRef.current;
+    if (language === "off") return;
+
+    let cancelled = false;
+    (async () => {
+      setSubtitleLoading(true);
+      try {
+        const resolved = await resolveSubtitleForLanguage({
+          tmdbId: resolveTmdbId(movie),
+          imdbId: resolveImdbId(movie),
+          season,
+          episode,
+          language,
+        });
+        if (cancelled) return;
+        setSubtitleLang(resolved.lang);
+        setSubtitleFile(resolved.file);
+        setSubtitleLabel(resolved.label);
+        setLoaded(false);
+        setPlayerEngaged(false);
+        playbackConfirmedRef.current = false;
+      } finally {
+        if (!cancelled) setSubtitleLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [episode, isTvPlayer, movie, season]);
+
+  useEffect(() => {
+    if (!showNextEpisode) return;
+    if (nextEpisodeCountdown <= 0) {
+      playNextEpisode();
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setNextEpisodeCountdown((current) => current - 1);
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [nextEpisodeCountdown, playNextEpisode, showNextEpisode]);
+
+  useEffect(() => {
+    if (!isTvPlayer || !nextEpisodeTarget) return;
+    const runtime = currentEpisodeSummary?.runtime ?? movie.runtime ?? 0;
+    if (!runtime) return;
+
+    const startThreshold = Math.max(0.82, (runtime - 75) / runtime);
+    let started = false;
+
+    const timer = window.setInterval(() => {
+      if (started || showNextEpisode) return;
+      const currentSeconds = loaded ? Math.min(runtime, runtime * startThreshold) : 0;
+      const remaining = Math.max(runtime - currentSeconds, 0);
+      const progress = 1 - remaining / runtime;
+      setNextEpisodeProgress(progress);
+
+      if (progress >= startThreshold) {
+        started = true;
+        openNextEpisodeOverlay();
+      }
+    }, 2000);
+
+    return () => window.clearInterval(timer);
+  }, [currentEpisodeSummary?.runtime, isTvPlayer, loaded, movie.runtime, nextEpisodeTarget, openNextEpisodeOverlay, showNextEpisode]);
+
+  useEffect(() => {
+    if (!subtitleFile || subtitleLang === "off") return;
+
+    const onMessage = (event: MessageEvent) => {
+      const data = event.data as { currentTime?: number; duration?: number } | undefined;
+      if (typeof data?.currentTime === "number") {
+        setPlaybackTime(data.currentTime);
+      }
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [subtitleFile, subtitleLang]);
+
+  useEffect(() => {
     if (isTrailer) return;
 
     const onMessage = (event: MessageEvent) => {
@@ -304,11 +649,14 @@ function VideoPlayerModal({
         playbackConfirmedRef.current = true;
         clearPlaybackWatchdog();
       }
+      if (isEmbedPlaybackEnded(event.data) || isEmbedNearEnd(event.data, 0.985)) {
+        openNextEpisodeOverlay();
+      }
     };
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [clearPlaybackWatchdog, isTrailer, iframeSrc]);
+  }, [clearPlaybackWatchdog, isTrailer, openNextEpisodeOverlay]);
 
   useEffect(() => {
     setPlayerEngaged(false);
@@ -366,25 +714,32 @@ function VideoPlayerModal({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (document.fullscreenElement) return;
+      if (getActiveFullscreenElement()) return;
       onClose();
     };
     const onFullscreenChange = () => {
-      const active = document.fullscreenElement === stageRef.current;
-      setIsFullscreen(active);
-      if (active) {
+      setIsFullscreen(Boolean(getActiveFullscreenElement()));
+      if (getActiveFullscreenElement()) {
         window.setTimeout(() => iframeRef.current?.focus(), 50);
+      } else {
+        window.setTimeout(() => {
+          if (!getActiveFullscreenElement()) {
+            setIsFullscreen(false);
+          }
+        }, 50);
       }
     };
 
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
     document.addEventListener("fullscreenchange", onFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", onFullscreenChange as EventListener);
     return () => {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
       document.removeEventListener("fullscreenchange", onFullscreenChange);
-      void safeExitFullscreen();
+      document.removeEventListener("webkitfullscreenchange", onFullscreenChange as EventListener);
+      void exitAnyFullscreen();
     };
   }, [onClose]);
 
@@ -398,12 +753,14 @@ function VideoPlayerModal({
     if (!stage) return;
 
     try {
-      if (document.fullscreenElement === stage) {
-        await safeExitFullscreen();
-      } else {
-        await stage.requestFullscreen();
-        focusPlayer();
+      if (getActiveFullscreenElement()) {
+        await exitAnyFullscreen();
+        setIsFullscreen(false);
+        return;
       }
+      await requestElementFullscreen(stage);
+      setIsFullscreen(true);
+      focusPlayer();
     } catch {
       // Browser blocked fullscreen — user can still use the embed control.
     }
@@ -545,12 +902,26 @@ function VideoPlayerModal({
               )}
 
               {iframeSrc && loaded && (
-                <div className="pointer-events-none absolute top-2 right-2 z-[5] flex items-center gap-2">
+                <div className="absolute top-2 right-2 z-[20] flex items-center gap-2 pointer-events-auto">
+                  {!isTrailer ? (
+                    <PlayerSubtitlePicker
+                      value={subtitleLang}
+                      loading={subtitleLoading}
+                      disabled={!loaded}
+                      tracks={subtitleTracks}
+                      autoSinhalaAvailable={autoSinhalaAvailable}
+                      onSearch={() => void refreshSubtitleTracks()}
+                      onChange={handleSubtitleChange}
+                      onTrackSelect={(track) => {
+                        void handleSubtitleChange(track.language);
+                      }}
+                    />
+                  ) : null}
                   <button
                     type="button"
                     onClick={toggleFullscreen}
                     aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                    className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white backdrop-blur transition hover:border-[#f4c27a] hover:bg-[#f4c27a] hover:text-stone-950"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white backdrop-blur transition hover:border-[#f4c27a] hover:bg-[#f4c27a] hover:text-stone-950"
                   >
                     {isFullscreen ? (
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
@@ -610,7 +981,7 @@ function VideoPlayerModal({
                   )}
                   <iframe
                     ref={iframeRef}
-                    key={`${provider}-${season ?? 0}-${episode ?? 0}-${iframeSrc}`}
+                    key={`${provider}-${season ?? 0}-${episode ?? 0}-${subtitleLang}-${subtitleFile ?? "none"}-${iframeSrc}`}
                     src={iframeSrc}
                     title={isTrailer ? `${movie.title} trailer` : `${movie.title} stream`}
                     tabIndex={0}
@@ -630,6 +1001,22 @@ function VideoPlayerModal({
                     onPointerDown={focusPlayer}
                     className="player-embed-iframe absolute inset-0 z-[1] h-full w-full border-0"
                   />
+                  {!isTrailer && activeSubtitleCue ? (
+                    <div className="pointer-events-none absolute inset-x-0 bottom-[13%] z-[7] flex justify-center px-4 sm:bottom-[11%]">
+                      <div className="max-w-[88%] rounded-2xl border border-black/20 bg-black/65 px-4 py-2 text-center shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-md sm:max-w-3xl sm:px-5 sm:py-3">
+                        <p className="whitespace-pre-line font-[var(--font-playfair)] text-[15px] leading-snug text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] sm:text-[18px]">
+                          {activeSubtitleCue.text}
+                        </p>
+                        <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#f4c27a]/85">
+                          {subtitleLang === "si-auto"
+                            ? "Sinhala auto translation"
+                            : subtitleLang === "si"
+                              ? "Sinhala subtitle"
+                              : subtitleLabel || "Subtitle"}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
                   {!isTrailer && loaded && !playerEngaged && (
                     <button
                       type="button"
@@ -652,6 +1039,19 @@ function VideoPlayerModal({
                       </span>
                     </button>
                   )}
+                  {isTvPlayer && nextEpisodeTarget ? (
+                    <PlayerNextEpisodeOverlay
+                      visible={showNextEpisode}
+                      showTitle={movie.title}
+                      nextSeason={nextEpisodeTarget.season}
+                      nextEpisode={nextEpisodeTarget.episode}
+                      episode={nextEpisodeSummary}
+                      countdown={nextEpisodeCountdown}
+                      progress={nextEpisodeProgress}
+                      onPlayNow={playNextEpisode}
+                      onCancel={dismissNextEpisode}
+                    />
+                  ) : null}
                 </>
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[radial-gradient(circle_at_center,rgba(201,106,43,0.2),transparent_42%),#0f0d0b] px-6 text-center">

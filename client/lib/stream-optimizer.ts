@@ -91,11 +91,9 @@ export function formatProviderSwitchMessage(next: StreamProvider): string {
   return `Blocked or empty on this host — switching to ${PROVIDER_LABELS[next]}…`;
 }
 
+import { isEmbedPlaybackStarted } from "@/lib/embed-events";
+
 /** True when an embed player reports playback started (VidSrc family). */
 export function isEmbedPlaybackMessage(data: unknown): boolean {
-  if (!data || typeof data !== "object") return false;
-  const payload = data as { type?: string; event?: string; data?: { event?: string } };
-  if (payload.type === "PLAYER_EVENT" && payload.data?.event === "play") return true;
-  if (payload.event === "play") return true;
-  return false;
+  return isEmbedPlaybackStarted(data);
 }
