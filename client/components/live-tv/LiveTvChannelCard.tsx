@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useRef } from "react";
+import { memo } from "react";
 import { LIVE_TV_CATEGORY_LABELS } from "@/lib/live-tv/channels";
 import { getChannelPosterStyles } from "@/lib/live-tv/posters";
 import { prefetchChannelStream } from "@/lib/live-tv/stream-cache";
@@ -29,69 +29,15 @@ function LiveTvChannelCard({
 }: LiveTvChannelCardProps) {
   const hasStream = Boolean(channel.stream ?? getStreamForChannel(channel.id));
   const posterStyle = getChannelPosterStyles(channel);
-  const cardRef = useRef<HTMLButtonElement>(null);
-  const moveRafRef = useRef<number | null>(null);
-
-  const setCardMotion = (clientX: number, clientY: number, active: number) => {
-    const card = cardRef.current;
-    if (!card) return;
-
-    const rect = card.getBoundingClientRect();
-    const px = ((clientX - rect.left) / rect.width - 0.5) * 2;
-    const py = ((clientY - rect.top) / rect.height - 0.5) * 2;
-    const clamp = (value: number) => Math.max(-1, Math.min(1, value));
-    const x = clamp(px);
-    const y = clamp(py);
-
-    const tx = x * 10;
-    const ty = y * 10;
-    const rx = -y * 8;
-    const ry = x * 8;
-
-    card.style.setProperty("--card-tx", `${tx.toFixed(2)}px`);
-    card.style.setProperty("--card-ty", `${ty.toFixed(2)}px`);
-    card.style.setProperty("--card-rx", `${rx.toFixed(2)}deg`);
-    card.style.setProperty("--card-ry", `${ry.toFixed(2)}deg`);
-    card.style.setProperty("--card-scale", active ? "1.03" : "1");
-    card.style.setProperty("--card-glow-opacity", active ? "1" : "0");
-    card.style.setProperty("--card-glow-strength", active ? "0.92" : "0");
-    card.style.setProperty("--card-shine-opacity", active ? "1" : "0");
-    card.style.setProperty("--card-spot-x", `${(x * 50 + 50).toFixed(2)}%`);
-    card.style.setProperty("--card-spot-y", `${(y * 50 + 50).toFixed(2)}%`);
-    card.style.setProperty("--card-spot-opacity", active ? "1" : "0");
-  };
-
-  const scheduleCardMotion = (clientX: number, clientY: number) => {
-    if (moveRafRef.current !== null) cancelAnimationFrame(moveRafRef.current);
-    moveRafRef.current = requestAnimationFrame(() => {
-      setCardMotion(clientX, clientY, 1);
-      moveRafRef.current = null;
-    });
-  };
-
-  const resetCardMotion = () => {
-    if (moveRafRef.current !== null) cancelAnimationFrame(moveRafRef.current);
-    moveRafRef.current = null;
-    setCardMotion(0, 0, 0);
-  };
 
   return (
     <button
       type="button"
-      ref={cardRef}
       onClick={() => onSelect(channel)}
       onMouseEnter={() => prefetchChannelStream(channel.id)}
       onFocus={() => prefetchChannelStream(channel.id)}
-      onPointerEnter={(e) => setCardMotion(e.clientX, e.clientY, 1)}
-      onPointerMove={(e) => scheduleCardMotion(e.clientX, e.clientY)}
-      onPointerLeave={resetCardMotion}
-      onPointerCancel={resetCardMotion}
-      className={`group relative flex w-full flex-col overflow-hidden rounded-xl border text-left transition-all duration-200 ${
+      className={`group relative flex w-full flex-col overflow-hidden rounded-xl text-left ${
         compact ? "min-w-[128px]" : ""
-      } ${
-        isSelected
-          ? "gold-glow border-[var(--accent-primary)] bg-[var(--bg-card)]"
-          : "border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-sm)] hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-md)]"
       }`}
       aria-pressed={isSelected}
       aria-label={`Watch ${channel.name}`}
@@ -100,15 +46,40 @@ function LiveTvChannelCard({
         backgroundImage: posterStyle.backgroundImage,
         backgroundSize: "cover",
         backgroundPosition: "center",
-        transformStyle: "preserve-3d",
-        transform:
-          "perspective(1100px) translate3d(var(--card-tx, 0px), var(--card-ty, 0px), 0) rotateX(var(--card-rx, 0deg)) rotateY(var(--card-ry, 0deg)) scale(var(--card-scale, 1))",
-        transformOrigin: "center",
+        // Premium border: amber/gold glow ring that intensifies on selected
+        border: isSelected
+          ? "1.5px solid rgba(245,158,11,0.85)"
+          : "1.5px solid rgba(245,158,11,0.12)",
+        // Layered shadow: depth + outer glow
+        boxShadow: isSelected
+          ? "0 0 0 3px rgba(245,158,11,0.18), 0 0 18px 4px rgba(234,88,12,0.22), 0 8px 32px rgba(0,0,0,0.55)"
+          : "0 2px 8px rgba(0,0,0,0.35)",
+        transform: "scale(1)",
         willChange: "transform, box-shadow, border-color",
         transition:
-          "transform 400ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 400ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 400ms ease",
+          "transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 300ms ease, border-color 300ms ease",
+      }}
+      // Inline CSS vars for hover — avoids JS and keeps animations CSS-driven
+      onMouseEnter={(e) => {
+        prefetchChannelStream(channel.id);
+        if (!isSelected) {
+          const el = e.currentTarget;
+          el.style.transform = "scale(1.02)";
+          el.style.border = "1.5px solid rgba(245,158,11,0.5)";
+          el.style.boxShadow =
+            "0 0 0 2px rgba(245,158,11,0.12), 0 0 14px 2px rgba(245,158,11,0.14), 0 10px 36px rgba(0,0,0,0.5)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isSelected) {
+          const el = e.currentTarget;
+          el.style.transform = "scale(1)";
+          el.style.border = "1.5px solid rgba(245,158,11,0.12)";
+          el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.35)";
+        }
       }}
     >
+      {/* Cinematic gradient overlay */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -118,74 +89,55 @@ function LiveTvChannelCard({
         }}
       />
 
+      {/* Selected state: persistent amber/gold inner glow */}
+      {isSelected && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-xl"
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.18) 0%, rgba(234,88,12,0.08) 45%, transparent 70%)",
+            mixBlendMode: "screen",
+          }}
+        />
+      )}
+
+      {/* Hover shimmer overlay — CSS group-hover driven, no JS */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300"
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-xl"
         style={{
-          opacity: "var(--card-glow-opacity, 0)",
           background:
-            "radial-gradient(circle at 50% 38%, rgba(217, 119, 6, 0.36), rgba(245, 158, 11, 0.18) 36%, rgba(234, 88, 12, 0.08) 58%, transparent 74%)",
-          transform:
-            "translate3d(calc(var(--card-tx, 0px) * 0.35), calc(var(--card-ty, 0px) * 0.35), 0) scale(var(--card-glow-strength, 0))",
-          transformOrigin: "center",
-          willChange: "transform, opacity",
+            "radial-gradient(ellipse at 50% 15%, rgba(245,158,11,0.10) 0%, rgba(234,88,12,0.05) 50%, transparent 70%)",
           mixBlendMode: "screen",
         }}
       />
 
+      {/* Card body */}
       <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 transition-opacity duration-300 ease-out"
-        style={{
-          opacity: "var(--card-spot-opacity, 0) ",
-          background:
-            "radial-gradient(circle at var(--card-spot-x, 50%) var(--card-spot-y, 38%), rgba(245,158,11,0.18), transparent 45%)",
-          mixBlendMode: "screen",
-          willChange: "background, opacity",
-        }}
-      />
-
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300"
-        style={{
-          opacity: "calc(var(--card-shine-opacity, 0) * 0.08)",
-          background:
-            "linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.06) 18%, transparent 34%, transparent 64%, rgba(255,255,255,0.08) 84%, rgba(255,255,255,0.14) 100%)",
-          transform:
-            "translate3d(calc(var(--card-tx, 0px) * -0.14), calc(var(--card-ty, 0px) * -0.14), 0)",
-          willChange: "transform, opacity",
-        }}
-      />
-
-      <div
-        className={`relative flex w-full items-center justify-center bg-transparent transition-transform duration-300 ease-out ${
+        className={`relative flex w-full items-center justify-center bg-transparent ${
           compact ? "aspect-square p-3" : "aspect-[4/3] p-4 sm:p-5"
         }`}
-        style={{
-          transform:
-            "translate3d(calc(var(--card-tx, 0px) * -0.18), calc(var(--card-ty, 0px) * -0.28), 0)",
-          willChange: "transform",
-        }}
       >
+        {/* Subtle inner ambient light */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-90"
           style={{
             background:
-              "radial-gradient(circle at 50% 34%, rgba(255,255,255,0.08), transparent 40%), radial-gradient(circle at 50% 38%, rgba(201, 106, 43, 0.08), transparent 56%)",
+              "radial-gradient(circle at 50% 34%, rgba(255,255,255,0.06), transparent 40%), radial-gradient(circle at 50% 38%, rgba(201, 106, 43, 0.06), transparent 56%)",
           }}
         />
 
+        {/* Channel logo container */}
         <div
-          className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-card)] shadow-sm transition-transform duration-300 ease-out ${
+          className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-[var(--bg-card)] shadow-sm transition-all duration-300 ${
             compact ? "size-12" : "size-14 sm:size-16"
+          } ${
+            isSelected
+              ? "border-[rgba(245,158,11,0.55)] shadow-[0_0_10px_rgba(245,158,11,0.25)]"
+              : "border-[var(--border)] group-hover:border-[rgba(245,158,11,0.3)]"
           }`}
-          style={{
-            transform:
-              "translate3d(calc(var(--card-tx, 0px) * 0.5), calc(var(--card-ty, 0px) * -0.08), 0)",
-            willChange: "transform",
-          }}
         >
           <ChannelLogo
             channel={channel}
@@ -195,38 +147,30 @@ function LiveTvChannelCard({
           />
         </div>
 
+        {/* Stream status dot */}
         <span
           className={`absolute right-2 top-2 h-1.5 w-1.5 rounded-full ring-2 ring-[var(--bg-secondary)] ${
             hasStream ? "bg-emerald-500" : "bg-amber-400"
           }`}
           title={hasStream ? "Stream ready" : "Resolves on play"}
           aria-hidden
-          style={{
-            transform:
-              "translate3d(calc(var(--card-tx, 0px) * 0.75), calc(var(--card-ty, 0px) * -0.08), 0)",
-            willChange: "transform",
-          }}
         />
 
+        {/* HD badge */}
         {channel.isHd && (
           <span className="absolute left-2 top-2 rounded border border-[var(--border)] bg-[var(--bg-card)]/95 px-1 py-px text-[7px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             HD
           </span>
         )}
 
+        {/* Selected / Live indicator */}
         {isSelected && (
-          <span
-            className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[var(--accent-primary)] px-2 py-px text-[7px] font-bold uppercase tracking-wider text-[var(--text-inverse)]"
-            style={{
-              transform:
-                "translate3d(calc(-50% + var(--card-tx, 0px) * 0.9), calc(var(--card-ty, 0px) * -0.12), 0)",
-              willChange: "transform",
-            }}
-          >
+          <span className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[var(--accent-primary)] px-2 py-px text-[7px] font-bold uppercase tracking-wider text-[var(--text-inverse)]">
             Live
           </span>
         )}
 
+        {/* Favorite toggle */}
         {onToggleFavorite && (
           <span
             role="button"
@@ -247,16 +191,11 @@ function LiveTvChannelCard({
                 ? `Remove ${channel.name} from favorites`
                 : `Add ${channel.name} to favorites`
             }
-            className={`absolute bottom-2 right-2 flex h-6 w-6 items-center justify-center rounded-full border transition-all ${
+            className={`absolute bottom-2 right-2 flex h-6 w-6 items-center justify-center rounded-full border transition-all duration-200 ${
               isFavorite
                 ? "border-[var(--accent-primary)] bg-[var(--gold-dim)] text-[var(--accent-primary)] opacity-100"
                 : "border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-muted)] opacity-0 shadow-sm group-hover:opacity-100 hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
             }`}
-            style={{
-              transform:
-                "translate3d(calc(var(--card-tx, 0px) * 0.62), calc(var(--card-ty, 0px) * -0.12), 0)",
-              willChange: "transform, opacity",
-            }}
           >
             <svg
               viewBox="0 0 24 24"
@@ -271,6 +210,7 @@ function LiveTvChannelCard({
         )}
       </div>
 
+      {/* Channel info footer */}
       <div
         className={`border-t border-white/10 bg-[rgba(2,6,23,0.66)] backdrop-blur-[1px] ${
           compact ? "px-2 py-1.5" : "px-2.5 py-2"
