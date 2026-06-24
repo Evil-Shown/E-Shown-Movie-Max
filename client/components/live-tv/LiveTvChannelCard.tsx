@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { LIVE_TV_CATEGORY_LABELS } from "@/lib/live-tv/channels";
 import { getChannelPosterStyles } from "@/lib/live-tv/posters";
 import { prefetchChannelStream } from "@/lib/live-tv/stream-cache";
@@ -56,12 +56,22 @@ function LiveTvChannelCard({
 }: LiveTvChannelCardProps) {
   const hasStream = Boolean(channel.stream ?? getStreamForChannel(channel.id));
   const posterStyle = getChannelPosterStyles(channel);
+  const tmdbBackdrop = useChannelBackdrop(channel.id);
 
   return (
     <button
       type="button"
       onClick={() => onSelect(channel)}
-      onMouseEnter={() => prefetchChannelStream(channel.id)}
+      onMouseEnter={(e) => {
+        prefetchChannelStream(channel.id);
+        if (!isSelected) {
+          const el = e.currentTarget;
+          el.style.transform = "scale(1.02)";
+          el.style.border = "1.5px solid rgba(245,158,11,0.5)";
+          el.style.boxShadow =
+            "0 0 0 2px rgba(245,158,11,0.12), 0 0 14px 2px rgba(245,158,11,0.14), 0 10px 36px rgba(0,0,0,0.5)";
+        }
+      }}
       onFocus={() => prefetchChannelStream(channel.id)}
       className={`group relative flex w-full flex-col overflow-hidden rounded-xl text-left ${
         compact ? "min-w-[128px]" : ""
@@ -92,16 +102,6 @@ function LiveTvChannelCard({
           "transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 300ms ease, border-color 300ms ease",
       }}
       // Inline CSS vars for hover — avoids JS and keeps animations CSS-driven
-      onMouseEnter={(e) => {
-        prefetchChannelStream(channel.id);
-        if (!isSelected) {
-          const el = e.currentTarget;
-          el.style.transform = "scale(1.02)";
-          el.style.border = "1.5px solid rgba(245,158,11,0.5)";
-          el.style.boxShadow =
-            "0 0 0 2px rgba(245,158,11,0.12), 0 0 14px 2px rgba(245,158,11,0.14), 0 10px 36px rgba(0,0,0,0.5)";
-        }
-      }}
       onMouseLeave={(e) => {
         if (!isSelected) {
           const el = e.currentTarget;
