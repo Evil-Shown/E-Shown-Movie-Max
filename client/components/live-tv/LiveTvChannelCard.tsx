@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { memo } from "react";
 import { LIVE_TV_CATEGORY_LABELS } from "@/lib/live-tv/channels";
 import { getChannelPosterStyles } from "@/lib/live-tv/posters";
 import { prefetchChannelStream } from "@/lib/live-tv/stream-cache";
@@ -56,7 +56,6 @@ function LiveTvChannelCard({
 }: LiveTvChannelCardProps) {
   const hasStream = Boolean(channel.stream ?? getStreamForChannel(channel.id));
   const posterStyle = getChannelPosterStyles(channel);
-  const tmdbBackdrop = useChannelBackdrop(channel.id);
 
   return (
     <button
@@ -90,7 +89,7 @@ function LiveTvChannelCard({
         transform: "scale(1)",
         willChange: "transform, box-shadow, border-color",
         transition:
-          "transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 300ms ease, border-color 300ms ease, background-image 400ms ease",
+          "transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 300ms ease, border-color 300ms ease",
       }}
       // Inline CSS vars for hover — avoids JS and keeps animations CSS-driven
       onMouseEnter={(e) => {
