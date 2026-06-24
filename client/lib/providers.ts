@@ -50,10 +50,19 @@ export function buildEmbedUrl(
   type: "movie" | "tv",
   season?: number,
   episode?: number,
-  options?: { autoPlay?: boolean; seek?: number }
+  options?: {
+    autoPlay?: boolean;
+    seek?: number;
+    subtitleLang?: string;
+    subtitleFile?: string;
+    subtitleLabel?: string;
+  }
 ): string {
   const autoPlay = options?.autoPlay !== false;
   const seek = options?.seek;
+  const subtitleLang = options?.subtitleLang;
+  const subtitleFile = options?.subtitleFile;
+  const subtitleLabel = options?.subtitleLabel;
 
   switch (provider) {
     case "vidfast": {
@@ -69,6 +78,9 @@ export function buildEmbedUrl(
         iconColor: PLAYER_THEME.icon,
         title: "false",
         poster: "false",
+        sub: subtitleLang && subtitleLang !== "off" ? subtitleLang : undefined,
+        sub_file: subtitleFile,
+        sub_label: subtitleLabel,
       });
     }
     case "vidlink": {
@@ -85,6 +97,9 @@ export function buildEmbedUrl(
         title: "false",
         poster: "false",
         icons: "default",
+        sub: subtitleLang && subtitleLang !== "off" ? subtitleLang : undefined,
+        sub_file: subtitleFile,
+        sub_label: subtitleLabel,
       });
     }
     case "superembed": {
