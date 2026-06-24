@@ -1,12 +1,39 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { LIVE_TV_CATEGORY_LABELS } from "@/lib/live-tv/channels";
 import { getChannelPosterStyles } from "@/lib/live-tv/posters";
 import { prefetchChannelStream } from "@/lib/live-tv/stream-cache";
 import { getStreamForChannel } from "@/lib/live-tv/streams";
 import type { LiveTvChannel } from "@/lib/live-tv/types";
 import ChannelLogo from "@/components/live-tv/ChannelLogo";
+import { loadTmdbBackdrops, type BackdropMap } from "@/lib/live-tv/tmdb-backdrops";
+
+// Module-level cache so the JSON is only fetched once across all card instances
+let _backdropMap: BackdropMap | null = null;
+let _backdropPromise: Promise<BackdropMap> | null = null;
+
+function useChannelBackdrop(channelId: string): string | null {
+  const [backdrop, setBackdrop] = useState<string | null>(
+    _backdropMap ? (_backdropMap[channelId] ?? null) : null
+  );
+
+  useEffect(() => {
+    if (_backdropMap) {
+      setBackdrop(_backdropMap[channelId] ?? null);
+      return;
+    }
+    if (!_backdropPromise) {
+      _backdropPromise = loadTmdbBackdrops();
+    }
+    _backdropPromise.then((map) => {
+      _backdropMap = map;
+      setBackdrop(map[channelId] ?? null);
+    });
+  }, [channelId]);
+
+  return backdrop;
+}
 
 interface LiveTvChannelCardProps {
   channel: LiveTvChannel;
@@ -29,6 +56,7 @@ function LiveTvChannelCard({
 }: LiveTvChannelCardProps) {
   const hasStream = Boolean(channel.stream ?? getStreamForChannel(channel.id));
   const posterStyle = getChannelPosterStyles(channel);
+  const tmdbBackdrop = useChannelBackdrop(channel.id);
 
   return (
     <button
@@ -43,7 +71,12 @@ function LiveTvChannelCard({
       aria-label={`Watch ${channel.name}`}
       style={{
         backgroundColor: posterStyle.backgroundColor,
-        backgroundImage: posterStyle.backgroundImage,
+        // If a TMDb backdrop is available, use it as the card background image
+        // with the cinematic gradient overlaid on top. Otherwise fall back to the
+        // generated gradient poster style.
+        backgroundImage: tmdbBackdrop
+          ? `linear-gradient(180deg, rgba(2,6,23,0.08) 0%, rgba(2,6,23,0.15) 35%, rgba(2,6,23,0.72) 100%), url(${tmdbBackdrop})`
+          : posterStyle.backgroundImage,
         backgroundSize: "cover",
         backgroundPosition: "center",
         // Premium border: amber/gold glow ring that intensifies on selected
@@ -57,7 +90,7 @@ function LiveTvChannelCard({
         transform: "scale(1)",
         willChange: "transform, box-shadow, border-color",
         transition:
-          "transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 300ms ease, border-color 300ms ease",
+          "transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 300ms ease, border-color 300ms ease, background-image 400ms ease",
       }}
       // Inline CSS vars for hover — avoids JS and keeps animations CSS-driven
       onMouseEnter={(e) => {
