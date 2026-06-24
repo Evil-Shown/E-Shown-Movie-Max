@@ -551,7 +551,6 @@ function VideoPlayerModal({
     setSubtitleTranslationAvailable(false);
     setSubtitleCues([]);
     setPlaybackTime(0);
-    setPlaybackDuration(0);
   }, [movie.id]);
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const { contextBridge } = require("electron");
 const pkg = require("./package.json");
 
 const launchDay = new Date().toISOString().slice(0, 10);

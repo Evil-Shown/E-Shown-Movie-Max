@@ -23,6 +23,21 @@ function Write-Utf8NoBom {
   [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
 }
 
+function Robocopy-Item {
+  param([string]$Source, [string]$Dest)
+  if (Test-Path $Source -PathType Leaf) {
+    $destDir = if (Test-Path $Dest -PathType Container) { $Dest } else { Split-Path $Dest -Parent }
+    New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+    Copy-Item $Source (Join-Path $destDir (Split-Path $Source -Leaf)) -Force
+    return
+  }
+  New-Item -ItemType Directory -Path $Dest -Force | Out-Null
+  robocopy $Source $Dest /E /COPY:DAT /NFL /NDL /NJH /NJS /nc /ns /np /r:2 /w:5 | Out-Null
+  if ($LASTEXITCODE -ge 8) {
+    throw "Robocopy failed for $Source -> $Dest (exit code $LASTEXITCODE)"
+  }
+}
+
 function Sync-DesktopShell {
   $required = @(
     "package.json",
@@ -139,13 +154,13 @@ foreach ($dir in @($clientStaging, $serverStaging, (Join-Path $desktop "resource
 Write-Host "[1/6] Staging client..."
 $excludeDirs = @("node_modules", ".next")
 Get-ChildItem -Path $client -Force | Where-Object { $excludeDirs -notcontains $_.Name } | ForEach-Object {
-  Copy-Item $_.FullName (Join-Path $clientStaging $_.Name) -Recurse -Force
+  Robocopy-Item -Source $_.FullName -Dest (Join-Path $clientStaging $_.Name)
 }
 Prepare-ClientEnvForPackage -SourceEnv $clientEnvFile -DestPath (Join-Path $clientStaging ".env.local")
 
 Write-Host "[2/6] Staging server..."
 Get-ChildItem -Path $server -Force | Where-Object { $_.Name -ne "node_modules" } | ForEach-Object {
-  Copy-Item $_.FullName (Join-Path $serverStaging $_.Name) -Recurse -Force
+  Robocopy-Item -Source $_.FullName -Dest (Join-Path $serverStaging $_.Name)
 }
 Copy-Item $serverEnvFile (Join-Path $serverStaging ".env") -Force
 
@@ -171,12 +186,18 @@ New-Item -ItemType Directory -Path (Join-Path $desktop "assets") -Force | Out-Nu
 
 $clientShip = @(".next", "public", "node_modules", "package.json", "package-lock.json", "next.config.ts", ".env.local")
 foreach ($item in $clientShip) {
-  Copy-Item (Join-Path $clientStaging $item) (Join-Path $resourcesApp $item) -Recurse -Force
+  $src = Join-Path $clientStaging $item
+  if (Test-Path $src) {
+    Robocopy-Item -Source $src -Dest (Join-Path $resourcesApp $item)
+  }
 }
 
 $serverShip = @("src", "node_modules", "package.json", "package-lock.json", ".env")
 foreach ($item in $serverShip) {
-  Copy-Item (Join-Path $serverStaging $item) (Join-Path $resourcesServer $item) -Recurse -Force
+  $src = Join-Path $serverStaging $item
+  if (Test-Path $src) {
+    Robocopy-Item -Source $src -Dest (Join-Path $resourcesServer $item)
+  }
 }
 
 Copy-Item $iconSource $iconDest -Force

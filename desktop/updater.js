@@ -106,10 +106,7 @@ function checkForUpdates({ manual = false } = {}) {
   check.catch((error) => {
     console.error("[updater] check failed:", error?.message || error);
     if (manual) {
-      void showUpdateFailureDialog(
-        "Could not check for updates right now.",
-        error?.message
-      );
+      void showUpdateFailureDialog("Could not check for updates right now.", error?.message);
     }
   });
 }
