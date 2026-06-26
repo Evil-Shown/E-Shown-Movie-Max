@@ -26,6 +26,7 @@ import {
   unmarkEpisodeWatched,
 } from '@/lib/storage/episode-progress';
 import { getPreferredProvider, setPreferredProvider } from '@/lib/storage/provider-pref';
+import { hydratePerformanceCache } from '@/lib/storage/provider-performance';
 import type { ContinueWatchingItem, WatchlistItem } from '@/lib/storage/types';
 import {
   getWatchlist,
@@ -104,6 +105,7 @@ export function UserLibraryProvider({ children }: { children: ReactNode }) {
         getWatchlist(),
         getContinueWatching(),
         getPreferredProvider(),
+        hydratePerformanceCache(),
       ]);
       setWatchlist(wl);
       setContinueWatching(cw);

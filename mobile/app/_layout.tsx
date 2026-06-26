@@ -21,6 +21,7 @@ import { NotoSansSinhala_500Medium } from '@expo-google-fonts/noto-sans-sinhala'
 
 import { colors } from '@/constants/theme';
 import { UserLibraryProvider } from '@/components/providers/UserLibraryProvider';
+import { VideoPlayerProvider } from '@/components/providers/VideoPlayerProvider';
 
 // Keep the native splash screen visible until fonts are ready — avoids a
 // flash of fallback system font before Playfair/Inter load in.
@@ -61,17 +62,19 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <UserLibraryProvider>
-        <StatusBar style="dark" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.bgPrimary },
-          }}
-        >
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="movie/[id]" options={{ presentation: 'card' }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
+        <VideoPlayerProvider>
+          <StatusBar style="dark" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.bgPrimary },
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="movie/[id]" options={{ presentation: 'card' }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </VideoPlayerProvider>
       </UserLibraryProvider>
     </QueryClientProvider>
   );
