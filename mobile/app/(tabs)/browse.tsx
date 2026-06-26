@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+﻿import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -41,7 +41,7 @@ function mergeMovies(existing: Movie[], incoming: Movie[]): Movie[] {
 }
 
 /**
- * Browse screen — ported from the web app's app/browse/page.tsx +
+ * Browse screen ΓÇö ported from the web app's app/browse/page.tsx +
  * BrowseCatalog.tsx. Infinite scroll via FlatList's onEndReached, genre
  * pills, and sort tabs. The web version used IntersectionObserver for
  * infinite scroll; RN's FlatList onEndReached is the equivalent.
