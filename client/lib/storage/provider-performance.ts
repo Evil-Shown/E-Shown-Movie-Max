@@ -61,6 +61,7 @@ export function getRankedProviders(): StreamProvider[] {
   const penalty: Partial<Record<StreamProvider, number>> = {
     vidsrc: 10_000,
     vidsrcpm: 6_000,
+    autoembed: 15_000,
   };
   return [...STREAM_PROVIDERS].sort((a, b) => {
     const aMs = (store[a]?.avgMs ?? 12_000) + (penalty[a] ?? 0);

@@ -47,9 +47,28 @@ const EMBED_PROVIDER_HOSTS = [
   "uqloads.xyz",
 ];
 
+/** Analytics/trackers embed players call before video — must not be blocked. */
+const EMBED_SUPPORT_HOSTS = [
+  "dtscout.com",
+  "dtscdn.com",
+  "google-analytics.com",
+  "googletagmanager.com",
+  "cloudflare.com",
+  "cloudflareinsights.com",
+];
+
+function isEmbedSupportHost(hostname) {
+  const host = String(hostname || "").toLowerCase();
+  if (!host) return false;
+  return EMBED_SUPPORT_HOSTS.some(
+    (allowed) => host === allowed || host.endsWith(`.${allowed}`)
+  );
+}
+
 function isEmbedProviderHost(hostname) {
   const host = String(hostname || "").toLowerCase();
   if (!host) return false;
+  if (isEmbedSupportHost(host)) return true;
   return EMBED_PROVIDER_HOSTS.some(
     (allowed) => host === allowed || host.endsWith(`.${allowed}`)
   );

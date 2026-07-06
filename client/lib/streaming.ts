@@ -69,6 +69,17 @@ export function getMovieEmbedUrl(
   provider: StreamProvider = DEFAULT_STREAM_PROVIDER,
   options?: { season?: number; episode?: number; seek?: number }
 ): string | null {
+  const raw = getRawMovieEmbedUrl(movie, provider, options);
+  if (!raw) return null;
+  return proxifyEmbedUrl(raw);
+}
+
+/** Direct embed URL (never proxied) — use for opening in a browser tab. */
+export function getRawMovieEmbedUrl(
+  movie: Movie,
+  provider: StreamProvider = DEFAULT_STREAM_PROVIDER,
+  options?: { season?: number; episode?: number; seek?: number }
+): string | null {
   const mediaId = resolveMediaId(movie);
   if (!mediaId) return null;
 
@@ -76,18 +87,14 @@ export function getMovieEmbedUrl(
   if (tv) {
     const season = options?.season ?? 1;
     const episode = options?.episode ?? 1;
-    return proxifyEmbedUrl(
-      buildEmbedUrl(provider, mediaId, "tv", season, episode, {
-        autoPlay: true,
-        seek: options?.seek,
-      })
-    );
-  }
-
-  return proxifyEmbedUrl(
-    buildEmbedUrl(provider, mediaId, "movie", undefined, undefined, {
+    return buildEmbedUrl(provider, mediaId, "tv", season, episode, {
       autoPlay: true,
       seek: options?.seek,
-    })
-  );
+    });
+  }
+
+  return buildEmbedUrl(provider, mediaId, "movie", undefined, undefined, {
+    autoPlay: true,
+    seek: options?.seek,
+  });
 }

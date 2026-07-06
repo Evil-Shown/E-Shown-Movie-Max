@@ -14,8 +14,7 @@ import {
   isEmbedPlaybackMessage,
   warmStreamProviders,
 } from "@/lib/stream-optimizer";
-import { getMovieEmbedUrl, isTvShow } from "@/lib/streaming";
-import { installAdPopupBlocker } from "@/lib/block-ad-nav";
+import { getMovieEmbedUrl, getRawMovieEmbedUrl, isTvShow } from "@/lib/streaming";
 import PlayerTvSelector from "@/components/PlayerTvSelector";
 import { getTrailerId } from "@/lib/trailers";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
@@ -231,6 +230,14 @@ function VideoPlayerModal({
         seek: resumeSeconds,
       });
 
+  const rawEmbedUrl = isTrailer
+    ? null
+    : getRawMovieEmbedUrl(movie, provider, {
+        season,
+        episode,
+        seek: resumeSeconds,
+      });
+
   const iframeSrc = isTrailer
     ? `https://www.youtube.com/embed/${trailerId}?autoplay=1&rel=0&modestbranding=1`
     : movieEmbedUrl;
@@ -288,11 +295,6 @@ function VideoPlayerModal({
     setAutoSwitchMessage(null);
     setPlayerEngaged(false);
   }, [movie.id, mode]);
-
-  useEffect(() => {
-    if (isTrailer) return;
-    return installAdPopupBlocker();
-  }, [isTrailer, movie.id]);
 
   useEffect(() => {
     if (isTrailer) return;
@@ -405,6 +407,11 @@ function VideoPlayerModal({
     } catch {
       // Browser blocked fullscreen — user can still use the embed control.
     }
+  }
+
+  function openStreamInBrowserTab() {
+    if (!rawEmbedUrl) return;
+    window.open(rawEmbedUrl, "_blank", "noopener,noreferrer");
   }
 
   function handleProviderSwitch() {
@@ -577,9 +584,11 @@ function VideoPlayerModal({
                     <div className="absolute inset-0 z-[3] flex flex-col items-center justify-center gap-4 bg-black/85 px-6 text-center">
                       <p className="font-[var(--font-playfair)] text-xl text-stone-100">No stream on this source</p>
                       <p className="max-w-sm text-sm leading-relaxed text-stone-300">
-                        {PROVIDER_LABELS[provider]} doesn&apos;t have this title right now. We&apos;ll try the next source
-                        automatically, or you can switch manually.
+                        {PROVIDER_LABELS[provider]} doesn&apos;t have this title right now. If you use an ad blocker
+                        (uBlock, AdGuard, Brave Shields), pause it for this site — blocked trackers like{" "}
+                        <span className="text-stone-200">dtscout.com</span> stop embed players from starting.
                       </p>
+                      <div className="flex flex-wrap items-center justify-center gap-2">
                       <button
                         type="button"
                         onClick={handleProviderSwitch}
@@ -587,6 +596,16 @@ function VideoPlayerModal({
                       >
                         Try Next Source
                       </button>
+                      {rawEmbedUrl ? (
+                        <button
+                          type="button"
+                          onClick={openStreamInBrowserTab}
+                          className="rounded-full border border-stone-400 px-5 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-stone-100 hover:bg-white hover:text-stone-950"
+                        >
+                          Open in Browser Tab
+                        </button>
+                      ) : null}
+                      </div>
                     </div>
                   )}
                   <iframe
@@ -595,7 +614,7 @@ function VideoPlayerModal({
                     src={iframeSrc}
                     title={isTrailer ? `${movie.title} trailer` : `${movie.title} stream`}
                     tabIndex={0}
-                    referrerPolicy="no-referrer"
+                    referrerPolicy="strict-origin-when-cross-origin"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share"
                     allowFullScreen
                     onLoad={() => {
@@ -629,7 +648,7 @@ function VideoPlayerModal({
                         Click to start watching
                       </span>
                       <span className="max-w-xs text-xs text-stone-200">
-                        Tap once to focus the player and avoid accidental ad clicks.
+                        Tap once to focus the player. Pause ad blockers for localhost if video never starts.
                       </span>
                     </button>
                   )}
@@ -700,6 +719,7 @@ function VideoPlayerModal({
           ) : null}
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             {!isTrailer && iframeSrc && (
+              <>
               <button
                 type="button"
                 onClick={handleProviderSwitch}
@@ -707,6 +727,16 @@ function VideoPlayerModal({
               >
                 Not working? Switch
               </button>
+              {rawEmbedUrl ? (
+                <button
+                  type="button"
+                  onClick={openStreamInBrowserTab}
+                  className="rounded-full border border-[var(--border-strong)] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
+                >
+                  Open in Tab
+                </button>
+              ) : null}
+              </>
             )}
             <button
               type="button"
