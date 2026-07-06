@@ -7,6 +7,14 @@ import { sortByStability } from "@/lib/live-tv/stream-stability";
 import type { LiveTvStream } from "@/lib/live-tv/types";
 
 const UNRELIABLE_HOSTS = ["allinonereborn", "149.71.34.166", "free.fullspeed.tv"];
+const LOCAL_CHANNEL_IDS = new Set([
+  "hiru-tv", "tv-derana", "sirasa-tv", "itn", "swarnavahini", "rupavahini",
+  "vasantham-tv", "supreme-tv", "shakthi-tv", "channel-eye", "asia-tv",
+  "siyatha-tv", "monara-tv", "ndtv-lanka", "talent-tv", "imai-tv", "verbum-tv",
+  "star-tamil-tv", "ada-derana-24", "jaya-tv", "shraddha-tv", "charana-tv",
+  "the-buddhist", "tv1", "art-tv", "rangiri-tv", "haritha-tv", "tv-didula",
+  "damsathara-tv",
+]);
 const INTERNATIONAL_SKIP_SCRAPE = new Set([
   "animal-planet", "discovery-channel", "national-geographic", "history-channel",
   "smithsonian", "cartoon-network", "nickelodeon", "disney-channel", "boomerang",
@@ -36,7 +44,7 @@ export async function resolveChannelStream(channelId: string): Promise<LiveTvStr
 
   const [iptvEntries, scrapedUrls] = await Promise.all([
     resolveAllStreamsFromIptvOrg(registry?.iptvChannelId, channel.name, 10),
-    INTERNATIONAL_SKIP_SCRAPE.has(channelId)
+    INTERNATIONAL_SKIP_SCRAPE.has(channelId) && !LOCAL_CHANNEL_IDS.has(channelId)
       ? Promise.resolve([])
       : scrapeChannelStreams(channelId),
   ]);

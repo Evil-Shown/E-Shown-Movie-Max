@@ -3,6 +3,7 @@
 import LiveTvCategoryTabs from "@/components/live-tv/LiveTvCategoryTabs";
 import LiveTvChannelGrid from "@/components/live-tv/LiveTvChannelGrid";
 import LiveTvEmptyState from "@/components/live-tv/LiveTvEmptyState";
+import LiveTvBetaBanner from "@/components/live-tv/LiveTvBetaBanner";
 import LiveTvHero from "@/components/live-tv/LiveTvHero";
 import LiveTvPlayer from "@/components/live-tv/LiveTvPlayer";
 import LiveTvSearchBar from "@/components/live-tv/LiveTvSearchBar";
@@ -176,19 +177,25 @@ export default function LiveTvPageClient() {
         <div className="mx-auto max-w-[1280px]">
           <LiveTvHero />
 
-          <div className="mt-5 flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-[var(--shadow-sm)] sm:flex-row sm:items-center sm:justify-between sm:p-5">
-            <div className="w-full max-w-xl shrink-0">
-              <LiveTvSearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                resultCount={filteredChannels.length}
-              />
-            </div>
-            <div className="flex-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
-              <LiveTvCategoryTabs
-                activeCategory={activeCategory}
-                onCategoryChange={setActiveCategory}
-              />
+          <LiveTvBetaBanner />
+
+          <div className="mt-5 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-[var(--shadow-sm)] sm:p-5">
+            <LiveTvSearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              resultCount={filteredChannels.length}
+            />
+
+            <div className="mt-4 border-t border-[var(--border)] pt-4">
+              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--text-muted)]">
+                Categories
+              </p>
+              <div className="-mx-1 overflow-x-auto px-1 pb-0.5 scrollbar-hide">
+                <LiveTvCategoryTabs
+                  activeCategory={activeCategory}
+                  onCategoryChange={setActiveCategory}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -201,9 +208,6 @@ export default function LiveTvPageClient() {
           aria-hidden
         />
         <div ref={playerRef} className="relative mx-auto max-w-[1100px] scroll-mt-24">
-          <p className="mb-3 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">
-            Now Playing
-          </p>
           <LiveTvPlayer
             channel={selectedChannel}
             isFavorite={selectedChannel ? isFavoriteChannel(selectedChannel.id) : false}

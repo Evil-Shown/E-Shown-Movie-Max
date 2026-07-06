@@ -28,6 +28,8 @@ export const BROADCASTER_PAGES: Record<string, { pageUrl: string; referer?: stri
   "channel-eye": { pageUrl: "https://www.channeleye.lk/live", referer: "https://www.channeleye.lk/" },
   "hiru-tv": { pageUrl: "https://www.hirutv.lk/live", referer: "https://www.hirutv.lk/" },
   "talent-tv": { pageUrl: "https://talenttv.lk/", referer: "https://talenttv.lk/" },
+  "jaya-tv": { pageUrl: "https://jayatv.lk/", referer: "https://jayatv.lk/" },
+  "ada-derana-24": { pageUrl: "https://www.adaderana.lk/", referer: "https://www.adaderana.lk/" },
 };
 
 const M3U8_PATTERN = /https?:\/\/[^\s"'<>\\]+?\.m3u8[^\s"'<>\\]*/gi;

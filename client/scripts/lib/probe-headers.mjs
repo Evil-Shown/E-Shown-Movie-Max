@@ -59,6 +59,18 @@ export const PEOTV_CHANNEL_IDS = {
   "siyatha-tv": ["008", "300"],
   "monara-tv": ["104"],
   "star-tamil-tv": ["021"],
+  "ada-derana-24": ["014"],
+  "jaya-tv": ["094"],
+  "shraddha-tv": ["099"],
+  "charana-tv": ["005", "305"],
+  "the-buddhist": ["096"],
+  "tv1": ["012"],
+  "art-tv": ["017"],
+  "rangiri-tv": ["022"],
+  "haritha-tv": ["009"],
+  "tv-didula": ["117"],
+  "damsathara-tv": ["126"],
+  "verbum-tv": ["093"],
 };
 
 export function getChannelProbeTargets(channelId) {

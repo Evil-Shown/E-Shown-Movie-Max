@@ -4,7 +4,7 @@ import { LIVE_TV_CATEGORY_LABELS } from "@/lib/live-tv/channels";
 import type { LiveTvCategoryFilter } from "@/lib/live-tv/types";
 
 const TABS: { value: LiveTvCategoryFilter; label: string }[] = [
-  { value: "all", label: "All Channels" },
+  { value: "all", label: "All" },
   { value: "local", label: LIVE_TV_CATEGORY_LABELS.local },
   { value: "sports", label: LIVE_TV_CATEGORY_LABELS.sports },
   { value: "entertainment", label: LIVE_TV_CATEGORY_LABELS.entertainment },
@@ -23,7 +23,7 @@ export default function LiveTvCategoryTabs({
   onCategoryChange,
 }: LiveTvCategoryTabsProps) {
   return (
-    <div className="flex flex-wrap gap-2.5">
+    <div className="flex w-max min-w-full gap-2">
       {TABS.map((tab) => {
         const active = activeCategory === tab.value;
         return (
@@ -31,10 +31,11 @@ export default function LiveTvCategoryTabs({
             key={tab.value}
             type="button"
             onClick={() => onCategoryChange(tab.value)}
-            className={`rounded-full px-5 py-2.5 text-[13px] font-bold tracking-wide transition-all duration-300 ${
+            aria-pressed={active}
+            className={`shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-semibold tracking-wide transition-colors ${
               active
-                ? "bg-gradient-to-r from-[#c96a2b] to-[#e88a4a] text-white shadow-[0_4px_14px_rgba(201,106,43,0.35)]"
-                : "border border-white/60 bg-white/40 text-[#8c6b5d] shadow-[0_2px_8px_rgba(0,0,0,0.02)] backdrop-blur-md hover:bg-white/70 hover:text-[#c96a2b] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)]"
+                ? "border-[var(--accent-primary)] bg-[var(--accent-primary)] text-white shadow-[0_4px_14px_rgba(201,106,43,0.28)]"
+                : "border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
             }`}
           >
             {tab.label}

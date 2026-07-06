@@ -1,45 +1,34 @@
 const { app, dialog } = require("electron");
 const { autoUpdater } = require("electron-updater");
+const { showUpdateDialog } = require("./update-dialog");
 
 let updateCheckStarted = false;
+/** @type {(() => import("electron").BrowserWindow | null) | null} */
+let getMainWindow = null;
 
 function formatVersion(version) {
   return version ? `v${version}` : "a new version";
 }
 
-function setupAutoUpdater() {
+function setupAutoUpdater(options = {}) {
   if (!app.isPackaged) return;
+
+  getMainWindow = typeof options.getMainWindow === "function" ? options.getMainWindow : null;
 
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowDowngrade = false;
 
   autoUpdater.on("update-available", async (info) => {
-    const current = app.getVersion();
-    const next = info.version || "unknown";
-    const notes = info.releaseNotes
-      ? typeof info.releaseNotes === "string"
-        ? info.releaseNotes
-        : ""
-      : "";
-
-    const { response } = await dialog.showMessageBox({
-      type: "info",
-      buttons: ["Download update", "Not now"],
-      defaultId: 0,
-      cancelId: 1,
-      title: "Update available",
-      message: `CHITHRA - CINEMA ${formatVersion(next)} is available.`,
-      detail: [
-        `Installed: ${formatVersion(current)}`,
-        notes ? `\n${notes}` : "",
-        "\nDownload and install the update?"
-      ]
-        .join("")
-        .trim()
+    const response = await showUpdateDialog({
+      parent: getMainWindow?.() || undefined,
+      kind: "available",
+      currentVersion: app.getVersion(),
+      nextVersion: info.version || "unknown",
+      releaseNotes: info.releaseNotes,
     });
 
-    if (response === 0) {
+    if (response === "primary") {
       await autoUpdater.downloadUpdate();
     }
   });
@@ -54,17 +43,14 @@ function setupAutoUpdater() {
   });
 
   autoUpdater.on("update-downloaded", async (info) => {
-    const { response } = await dialog.showMessageBox({
-      type: "info",
-      buttons: ["Restart now", "Later"],
-      defaultId: 0,
-      cancelId: 1,
-      title: "Update ready",
-      message: `${formatVersion(info.version)} has been downloaded.`,
-      detail: "Restart CHITHRA - CINEMA to finish installing the update."
+    const response = await showUpdateDialog({
+      parent: getMainWindow?.() || undefined,
+      kind: "ready",
+      currentVersion: app.getVersion(),
+      nextVersion: info.version || "unknown",
     });
 
-    if (response === 0) {
+    if (response === "primary") {
       app.isQuitting = true;
       autoUpdater.quitAndInstall(false, true);
     }
@@ -82,7 +68,7 @@ function checkForUpdates({ manual = false } = {}) {
         type: "info",
         title: "Updates",
         message: "Updates are only checked in the installed desktop app.",
-        detail: "Run the packaged CHITHRA - CINEMA installer to test auto-update."
+        detail: "Run the packaged CHITHRA - CINEMA installer to test auto-update.",
       });
     }
     return;
@@ -98,7 +84,7 @@ function checkForUpdates({ manual = false } = {}) {
         type: "warning",
         title: "Update check failed",
         message: "Could not check for updates right now.",
-        detail: error?.message || "Check your internet connection and try again."
+        detail: error?.message || "Check your internet connection and try again.",
       });
     }
   });

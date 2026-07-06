@@ -368,7 +368,7 @@ if (!gotLock) {
     try {
       configureAdBlocking();
       configureEmbedHeaders();
-      setupAutoUpdater();
+      setupAutoUpdater({ getMainWindow: () => mainWindow });
       checkForUpdates();
       await bootApplication();
     } catch (error) {
