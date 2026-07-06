@@ -58,3 +58,17 @@ See `scripts/desktop-shell/README.md` for details.
 ```powershell
 npm run package:portable
 ```
+
+## ⚖️ License & Intellectual Property Restriction
+
+**Copyright © 2026 CHITHRA — CINEMA. All rights reserved.**
+
+This software and its entire codebase (including frontend, backend, desktop wrapper, scraping scripts, and configuration files) are strictly **proprietary** and **confidential**. 
+
+### Restrictions:
+- **No Copying/Cloning**: You are strictly prohibited from copying, cloning, duplicating, or mimicking any part of this project, its code structure, or its features.
+- **No Redistribution**: You may not distribute, host, publish, or sublicense the source code or binaries to any third party.
+- **No Modification**: You may not modify, alter, or create derivative works of this codebase.
+- **No Reverse Engineering**: Any attempt to decompile, reverse engineer, or decrypt the packaged Electron application (`.asar`) or binary installer is strictly prohibited and subject to legal action.
+
+By accessing this codebase, you agree to keep the code confidential. Unauthorized use, copying, or distribution will result in immediate termination of access and legal action.
