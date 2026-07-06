@@ -141,8 +141,8 @@ function waitForUrl(url, timeoutMs = 120000, intervalMs = 500) {
 
 function createSplashWindow() {
   splashWindow = new BrowserWindow({
-    width: 460,
-    height: 320,
+    width: 960,
+    height: 540,
     frame: false,
     resizable: false,
     center: true,
