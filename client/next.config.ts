@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Prevent native torrent deps from entering the server/client SSR graph if referenced elsewhere.
+  serverExternalPackages: ["webtorrent", "node-datachannel"],
   async redirects() {
     return [
       {

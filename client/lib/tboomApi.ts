@@ -159,7 +159,7 @@ function dedupe<T>(key: string, fn: () => Promise<T>): Promise<T> {
 export async function tboomSearch(
   query: string,
   limit = 30
-): Promise<SearchApiResponse | TboomApiError> {
+): Promise<SearchApiResponse | TorrentResult[] | TboomApiError> {
   const key = `search:${query}:${limit}`;
   return dedupe(key, async () => {
     const url = `${BASE_URL}/api/search?q=${encodeURIComponent(query)}&limit=${limit}`;

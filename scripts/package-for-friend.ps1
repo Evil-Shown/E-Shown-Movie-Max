@@ -1,5 +1,5 @@
 # Builds a portable Windows folder your friend can run with START-CHITHRA.bat
-# Does NOT change your source code - only writes to the release/ folder.
+# Writes only to release/ — your dev client/ folder is copied to a temp staging dir first.
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path $PSScriptRoot -Parent
@@ -12,6 +12,38 @@ $appDir = Join-Path $packageDir "app"
 $envFile = Join-Path $client ".env.local"
 $zipPath = Join-Path $releaseRoot "$packageName.zip"
 
+function Invoke-ProductionBuild {
+  param([string]$WorkDir)
+
+  Push-Location $WorkDir
+  $env:NEXT_TELEMETRY_DISABLED = "1"
+
+  Write-Host "  Trying: npm run build (Turbopack)..." -ForegroundColor DarkGray
+  npm run build 2>&1 | ForEach-Object { Write-Host $_ }
+  if ($LASTEXITCODE -eq 0) {
+    Pop-Location
+    return
+  }
+
+  Write-Host "  Turbopack build failed — retrying with webpack..." -ForegroundColor Yellow
+  npx next build --webpack 2>&1 | ForEach-Object { Write-Host $_ }
+  if ($LASTEXITCODE -ne 0) {
+    Pop-Location
+    throw @"
+Production build failed.
+
+Common cause (fixed in source): WebTorrent must load from CDN in the browser, not from npm,
+because node-datachannel breaks Next.js production builds.
+
+If this persists:
+  1) cd client && npm install && npm run build
+  2) Fix any TypeScript/ESLint errors shown above
+  3) Re-run scripts\package-for-friend.ps1
+"@
+  }
+  Pop-Location
+}
+
 Write-Host ""
 Write-Host "=== Chithra Cinema - package for friend ===" -ForegroundColor Cyan
 Write-Host ""
@@ -22,6 +54,10 @@ if (-not (Test-Path $client)) {
 
 if (-not (Test-Path $envFile)) {
   throw "Missing $envFile - create it from client/.env.example with your API keys first."
+}
+
+if (-not (Test-Path (Join-Path $client "package-lock.json"))) {
+  throw "Missing client/package-lock.json - run 'npm install' in client/ first."
 }
 
 $staging = Join-Path $env:TEMP "chithra-package-staging-$stamp"
@@ -43,15 +79,16 @@ Copy-Item $envFile (Join-Path $staging ".env.local") -Force
 Write-Host "[2/5] Installing dependencies in staging..."
 Push-Location $staging
 npm ci
-if ($LASTEXITCODE -ne 0) { throw "npm ci failed" }
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "npm ci failed" }
+Pop-Location
 
 Write-Host "[3/5] Building production app..."
-npm run build
-if ($LASTEXITCODE -ne 0) { throw "npm run build failed" }
+Invoke-ProductionBuild -WorkDir $staging
 
 Write-Host "[4/5] Trimming to production dependencies..."
+Push-Location $staging
 npm ci --omit=dev
-if ($LASTEXITCODE -ne 0) { throw "npm ci --omit=dev failed" }
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "npm ci --omit=dev failed" }
 Pop-Location
 
 if (Test-Path $packageDir) {
@@ -121,6 +158,7 @@ Troubleshooting
 - "Node.js is not installed" -> install from nodejs.org, restart PC, try again.
 - Page won't load -> wait 10 seconds and refresh the browser.
 - Port busy -> close any other Chithra window and try again.
+- God's Eye stream/download needs internet (WebTorrent loads from CDN).
 
 Note: This package includes API keys needed to run the app.
       Share only with people you trust. Do not upload publicly.
