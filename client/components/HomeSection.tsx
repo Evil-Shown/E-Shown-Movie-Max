@@ -4,17 +4,17 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ReactNode } from "react";
 
 interface HomeSectionProps {
-  className: string;
+  className?: string;
   children: ReactNode;
 }
 
-export default function HomeSection({ className, children }: HomeSectionProps) {
+export default function HomeSection({ className = "", children }: HomeSectionProps) {
   const prefersReducedMotion = useReducedMotion();
 
   return (
     <motion.section
       className={`home-section ${className}`}
-      initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.96 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.98 }}
       whileInView={prefersReducedMotion ? undefined : { opacity: 1, scale: 1 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}

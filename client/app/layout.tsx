@@ -54,7 +54,7 @@ export default function RootLayout({
           <QuickViewProvider>
             <NavigationProgress />
             <Header />
-            <main className="flex-1 pt-[96px] sm:pt-[118px]">
+            <main className="site-main flex-1">
               <PageTransition>{children}</PageTransition>
             </main>
             <Footer />

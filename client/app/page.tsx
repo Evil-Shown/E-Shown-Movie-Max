@@ -11,7 +11,7 @@ export default async function HomePage() {
     <>
       <HeroBanner movie={featured} />
 
-      <HomeSection className="section-base py-14">
+      <HomeSection className="section-base py-12">
         <MovieRow
           embedded
           eyebrow="Popular Now"
@@ -23,7 +23,7 @@ export default async function HomePage() {
         />
       </HomeSection>
 
-      <HomeSection className="section-alt py-14">
+      <HomeSection className="section-alt py-12">
         <MovieRow
           embedded
           eyebrow="In Theaters"
@@ -33,7 +33,7 @@ export default async function HomePage() {
         />
       </HomeSection>
 
-      <HomeSection className="section-surface py-14">
+      <HomeSection className="section-surface py-12">
         <MovieRow
           embedded
           eyebrow="Critics' Choice"
@@ -43,11 +43,11 @@ export default async function HomePage() {
         />
       </HomeSection>
 
-      <HomeSection className="section-alt py-14">
+      <HomeSection className="section-alt py-12">
         <MovieRow embedded eyebrow="Genre Spotlight" title="Sci-Fi & Beyond" movies={sciFi} />
       </HomeSection>
 
-      <HomeSection className="section-base py-14">
+      <HomeSection className="section-base py-12">
         <MovieRow embedded eyebrow="Genre Spotlight" title="Drama Collection" movies={drama} />
       </HomeSection>
 
