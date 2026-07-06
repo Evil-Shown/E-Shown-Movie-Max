@@ -10,10 +10,84 @@ type TorrentResult = {
   size?: string;
   uploaded?: string;
   _providers?: string[];
+  _providerHint?: string;
+  link?: string;
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
 const RECENT_SEARCHES_KEY = "tboom_recent_searches";
+const WEBTORRENT_FALLBACK_SCRIPT_ID = "webtorrent-browser-fallback";
+const WEBTORRENT_FALLBACK_SCRIPT_SRC = "https://cdn.jsdelivr.net/npm/webtorrent@latest/dist/webtorrent.min.js";
+
+type WebTorrentLikeCtor = new () => {
+  add: (
+    magnetUri: string,
+    callback: (torrent: {
+      infoHash?: string;
+      numPeers?: number;
+      progress?: number;
+      downloadSpeed?: number;
+      on?: (event: string, cb: () => void) => void;
+      files: Array<{
+        name: string;
+        renderTo: (video: HTMLVideoElement, cb: (error: Error | null) => void) => void;
+        getBlobURL?: (cb: (error: Error | null, url: string) => void) => void;
+      }>;
+    }) => void
+  ) => void;
+  destroy: () => Promise<void> | void;
+};
+
+declare global {
+  interface Window {
+    WebTorrent?: WebTorrentLikeCtor;
+  }
+}
+
+function hasBrowserTorrentPrerequisites() {
+  return typeof window !== "undefined" && typeof window.RTCPeerConnection !== "undefined";
+}
+
+function loadWebTorrentFromCdn(): Promise<WebTorrentLikeCtor> {
+  return new Promise((resolve, reject) => {
+    if (window.WebTorrent) {
+      resolve(window.WebTorrent);
+      return;
+    }
+
+    const existing = document.getElementById(WEBTORRENT_FALLBACK_SCRIPT_ID) as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener("load", () => {
+        if (window.WebTorrent) resolve(window.WebTorrent);
+        else reject(new Error("WebTorrent fallback did not expose constructor."));
+      });
+      existing.addEventListener("error", () => reject(new Error("WebTorrent fallback script failed to load.")));
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = WEBTORRENT_FALLBACK_SCRIPT_ID;
+    script.src = WEBTORRENT_FALLBACK_SCRIPT_SRC;
+    script.async = true;
+    script.onload = () => {
+      if (window.WebTorrent) resolve(window.WebTorrent);
+      else reject(new Error("WebTorrent fallback did not expose constructor."));
+    };
+    script.onerror = () => reject(new Error("WebTorrent fallback script failed to load."));
+    document.head.appendChild(script);
+  });
+}
+
+async function loadWebTorrentCtor(): Promise<WebTorrentLikeCtor> {
+  try {
+    const webTorrentModule = await import("webtorrent");
+    const ctor = (webTorrentModule.default ?? webTorrentModule) as WebTorrentLikeCtor;
+    if (typeof ctor === "function") return ctor;
+    throw new Error("Invalid WebTorrent module export.");
+  } catch {
+    return loadWebTorrentFromCdn();
+  }
+}
 
 type ParsedTitle = {
   cleanTitle: string;
@@ -204,11 +278,52 @@ export default function TBoomPage() {
     speedMbps: 0
   });
   const [subtitleTracks, setSubtitleTracks] = useState<Array<{ label: string; src: string }>>([]);
+  const [resolvingMagnetName, setResolvingMagnetName] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ type: "info" | "success" | "warning"; text: string } | null>(null);
+  const [checkingSecurityName, setCheckingSecurityName] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackTime, setPlaybackTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const clientRef = useRef<unknown>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timeUpdateHandlerRef = useRef<(() => void) | null>(null);
 
   const trimmedQuery = useMemo(() => query.trim(), [query]);
+
+  function showActionMessage(type: "info" | "success" | "warning", text: string) {
+    setActionMessage({ type, text });
+    window.setTimeout(() => {
+      setActionMessage((current) => (current?.text === text ? null : current));
+    }, 2800);
+  }
+
+  function extractInfoHash(input?: string) {
+    const value = (input || "").trim();
+    if (!value) return "";
+    if (/^[a-fA-F0-9]{40}$/.test(value)) return value.toLowerCase();
+    const match = value.match(/btih:([a-zA-Z0-9]+)/i);
+    return match?.[1]?.toLowerCase() || "";
+  }
+
+  function triggerMagnetDownload(magnetHref: string) {
+    const anchor = document.createElement("a");
+    anchor.href = magnetHref;
+    anchor.rel = "noopener noreferrer";
+    anchor.style.display = "none";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+
+    window.setTimeout(() => {
+      showActionMessage(
+        "warning",
+        "If download did not start, set qBittorrent or Free Download Manager as your magnet handler."
+      );
+    }, 1200);
+  }
 
   function saveRecentSearch(term: string) {
     const normalized = term.trim();
@@ -321,6 +436,95 @@ export default function TBoomPage() {
     }
   }
 
+  async function resolveMagnetForTorrent(torrent: TorrentResult) {
+    const uploadName = torrent.name || "";
+    if (!uploadName) return;
+    setResolvingMagnetName(uploadName);
+    setError("");
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/search/resolve-magnet`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: torrent.name,
+          magnet: torrent.magnet,
+          providerHint: torrent._providerHint
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.magnet) {
+        setError(data?.error || "Could not resolve magnet for this upload.");
+        return;
+      }
+
+      setResults((prev) =>
+        prev.map((item) =>
+          item.name === torrent.name && item.size === torrent.size && item.uploaded === torrent.uploaded
+            ? { ...item, magnet: data.magnet }
+            : item
+        )
+      );
+      showActionMessage("success", "Magnet resolved. Stream/Download is ready.");
+    } catch {
+      setError("Magnet resolving failed. Try again.");
+    } finally {
+      setResolvingMagnetName(null);
+    }
+  }
+
+  async function checkSecurityForTorrent(torrent: TorrentResult) {
+    const hash = extractInfoHash(torrent.magnet);
+    if (!hash) {
+      showActionMessage("warning", "Security check unavailable: hash missing.");
+      return;
+    }
+
+    setCheckingSecurityName(torrent.name || "");
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/security/virustotal/report?hash=${encodeURIComponent(hash)}`);
+      const data = await response.json();
+      if (!response.ok) {
+        showActionMessage("warning", data?.error || "Virus report unavailable right now.");
+        return;
+      }
+
+      if (data.verdict === "risky") {
+        showActionMessage(
+          "warning",
+          `Security warning: malicious=${data.stats?.malicious || 0}, suspicious=${data.stats?.suspicious || 0}.`
+        );
+      } else {
+        showActionMessage("success", "Security check: no malicious flags in the latest VirusTotal report.");
+      }
+    } catch {
+      showActionMessage("warning", "Security service failed. Please try again.");
+    } finally {
+      setCheckingSecurityName(null);
+    }
+  }
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onLoadedMetadata = () => setDuration(video.duration || 0);
+    const onTimeUpdate = () => setPlaybackTime(video.currentTime || 0);
+
+    video.addEventListener("play", onPlay);
+    video.addEventListener("pause", onPause);
+    video.addEventListener("loadedmetadata", onLoadedMetadata);
+    video.addEventListener("timeupdate", onTimeUpdate);
+
+    return () => {
+      video.removeEventListener("play", onPlay);
+      video.removeEventListener("pause", onPause);
+      video.removeEventListener("loadedmetadata", onLoadedMetadata);
+      video.removeEventListener("timeupdate", onTimeUpdate);
+    };
+  }, [streamingMagnet]);
+
   useEffect(() => {
     return () => {
       if (searchDebounceRef.current) {
@@ -334,21 +538,123 @@ export default function TBoomPage() {
     };
   }, []);
 
+  function formatTime(seconds: number) {
+    const safe = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+    const h = Math.floor(safe / 3600);
+    const m = Math.floor((safe % 3600) / 60);
+    const s = safe % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
+  function resetPlayerUiState() {
+    setStreamReady(false);
+    setStreamStats({ peers: 0, progress: 0, speedMbps: 0 });
+    setSubtitleTracks([]);
+    setIsPlaying(false);
+    setPlaybackTime(0);
+    setDuration(0);
+    setPlaybackRate(1);
+  }
+
+  function clearVideoElement() {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (timeUpdateHandlerRef.current) {
+      video.removeEventListener("timeupdate", timeUpdateHandlerRef.current);
+      timeUpdateHandlerRef.current = null;
+    }
+    video.pause();
+    video.removeAttribute("src");
+    while (video.firstChild) {
+      video.removeChild(video.firstChild);
+    }
+    video.load();
+  }
+
   async function stopStreaming() {
     const client = clientRef.current as { destroy: () => Promise<void> | void } | null;
-    if (!client) return;
-
     setIsStopping(true);
-    try {
-      await client.destroy();
-    } finally {
-      clientRef.current = null;
-      setStreamingMagnet(null);
-      setStreamingTitle("");
-      setStreamReady(false);
-      setStreamStats({ peers: 0, progress: 0, speedMbps: 0 });
-      setSubtitleTracks([]);
+
+    // Instant user feedback and immediate playback stop.
+    clearVideoElement();
+    setStreamingMagnet(null);
+    setStreamingTitle("");
+    resetPlayerUiState();
+
+    if (!client) {
       setIsStopping(false);
+      return;
+    }
+
+    clientRef.current = null;
+    Promise.resolve(client.destroy())
+      .catch(() => {
+        // Ignore destroy errors after forced UI stop.
+      })
+      .finally(() => {
+        setIsStopping(false);
+      });
+  }
+
+  function handleTogglePlay() {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(() => {
+        showActionMessage("warning", "Playback start was blocked by browser policy.");
+      });
+    } else {
+      videoRef.current.pause();
+    }
+  }
+
+  function handleSeek(seconds: number) {
+    if (!videoRef.current) return;
+    videoRef.current.currentTime = seconds;
+    setPlaybackTime(seconds);
+  }
+
+  function handleVolume(nextVolume: number) {
+    if (!videoRef.current) return;
+    const normalized = Math.max(0, Math.min(1, nextVolume));
+    videoRef.current.volume = normalized;
+    setVolume(normalized);
+  }
+
+  function handleSpeed(nextRate: number) {
+    if (!videoRef.current) return;
+    videoRef.current.playbackRate = nextRate;
+    setPlaybackRate(nextRate);
+  }
+
+  async function handlePictureInPicture() {
+    const video = videoRef.current;
+    if (!video || !document.pictureInPictureEnabled) {
+      showActionMessage("warning", "Picture-in-picture is not available in this browser.");
+      return;
+    }
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else {
+        await video.requestPictureInPicture();
+      }
+    } catch {
+      showActionMessage("warning", "Could not toggle picture-in-picture.");
+    }
+  }
+
+  async function handleFullscreen() {
+    const video = videoRef.current;
+    if (!video) return;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await video.requestFullscreen();
+      }
+    } catch {
+      showActionMessage("warning", "Could not toggle fullscreen.");
     }
   }
 
@@ -429,38 +735,23 @@ export default function TBoomPage() {
       return;
     }
 
+    if (!hasBrowserTorrentPrerequisites()) {
+      setError("Browser streaming is not supported here. Use 'Download via Torrent' in qBittorrent/FDM.");
+      return;
+    }
+
     if (clientRef.current) {
       await stopStreaming();
     }
 
     setStreamingMagnet(magnetUri);
     setStreamingTitle(title ?? "Streaming now");
-    setStreamReady(false);
-    setStreamStats({ peers: 0, progress: 0, speedMbps: 0 });
-    setSubtitleTracks([]);
+    resetPlayerUiState();
     setError("");
 
     try {
-      const webTorrentModule = await import("webtorrent");
-      const WebTorrentCtor = webTorrentModule.default ?? webTorrentModule;
-      const client = new (WebTorrentCtor as new () => {
-        add: (
-          magnetUri: string,
-          callback: (torrent: {
-            infoHash?: string;
-            numPeers?: number;
-            progress?: number;
-            downloadSpeed?: number;
-            on?: (event: string, cb: () => void) => void;
-            files: Array<{
-              name: string;
-              renderTo: (video: HTMLVideoElement, cb: (error: Error | null) => void) => void;
-              getBlobURL?: (cb: (error: Error | null, url: string) => void) => void;
-            }>;
-          }) => void
-        ) => void;
-        destroy: () => Promise<void> | void;
-      })();
+      const WebTorrentCtor = await loadWebTorrentCtor();
+      const client = new WebTorrentCtor();
       clientRef.current = client;
 
       client.add(magnetUri, (torrent) => {
@@ -520,12 +811,23 @@ export default function TBoomPage() {
           if (videoRef.current && Number.isFinite(savedPosition) && savedPosition > 0) {
             videoRef.current.currentTime = savedPosition;
           }
+          if (videoRef.current) {
+            videoRef.current.volume = volume;
+            videoRef.current.playbackRate = playbackRate;
+          }
 
-          const onTimeUpdate = () => {
+          const onPersistTimeUpdate = () => {
             if (!videoRef.current) return;
             localStorage.setItem(resumeKey, String(videoRef.current.currentTime));
           };
-          videoRef.current?.addEventListener("timeupdate", onTimeUpdate);
+          if (timeUpdateHandlerRef.current && videoRef.current) {
+            videoRef.current.removeEventListener("timeupdate", timeUpdateHandlerRef.current);
+          }
+          timeUpdateHandlerRef.current = onPersistTimeUpdate;
+          videoRef.current?.addEventListener("timeupdate", onPersistTimeUpdate);
+          videoRef.current?.play().catch(() => {
+            showActionMessage("info", "Press Play to start streaming.");
+          });
         });
 
         const updateStats = () => {
@@ -540,7 +842,7 @@ export default function TBoomPage() {
         torrent.on?.("wire", updateStats);
       });
     } catch {
-      setError("WebTorrent failed to initialize in your browser.");
+      setError("WebTorrent failed to initialize. Use 'Download via Torrent' as fallback.");
       stopStreaming();
     }
   }
@@ -550,7 +852,7 @@ export default function TBoomPage() {
       <div className="mx-auto max-w-[980px]">
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-sm)] sm:p-8">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-cool)]">Torrent Search</p>
-          <h1 className="mt-2 font-[var(--font-playfair)] text-[34px] font-bold text-[var(--text-primary)]">T-BOOM</h1>
+          <h1 className="mt-2 font-[var(--font-playfair)] text-[34px] font-bold text-[var(--text-primary)]">THE GOD&apos;S EYE</h1>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
             Search the world&apos;s uploads and instantly stream or download anything available.
           </p>
@@ -658,7 +960,7 @@ export default function TBoomPage() {
             </p>
           )}
           {searched && !loading && !error && (
-            <p className="mt-4 rounded-lg border border-emerald-300/60 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            <p className="mt-4 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-main)] px-3 py-2 text-sm text-[var(--text-secondary)]">
               Found {flatResultCount} upload{flatResultCount === 1 ? "" : "s"} in {groupedResults.length} grouped title
               {groupedResults.length === 1 ? "" : "s"} for &quot;{activeQuery}&quot;.
             </p>
@@ -666,12 +968,18 @@ export default function TBoomPage() {
           {(providerMeta.providersUsed.length > 0 || providerMeta.providersFailed.length > 0) && (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               {providerMeta.providersUsed.map((provider) => (
-                <span key={`used-${provider}`} className="rounded-full border border-emerald-300/60 bg-emerald-50 px-3 py-1 text-emerald-700">
+                <span
+                  key={`used-${provider}`}
+                  className="rounded-full border border-[var(--accent-primary)]/35 bg-[var(--accent-primary)]/10 px-3 py-1 text-[var(--accent-primary)]"
+                >
                   Provider: {provider}
                 </span>
               ))}
               {providerMeta.providersFailed.map((provider) => (
-                <span key={`failed-${provider}`} className="rounded-full border border-amber-300/60 bg-amber-50 px-3 py-1 text-amber-700">
+                <span
+                  key={`failed-${provider}`}
+                  className="rounded-full border border-[var(--border-strong)] bg-[var(--bg-main)] px-3 py-1 text-[var(--text-secondary)]"
+                >
                   Failover used ({provider} down)
                 </span>
               ))}
@@ -710,7 +1018,24 @@ export default function TBoomPage() {
           {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
         </div>
 
+        {actionMessage && (
+          <div className="pointer-events-none fixed right-5 top-24 z-[140] max-w-md">
+            <div
+              className={`rounded-xl border px-4 py-3 text-sm shadow-lg backdrop-blur-sm ${
+                actionMessage.type === "success"
+                  ? "border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]"
+                  : actionMessage.type === "warning"
+                    ? "border-[var(--accent-cool)]/45 bg-[var(--accent-cool)]/14 text-[var(--accent-cool)]"
+                    : "border-[var(--border)] bg-[var(--bg-card)]/95 text-[var(--text-secondary)]"
+              }`}
+            >
+              {actionMessage.text}
+            </div>
+          </div>
+        )}
+
         <div id="results" className="mt-8 space-y-4">
+
           <section
             className={`rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-sm)] ${
               streamingMagnet ? "" : "hidden"
@@ -736,7 +1061,84 @@ export default function TBoomPage() {
                 {isStopping ? "Stopping..." : "Stop"}
               </button>
             </div>
-            <video ref={videoRef} controls className="mt-4 w-full rounded-xl border border-[var(--border)] bg-black" />
+            <video ref={videoRef} className="mt-4 w-full rounded-xl border border-[var(--border)] bg-black" />
+            <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--bg-main)] p-3">
+              <div className="mb-2 flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                <span>{formatTime(playbackTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={duration || 0}
+                value={Math.min(playbackTime, duration || 0)}
+                onChange={(event) => handleSeek(Number(event.target.value))}
+                className="w-full accent-[var(--accent-primary)]"
+              />
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleTogglePlay}
+                  className="inline-flex rounded-full bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-95"
+                >
+                  {isPlaying ? "Pause" : "Play"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSeek(Math.max(0, playbackTime - 10))}
+                  className="inline-flex rounded-full border border-[var(--border-strong)] px-3 py-2 text-xs font-medium text-[var(--text-primary)]"
+                >
+                  -10s
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSeek(Math.min(duration || playbackTime + 10, playbackTime + 10))}
+                  className="inline-flex rounded-full border border-[var(--border-strong)] px-3 py-2 text-xs font-medium text-[var(--text-primary)]"
+                >
+                  +10s
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePictureInPicture}
+                  className="inline-flex rounded-full border border-[var(--border-strong)] px-3 py-2 text-xs font-medium text-[var(--text-primary)]"
+                >
+                  PiP
+                </button>
+                <button
+                  type="button"
+                  onClick={handleFullscreen}
+                  className="inline-flex rounded-full border border-[var(--border-strong)] px-3 py-2 text-xs font-medium text-[var(--text-primary)]"
+                >
+                  Fullscreen
+                </button>
+                <label className="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] px-3 py-2 text-xs text-[var(--text-primary)]">
+                  Volume
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={volume}
+                    onChange={(event) => handleVolume(Number(event.target.value))}
+                    className="w-20 accent-[var(--accent-primary)]"
+                  />
+                </label>
+                <label className="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] px-3 py-2 text-xs text-[var(--text-primary)]">
+                  Speed
+                  <select
+                    value={playbackRate}
+                    onChange={(event) => handleSpeed(Number(event.target.value))}
+                    className="bg-transparent text-[var(--text-primary)]"
+                  >
+                    <option value={0.75}>0.75x</option>
+                    <option value={1}>1x</option>
+                    <option value={1.25}>1.25x</option>
+                    <option value={1.5}>1.5x</option>
+                    <option value={2}>2x</option>
+                  </select>
+                </label>
+              </div>
+            </div>
             {subtitleTracks.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {subtitleTracks.map((track) => (
@@ -813,29 +1215,29 @@ export default function TBoomPage() {
                         <div key={`${group.key}-${index}`} className="rounded-xl border border-[var(--border)] bg-[var(--bg-main)] p-4">
                           <p className="text-sm font-medium text-[var(--text-primary)]">{torrent.name || "Unknown upload title"}</p>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            <span className="rounded-full border border-emerald-300/60 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                            <span className="rounded-full border border-emerald-500/35 bg-gradient-to-r from-emerald-500/20 to-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-[0_4px_12px_rgba(16,185,129,0.18)]">
                               {torrent.health}
                             </span>
-                            <span className="rounded-full border border-blue-300/60 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                            <span className="rounded-full border border-sky-500/35 bg-gradient-to-r from-sky-500/20 to-cyan-400/10 px-3 py-1 text-xs font-semibold text-sky-700 shadow-[0_4px_12px_rgba(14,165,233,0.18)]">
                               {torrent.readiness}
                             </span>
                             {torrent.parsed.quality && (
-                              <span className="rounded-full bg-[var(--bg-card)] px-2 py-1 text-xs text-[var(--text-secondary)]">
+                              <span className="rounded-full border border-violet-500/25 bg-violet-500/10 px-2 py-1 text-xs font-semibold text-violet-700">
                                 {torrent.parsed.quality}
                               </span>
                             )}
                             {torrent.parsed.source && (
-                              <span className="rounded-full bg-[var(--bg-card)] px-2 py-1 text-xs text-[var(--text-secondary)]">
+                              <span className="rounded-full border border-fuchsia-500/25 bg-fuchsia-500/10 px-2 py-1 text-xs font-semibold text-fuchsia-700">
                                 {torrent.parsed.source}
                               </span>
                             )}
                             {torrent.parsed.codec && (
-                              <span className="rounded-full bg-[var(--bg-card)] px-2 py-1 text-xs text-[var(--text-secondary)]">
+                              <span className="rounded-full border border-[var(--border-strong)] bg-[var(--bg-card)] px-2 py-1 text-xs font-medium text-[var(--text-primary)]">
                                 {torrent.parsed.codec}
                               </span>
                             )}
                             {torrent.parsed.language && (
-                              <span className="rounded-full bg-[var(--bg-card)] px-2 py-1 text-xs text-[var(--text-secondary)]">
+                              <span className="rounded-full border border-[var(--border-strong)] bg-[var(--bg-card)] px-2 py-1 text-xs font-medium text-[var(--text-primary)]">
                                 {torrent.parsed.language}
                               </span>
                             )}
@@ -847,21 +1249,29 @@ export default function TBoomPage() {
                           </p>
                           {magnetHref ? (
                             <div className="mt-3 flex flex-wrap gap-2">
-                              <a
-                                href={magnetHref}
-                                onClick={() => trackAction("download", activeQuery)}
-                                className="inline-flex rounded-full border border-[var(--border-strong)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  trackAction("download", activeQuery);
+                                  showActionMessage(
+                                    "info",
+                                    "Tip: open this magnet in qBittorrent or Free Download Manager for faster speed, pause/resume, and stability."
+                                  );
+                                  triggerMagnetDownload(magnetHref);
+                                }}
+                                className="inline-flex rounded-full border border-[var(--accent-primary)]/55 bg-gradient-to-r from-[var(--accent-primary)]/22 to-[#f2bf79]/26 px-4 py-2 text-sm font-semibold text-[#9f4f1f] shadow-[0_8px_18px_rgba(201,106,43,0.22)] transition duration-200 hover:-translate-y-0.5 hover:from-[var(--accent-primary)]/30 hover:to-[#f2bf79]/34"
                               >
                                 Download via Torrent
-                              </a>
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => {
                                   trackAction("stream", activeQuery);
+                                  showActionMessage("info", "Preparing secure stream...");
                                   startTorrent(torrent.magnet, torrent.name);
                                 }}
                                 disabled={isStreaming}
-                                className="inline-flex rounded-full bg-[var(--accent-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+                                className="inline-flex rounded-full bg-gradient-to-r from-[var(--accent-primary)] to-[#e0883d] px-4 py-2 text-sm font-semibold text-[var(--text-inverse)] shadow-[0_10px_22px_rgba(201,106,43,0.35)] transition duration-200 hover:-translate-y-0.5 hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
                               >
                                 {isStreaming ? "Streaming..." : "Stream"}
                               </button>
@@ -869,14 +1279,33 @@ export default function TBoomPage() {
                                 type="button"
                                 onClick={async () => {
                                   await navigator.clipboard.writeText(magnetHref);
+                                  showActionMessage("success", "Magnet copied. Paste into your downloader/client.");
                                 }}
-                                className="inline-flex rounded-full border border-[var(--border-strong)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
+                                className="inline-flex rounded-full border border-[#6c63ff]/40 bg-gradient-to-r from-[#6c63ff]/16 to-[#8b5cf6]/14 px-4 py-2 text-sm font-semibold text-[#4f46e5] shadow-[0_8px_16px_rgba(99,102,241,0.18)] transition duration-200 hover:-translate-y-0.5 hover:from-[#6c63ff]/22 hover:to-[#8b5cf6]/20"
                               >
                                 Copy Magnet
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => checkSecurityForTorrent(torrent)}
+                                disabled={checkingSecurityName === torrent.name}
+                                className="inline-flex rounded-full border border-teal-500/45 bg-gradient-to-r from-teal-500/18 to-cyan-400/16 px-4 py-2 text-sm font-semibold text-teal-700 shadow-[0_8px_16px_rgba(20,184,166,0.18)] transition duration-200 hover:-translate-y-0.5 hover:from-teal-500/24 hover:to-cyan-400/22 disabled:cursor-not-allowed disabled:opacity-70"
+                              >
+                                {checkingSecurityName === torrent.name ? "Checking..." : "Security Check"}
+                              </button>
                             </div>
                           ) : (
-                            <p className="mt-3 text-sm text-[var(--text-secondary)]">Magnet link unavailable.</p>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <p className="text-sm text-[var(--text-secondary)]">Magnet link unavailable.</p>
+                              <button
+                                type="button"
+                                onClick={() => resolveMagnetForTorrent(torrent)}
+                                disabled={resolvingMagnetName === torrent.name}
+                                className="inline-flex rounded-full border border-[var(--border-strong)] px-3 py-1 text-xs font-medium text-[var(--text-primary)] transition hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] disabled:cursor-not-allowed disabled:opacity-70"
+                              >
+                                {resolvingMagnetName === torrent.name ? "Resolving..." : "Resolve Magnet"}
+                              </button>
+                            </div>
                           )}
                         </div>
                       );

@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
@@ -16,6 +17,7 @@ const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 60;
 const LOCAL_INDEX_MAX_ENTRIES = 2500;
 const BACKGROUND_REFRESH_MS = 10 * 60 * 1000;
+const VIRUSTOTAL_API_KEY = process.env.VIRUSTOTAL_API_KEY || "";
 
 const searchCache = new Map();
 const inFlightSearches = new Map();
@@ -236,7 +238,9 @@ function mapTorrentSearchApiItem(item) {
         leechers: Number(item?.peers || item?.leechers || 0),
         size: item?.size || "",
         uploaded: item?.time || item?.uploaded || "",
-        magnet: item?.magnet || item?.link || ""
+        magnet: item?.magnet || "",
+        link: item?.link || "",
+        _providerHint: "provider_torrent_search_api"
     };
 }
 
@@ -413,6 +417,93 @@ app.post("/api/analytics/download", (req, res) => {
     const query = sanitizeQuery(req.body?.query);
     incrementAnalytics(analytics.downloaded, query);
     res.json({ ok: true });
+});
+
+app.post("/api/search/resolve-magnet", async (req, res) => {
+    const name = sanitizeQuery(req.body?.name);
+    const providerHint = sanitizeQuery(req.body?.providerHint);
+    const existingMagnet = sanitizeQuery(req.body?.magnet);
+
+    if (existingMagnet) {
+        return res.json({ magnet: existingMagnet });
+    }
+
+    if (!name || name.length < 2) {
+        return res.status(400).json({ error: "Valid 'name' is required." });
+    }
+
+    try {
+        if (providerHint === "provider_torrent_search_api" || !providerHint) {
+            const candidates = await TorrentSearchApi.search(name, "All", 8);
+            for (const candidate of candidates) {
+                try {
+                    const resolvedMagnet = await TorrentSearchApi.getMagnet(candidate);
+                    const normalized = sanitizeQuery(resolvedMagnet);
+                    if (normalized.startsWith("magnet:?")) {
+                        return res.json({ magnet: normalized });
+                    }
+                } catch {
+                    // Try next candidate.
+                }
+            }
+        }
+
+        return res.status(404).json({ error: "Magnet not found for this upload." });
+    } catch (error) {
+        console.error("Resolve magnet error:", error.message);
+        return res.status(502).json({ error: "Unable to resolve magnet currently." });
+    }
+});
+
+app.get("/api/security/virustotal/report", async (req, res) => {
+    const hash = sanitizeQuery(req.query.hash).toLowerCase();
+    if (!hash || hash.length < 20) {
+        return res.status(400).json({ error: "Valid torrent hash is required." });
+    }
+
+    if (!VIRUSTOTAL_API_KEY) {
+        return res.status(503).json({
+            error: "VirusTotal is not configured.",
+            configured: false
+        });
+    }
+
+    try {
+        const response = await axios.get(`https://www.virustotal.com/api/v3/files/${encodeURIComponent(hash)}`, {
+            headers: {
+                "x-apikey": VIRUSTOTAL_API_KEY
+            },
+            timeout: REQUEST_TIMEOUT_MS
+        });
+
+        const stats = response.data?.data?.attributes?.last_analysis_stats || {};
+        const malicious = Number(stats.malicious || 0);
+        const suspicious = Number(stats.suspicious || 0);
+        const harmless = Number(stats.harmless || 0);
+        const undetected = Number(stats.undetected || 0);
+
+        return res.json({
+            configured: true,
+            hash,
+            verdict: malicious > 0 || suspicious > 0 ? "risky" : "clean_or_unknown",
+            stats: { malicious, suspicious, harmless, undetected }
+        });
+    } catch (error) {
+        if (error?.response?.status === 404) {
+            return res.status(404).json({
+                configured: true,
+                hash,
+                verdict: "unknown",
+                error: "No VirusTotal report found for this hash yet."
+            });
+        }
+
+        console.error("VirusTotal report error:", error.message);
+        return res.status(502).json({
+            configured: true,
+            error: "Could not fetch VirusTotal report right now."
+        });
+    }
 });
 
 const PORT = 5000;
