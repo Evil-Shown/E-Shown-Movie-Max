@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { Cinzel, Geist_Mono, Inter, Noto_Sans_Sinhala, Playfair_Display } from "next/font/google";
+import { Cinzel, Inter, Noto_Sans_Sinhala, Playfair_Display } from "next/font/google";
+import { Suspense } from "react";
 import BackToTop from "@/components/BackToTop";
+import CinemaIntroLoader from "@/components/CinemaIntroLoader";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import NavigationProgress from "@/components/NavigationProgress";
 import PageTransition from "@/components/PageTransition";
 import QueryProvider from "@/components/QueryProvider";
 import QuickViewProvider from "@/components/QuickViewProvider";
-import CinemaIntro from "@/components/CinemaIntro";
 import UserLibraryProvider from "@/components/UserLibraryProvider";
 import VideoPlayerProvider from "@/components/VideoPlayerProvider";
 import { BRAND_DESCRIPTION, BRAND_NAME } from "@/lib/brand";
@@ -18,11 +19,7 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 const playfair = Playfair_Display({
@@ -30,18 +27,21 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
   style: ["normal", "italic"],
   weight: ["400", "700"],
+  display: "swap",
 });
 
 const cinzel = Cinzel({
   variable: "--font-cinzel",
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["400", "600"],
+  display: "swap",
 });
 
 const notoSinhala = Noto_Sans_Sinhala({
   variable: "--font-sinhala",
   subsets: ["sinhala"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -53,6 +53,10 @@ export const metadata: Metadata = {
   applicationName: BRAND_NAME,
 };
 
+function HeaderFallback() {
+  return <div className="h-[72px] w-full shrink-0" aria-hidden />;
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -61,24 +65,22 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${geistMono.variable} ${playfair.variable} ${cinzel.variable} ${notoSinhala.variable} h-full antialiased`}
+      className={`${inter.variable} ${playfair.variable} ${cinzel.variable} ${notoSinhala.variable} h-full antialiased`}
     >
       <head>
-        <link rel="dns-prefetch" href="https://vsembed.ru" />
-        <link rel="dns-prefetch" href="https://vidlink.pro" />
-        <link rel="dns-prefetch" href="https://multiembed.mov" />
-        <link rel="dns-prefetch" href="https://embed.su" />
-        <link rel="preconnect" href="https://vidlink.pro" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://vsembed.ru" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://image.tmdb.org" />
+        <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="anonymous" />
       </head>
       <body className="flex min-h-full flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
-        <CinemaIntro />
+        <CinemaIntroLoader />
         <QueryProvider>
           <UserLibraryProvider>
             <VideoPlayerProvider>
               <QuickViewProvider>
                 <NavigationProgress />
-                <Header />
+                <Suspense fallback={<HeaderFallback />}>
+                  <Header />
+                </Suspense>
                 <main className="site-main flex-1">
                   <PageTransition>{children}</PageTransition>
                 </main>

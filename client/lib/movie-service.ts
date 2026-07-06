@@ -10,6 +10,7 @@ import {
   getSimilarMovies as getLocalSimilarMovies,
 } from "@/lib/movies";
 import type { Genre, MediaType, Movie } from "@/lib/types";
+import { cache } from "react";
 import { fetchOmdbByImdbId, isOmdbConfigured, searchOmdb, searchOmdbSeries } from "@/lib/omdb/client";
 import { mapOmdbDetail, mapOmdbSearchItem } from "@/lib/omdb/map";
 import {
@@ -24,6 +25,7 @@ import {
   fetchTmdbTv,
   fetchTopRated,
   fetchTrendingDay,
+  fetchTvBrowsePage,
   fetchTvPopular,
   isTmdbConfigured,
   searchTmdbMovies,
@@ -166,7 +168,7 @@ export async function getSimilarMovies(movie: Movie, limit = 8): Promise<Movie[]
   return getLocalSimilarMovies(movie, limit);
 }
 
-export async function getHomeCatalog(): Promise<HomeCatalog> {
+export const getHomeCatalog = cache(async function getHomeCatalog(): Promise<HomeCatalog> {
   if (!isTmdbConfigured()) {
     const topRated = [...localMovies].sort((a, b) => b.rating - a.rating).slice(0, 8);
     const heroMovies = getTrendingMovies().slice(0, 5);
@@ -235,7 +237,110 @@ export async function getHomeCatalog(): Promise<HomeCatalog> {
   } catch {
     return getHomeCatalogFallback();
   }
-}
+});
+
+export const getHomeCatalogEssential = cache(async function getHomeCatalogEssential() {
+  if (!isTmdbConfigured()) {
+    return {
+      heroMovies: getTrendingMovies().slice(0, 5),
+      trending: getTrendingMovies(),
+      trendingDay: getTrendingMovies(),
+    };
+  }
+
+  try {
+    const [nowPlaying, trendingDayRes, popular] = await Promise.all([
+      fetchNowPlaying(1),
+      fetchTrendingDay(1),
+      fetchPopular(1),
+    ]);
+
+    const trending = popular.results.map(mapTmdbListItem);
+    const heroMovies = nowPlaying.results.slice(0, 7).map(mapTmdbListItem);
+    const trendingDay = trendingDayRes.results
+      .map(mapTmdbMultiItem)
+      .filter((item): item is Movie => item !== null)
+      .slice(0, 12);
+
+    return {
+      heroMovies: heroMovies.length ? heroMovies : trending.slice(0, 5),
+      trending,
+      trendingDay: trendingDay.length ? trendingDay : trending,
+    };
+  } catch {
+    const fallback = getHomeCatalogFallback();
+    return {
+      heroMovies: fallback.heroMovies,
+      trending: fallback.trending,
+      trendingDay: fallback.trendingDay,
+    };
+  }
+});
+
+export const getHomeCatalogExtended = cache(async function getHomeCatalogExtended() {
+  if (!isTmdbConfigured()) {
+    const topRated = [...localMovies].sort((a, b) => b.rating - a.rating).slice(0, 8);
+    return {
+      trending: getTrendingMovies(),
+      newReleases: getNewReleases(),
+      topRated,
+      popularTv: [] as Movie[],
+      sinhalaCinema: [] as Movie[],
+      sciFi: getLocalMoviesByGenre("Sci-Fi"),
+      drama: getLocalMoviesByGenre("Drama"),
+      stats: buildLocalStats(),
+    };
+  }
+
+  try {
+    const [popular, nowPlaying, topRatedRes, sciFiRes, dramaRes, tvPopularRes, sinhalaRes] =
+      await Promise.all([
+        fetchPopular(1),
+        fetchNowPlaying(1),
+        fetchTopRated(1),
+        discoverMovies({ genre: "Sci-Fi", page: 1 }),
+        discoverMovies({ genre: "Drama", page: 1 }),
+        fetchTvPopular(1),
+        discoverSinhalaCinema(1).catch(() => ({ results: [], page: 1, total_pages: 0, total_results: 0 })),
+      ]);
+
+    const trending = popular.results.map(mapTmdbListItem);
+    const newReleases = nowPlaying.results.map(mapTmdbListItem);
+    const topRated = topRatedRes.results.slice(0, 8).map(mapTmdbListItem);
+    const popularTv = tvPopularRes.results.map(mapTmdbTvListItem);
+    const sinhalaCinema = sinhalaRes.results.map(mapTmdbListItem);
+    const sciFi = sciFiRes.results.map(mapTmdbListItem);
+    const drama = dramaRes.results.map(mapTmdbListItem);
+    const sampled = uniqueMovies([...trending, ...newReleases, ...topRated, ...sciFi, ...drama]);
+
+    return {
+      trending,
+      newReleases,
+      topRated,
+      popularTv,
+      sinhalaCinema,
+      sciFi,
+      drama,
+      stats: {
+        filmCount: popular.total_results,
+        genreCount: allGenres.length,
+        avgRating: computeAvgRating(sampled),
+      },
+    };
+  } catch {
+    const fallback = getHomeCatalogFallback();
+    return {
+      trending: fallback.trending,
+      newReleases: fallback.newReleases,
+      topRated: fallback.topRated,
+      popularTv: fallback.popularTv,
+      sinhalaCinema: fallback.sinhalaCinema,
+      sciFi: fallback.sciFi,
+      drama: fallback.drama,
+      stats: fallback.stats,
+    };
+  }
+});
 
 function getHomeCatalogFallback(): HomeCatalog {
   const topRated = [...localMovies].sort((a, b) => b.rating - a.rating).slice(0, 8);
@@ -313,6 +418,71 @@ export async function browseCatalog(options: {
     page: 1,
     totalPages: 1,
     totalResults: sorted.length,
+    lastLoadedPage: 1,
+  };
+}
+
+export async function browseTvCatalog(options: {
+  genre?: Genre | null;
+  page?: number;
+  pages?: number;
+  sort?: BrowseSort;
+}): Promise<PagedCatalog & { lastLoadedPage: number }> {
+  const startPage = Math.max(1, options.page ?? 1);
+  const pageCount = Math.max(1, options.pages ?? 1);
+  const sort = options.sort ?? "popular";
+
+  if (isTmdbConfigured()) {
+    try {
+      const responses = await Promise.all(
+        Array.from({ length: pageCount }, (_, index) =>
+          fetchTvBrowsePage(startPage + index, {
+            genre: options.genre ?? undefined,
+            sort,
+          })
+        )
+      );
+
+      const seen = new Set<string>();
+      const movies: Movie[] = [];
+
+      for (const response of responses) {
+        for (const item of response.results) {
+          const show = mapTmdbTvListItem(item);
+          if (seen.has(show.id)) continue;
+          seen.add(show.id);
+          movies.push(show);
+        }
+      }
+
+      const last = responses[responses.length - 1];
+
+      return {
+        movies,
+        source: "tmdb",
+        page: startPage,
+        totalPages: last.total_pages,
+        totalResults: last.total_results,
+        lastLoadedPage: startPage + pageCount - 1,
+      };
+    } catch {
+      return {
+        movies: [],
+        source: "tmdb",
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        lastLoadedPage: 1,
+      };
+    }
+  }
+
+  return {
+    movies: [],
+    source: "local",
+    page: 1,
+    totalPages: 1,
+    totalResults: 0,
     lastLoadedPage: 1,
   };
 }

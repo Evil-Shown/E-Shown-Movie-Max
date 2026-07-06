@@ -4,21 +4,42 @@ import InstantSearch from "@/components/InstantSearch";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { BRAND_NAME, BRAND_NAME_SINHALA } from "@/lib/brand";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import styles from "./Header.module.css";
 
 const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/browse", label: "Movies" },
-  { href: "/browse?type=tv", label: "Series" },
+  { href: "/browse", label: "Movies", series: false },
+  { href: "/browse?type=tv", label: "Series", series: true },
   { href: "/watchlist", label: "Watchlist" },
   { href: "/search", label: "Search" },
 ];
 
-function NavLink({ href, label }: { href: string; label: string }) {
+function NavLink({
+  href,
+  label,
+  series,
+}: {
+  href: string;
+  label: string;
+  series?: boolean;
+}) {
   const pathname = usePathname();
-  const active = pathname === href || (href !== "/" && pathname.startsWith(href));
+  const searchParams = useSearchParams();
+  const isBrowse = pathname === "/browse";
+  const isTv = searchParams.get("type") === "tv";
+
+  let active = false;
+  if (href === "/") {
+    active = pathname === "/";
+  } else if (series) {
+    active = isBrowse && isTv;
+  } else if (href === "/browse") {
+    active = isBrowse && !isTv;
+  } else {
+    active = pathname === href || pathname.startsWith(`${href}/`);
+  }
 
   return (
     <Link href={href} className={`${styles.navLink} ${active ? styles.navLinkActive : ""}`}>
@@ -83,7 +104,7 @@ export default function Header() {
         <div className={styles.inner}>
           <nav className={styles.leftNav}>
             {navLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} label={link.label} />
+              <NavLink key={link.href} href={link.href} label={link.label} series={link.series} />
             ))}
           </nav>
 

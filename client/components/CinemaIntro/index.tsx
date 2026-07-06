@@ -70,6 +70,7 @@ export default function CinemaIntro() {
   }, []);
 
   useLayoutEffect(() => {
+    if (process.env.NODE_ENV === "development") return;
     if (hasSeenIntro()) return;
     document.body.style.overflow = "hidden";
     setVisible(true);
