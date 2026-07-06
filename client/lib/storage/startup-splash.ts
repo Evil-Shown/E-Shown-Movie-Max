@@ -1,8 +1,10 @@
 const SESSION_KEY = "chithra_startup_splash_launch";
 const FULL_INTRO_VERSION_KEY = "chithra_desktop_full_intro_version";
-const DEV_SESSION_KEY = "chithra_startup_splash_dev";
 
 export type StartupSplashMode = "none" | "full" | "spline-only";
+
+/** Dev-only: survives client navigations, resets on a full page reload. */
+let devSplashPlayedThisDocument = false;
 
 function isDevDesktopQuery(): boolean {
   if (typeof window === "undefined") return false;
@@ -30,7 +32,7 @@ export function getStartupSplashMode(): StartupSplashMode {
   }
 
   if (process.env.NODE_ENV === "development" && isDevDesktopQuery()) {
-    if (sessionStorage.getItem(DEV_SESSION_KEY) === "1") return "none";
+    if (devSplashPlayedThisDocument) return "none";
     return "full";
   }
 
@@ -48,7 +50,7 @@ export function markStartupSplashStarted(mode: StartupSplashMode): void {
   }
 
   if (process.env.NODE_ENV === "development") {
-    sessionStorage.setItem(DEV_SESSION_KEY, "1");
+    devSplashPlayedThisDocument = true;
   }
 }
 
