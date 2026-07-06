@@ -2,8 +2,6 @@
 
 import LiveTvChannelCard from "@/components/live-tv/LiveTvChannelCard";
 import type { LiveTvChannel } from "@/lib/live-tv/types";
-import { motion, useReducedMotion } from "framer-motion";
-import { scaleInVariant, staggerContainer } from "@/lib/motion";
 
 interface LiveTvChannelGridProps {
   channels: LiveTvChannel[];
@@ -20,32 +18,19 @@ export default function LiveTvChannelGrid({
   onSelect,
   onToggleFavorite,
 }: LiveTvChannelGridProps) {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
-    <motion.div
-      className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4"
-      variants={prefersReducedMotion ? undefined : staggerContainer}
-      initial="hidden"
-      animate="visible"
-      key={channels.map((c) => c.id).join(",")}
-    >
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
       {channels.map((channel, index) => (
-        <motion.div
+        <LiveTvChannelCard
           key={channel.id}
-          variants={prefersReducedMotion ? undefined : scaleInVariant}
-          custom={index}
-          transition={{ delay: index * 0.03 }}
-        >
-          <LiveTvChannelCard
-            channel={channel}
-            isSelected={selectedChannelId === channel.id}
-            isFavorite={favoriteIds.has(channel.id)}
-            onSelect={onSelect}
-            onToggleFavorite={onToggleFavorite}
-          />
-        </motion.div>
+          channel={channel}
+          isSelected={selectedChannelId === channel.id}
+          isFavorite={favoriteIds.has(channel.id)}
+          priorityLogo={index < 14}
+          onSelect={onSelect}
+          onToggleFavorite={onToggleFavorite}
+        />
       ))}
-    </motion.div>
+    </div>
   );
 }

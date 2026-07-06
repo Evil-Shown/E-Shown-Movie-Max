@@ -7,25 +7,82 @@ import LiveTvHero from "@/components/live-tv/LiveTvHero";
 import LiveTvPlayer from "@/components/live-tv/LiveTvPlayer";
 import LiveTvSearchBar from "@/components/live-tv/LiveTvSearchBar";
 import LiveTvSectionRow from "@/components/live-tv/LiveTvSectionRow";
-import LiveTvSkeletonGrid, { LiveTvSkeletonPlayer } from "@/components/live-tv/LiveTvSkeletonGrid";
 import { getFeaturedChannels, LIVE_TV_CHANNELS } from "@/lib/live-tv/channels";
 import {
   getContinueWatchingChannels,
   getFavoriteChannelIds,
-  getRecentlyViewedChannels,
   isFavoriteChannel,
-  recordRecentlyViewed,
   toggleFavoriteChannel,
   upsertContinueWatching,
 } from "@/lib/live-tv/storage";
 import type { LiveTvCategoryFilter, LiveTvChannel } from "@/lib/live-tv/types";
 import { filterChannels } from "@/lib/live-tv/utils";
+import {
+  prefetchChannelLogos,
+  prefetchChannelStream,
+} from "@/lib/live-tv/stream-cache";
 import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+
+interface ChannelSectionProps {
+  title: string;
+  subtitle?: string;
+  icon?: ReactNode;
+  channels: LiveTvChannel[];
+  selectedChannelId?: string | null;
+  favoriteIds: Set<string>;
+  onSelect: (channel: LiveTvChannel) => void;
+  onToggleFavorite: (channel: LiveTvChannel) => void;
+}
+
+function ChannelSection({
+  title,
+  subtitle,
+  icon,
+  channels,
+  selectedChannelId,
+  favoriteIds,
+  onSelect,
+  onToggleFavorite,
+}: ChannelSectionProps) {
+  if (channels.length === 0) return null;
+
+  return (
+    <section className="mb-14">
+      <div className="mb-6 flex items-end justify-between gap-4 border-b border-[var(--border)] pb-4">
+        <div className="flex items-start gap-3">
+          {icon && (
+            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent-primary)]">
+              {icon}
+            </div>
+          )}
+          <div>
+            <h2 className="font-[var(--font-playfair)] text-xl font-bold text-[var(--text-primary)] sm:text-2xl">
+              {title}
+            </h2>
+            {subtitle && (
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p>
+            )}
+          </div>
+        </div>
+        <span className="shrink-0 rounded-full bg-[var(--bg-secondary)] px-3 py-1 text-xs font-medium text-[var(--text-muted)]">
+          {channels.length}
+        </span>
+      </div>
+      <LiveTvChannelGrid
+        channels={channels}
+        selectedChannelId={selectedChannelId}
+        favoriteIds={favoriteIds}
+        onSelect={onSelect}
+        onToggleFavorite={onToggleFavorite}
+      />
+    </section>
+  );
+}
 
 export default function LiveTvPageClient() {
   const afterHydration = useAfterHydration();
-  const [loading, setLoading] = useState(true);
+  const playerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<LiveTvCategoryFilter>("all");
   const [selectedChannel, setSelectedChannel] = useState<LiveTvChannel | null>(() => {
@@ -34,7 +91,6 @@ export default function LiveTvPageClient() {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [favorites, setFavorites] = useState<LiveTvChannel[]>([]);
   const [continueWatching, setContinueWatching] = useState<LiveTvChannel[]>([]);
-  const [recentlyViewed, setRecentlyViewed] = useState<LiveTvChannel[]>([]);
 
   const refreshLibrary = useCallback(() => {
     setFavoriteIds(new Set(getFavoriteChannelIds()));
@@ -44,16 +100,36 @@ export default function LiveTvPageClient() {
         .filter((ch): ch is LiveTvChannel => Boolean(ch))
     );
     setContinueWatching(getContinueWatchingChannels());
-    setRecentlyViewed(getRecentlyViewedChannels());
   }, []);
 
   useEffect(() => {
     refreshLibrary();
-    const timer = window.setTimeout(() => setLoading(false), 400);
-    return () => window.clearTimeout(timer);
   }, [refreshLibrary]);
 
   const featuredChannels = useMemo(() => getFeaturedChannels(), []);
+
+  const localChannels = useMemo(
+    () => LIVE_TV_CHANNELS.filter((ch) => ch.region === "local"),
+    []
+  );
+
+  const internationalChannels = useMemo(
+    () => LIVE_TV_CHANNELS.filter((ch) => ch.region === "international"),
+    []
+  );
+
+  // Warm default channel + visible logos immediately (no artificial delay)
+  useEffect(() => {
+    prefetchChannelStream("hiru-tv");
+    if (selectedChannel) prefetchChannelStream(selectedChannel.id);
+    prefetchChannelLogos(
+      [
+        ...localChannels.slice(0, 18).map((ch) => ch.id),
+        ...featuredChannels.map((ch) => ch.id),
+      ],
+      28
+    );
+  }, [localChannels, featuredChannels, selectedChannel]);
 
   const filteredChannels = useMemo(
     () => filterChannels(LIVE_TV_CHANNELS, searchQuery, activeCategory),
@@ -62,12 +138,15 @@ export default function LiveTvPageClient() {
 
   const handleSelectChannel = useCallback(
     (channel: LiveTvChannel) => {
+      prefetchChannelStream(channel.id);
       setSelectedChannel(channel);
       if (afterHydration) {
-        recordRecentlyViewed(channel.id);
         upsertContinueWatching(channel.id);
         refreshLibrary();
       }
+      requestAnimationFrame(() => {
+        playerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     },
     [afterHydration, refreshLibrary]
   );
@@ -81,14 +160,23 @@ export default function LiveTvPageClient() {
   );
 
   const showSectionRows = !searchQuery.trim() && activeCategory === "all";
+  const isFiltering = !showSectionRows;
+
+  const gridProps = {
+    selectedChannelId: selectedChannel?.id,
+    favoriteIds,
+    onSelect: handleSelectChannel,
+    onToggleFavorite: handleToggleFavorite,
+  };
 
   return (
     <div>
-      <section className="browse-hero-bg px-6 py-16">
+      {/* Header */}
+      <section className="browse-hero-bg px-6 pb-6 pt-10">
         <div className="mx-auto max-w-[1280px]">
           <LiveTvHero />
 
-          <div className="mt-8 flex flex-col gap-6 rounded-[24px] border border-white/60 bg-white/40 p-6 shadow-[0_8px_30px_rgba(0,0,0,0.03)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div className="mt-5 flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-[var(--shadow-sm)] sm:flex-row sm:items-center sm:justify-between sm:p-5">
             <div className="w-full max-w-xl shrink-0">
               <LiveTvSearchBar
                 value={searchQuery}
@@ -96,7 +184,7 @@ export default function LiveTvPageClient() {
                 resultCount={filteredChannels.length}
               />
             </div>
-            <div className="flex-1 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
+            <div className="flex-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
               <LiveTvCategoryTabs
                 activeCategory={activeCategory}
                 onCategoryChange={setActiveCategory}
@@ -106,119 +194,120 @@ export default function LiveTvPageClient() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-[1280px] px-6 pb-16 pt-10">
-        <div className="mb-10">
-          {loading ? (
-            <LiveTvSkeletonPlayer />
-          ) : (
-            <LiveTvPlayer
-              channel={selectedChannel}
-              isFavorite={selectedChannel ? isFavoriteChannel(selectedChannel.id) : false}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          )}
+      {/* Theater player */}
+      <section className="relative px-6 pb-10">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-full max-h-[520px] bg-gradient-to-b from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent"
+          aria-hidden
+        />
+        <div ref={playerRef} className="relative mx-auto max-w-[1100px] scroll-mt-24">
+          <p className="mb-3 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            Now Playing
+          </p>
+          <LiveTvPlayer
+            channel={selectedChannel}
+            isFavorite={selectedChannel ? isFavoriteChannel(selectedChannel.id) : false}
+            onToggleFavorite={handleToggleFavorite}
+          />
+          <p className="mt-3 text-center text-xs text-[var(--text-muted)]">
+            Drag the bar to rewind · tap <span className="font-semibold text-[var(--accent-primary)]">Go Live</span> to catch up
+          </p>
         </div>
+      </section>
 
-        {loading ? (
-          <LiveTvSkeletonGrid />
-        ) : (
-          <>
+      {/* Channel grids */}
+      <div className="mx-auto max-w-[1280px] px-6 pb-20">
+        <>
             {showSectionRows && (
-              <>
+              <div className="mb-12 space-y-2">
                 <LiveTvSectionRow
-                  title="Featured Channels"
-                  subtitle="Popular picks across local and international networks"
+                  title="Featured"
+                  subtitle="Hand-picked channels"
                   channels={featuredChannels}
-                  selectedChannelId={selectedChannel?.id}
-                  favoriteIds={favoriteIds}
-                  onSelect={handleSelectChannel}
-                  onToggleFavorite={handleToggleFavorite}
+                  {...gridProps}
                 />
-
                 <LiveTvSectionRow
                   title="Favorites"
                   channels={favorites}
-                  selectedChannelId={selectedChannel?.id}
-                  favoriteIds={favoriteIds}
-                  onSelect={handleSelectChannel}
-                  onToggleFavorite={handleToggleFavorite}
+                  {...gridProps}
                   emptyState={
                     <LiveTvEmptyState
                       title="No favorites yet"
-                      description="Tap the heart icon on any channel to save it here for quick access."
+                      description="Tap the heart on any channel to save it here."
                     />
                   }
                 />
-
                 <LiveTvSectionRow
                   title="Continue Watching"
-                  subtitle="Pick up where you left off"
+                  subtitle="Channels you've watched recently"
                   channels={continueWatching}
-                  selectedChannelId={selectedChannel?.id}
-                  favoriteIds={favoriteIds}
-                  onSelect={handleSelectChannel}
-                  onToggleFavorite={handleToggleFavorite}
+                  {...gridProps}
                   emptyState={
                     <LiveTvEmptyState
                       title="Nothing to continue"
-                      description="Select a channel above and it will appear here next time you visit."
+                      description="Channels you watch will appear here."
                     />
                   }
                 />
+              </div>
+            )}
 
-                <LiveTvSectionRow
-                  title="Recently Viewed"
-                  channels={recentlyViewed}
-                  selectedChannelId={selectedChannel?.id}
-                  favoriteIds={favoriteIds}
-                  onSelect={handleSelectChannel}
-                  onToggleFavorite={handleToggleFavorite}
-                  emptyState={
-                    <LiveTvEmptyState
-                      title="No recent channels"
-                      description="Channels you watch will show up here automatically."
-                    />
+            {isFiltering ? (
+              <section>
+                <div className="mb-6 border-b border-[var(--border)] pb-4">
+                  <h2 className="font-[var(--font-playfair)] text-xl font-bold text-[var(--text-primary)] sm:text-2xl">
+                    Search Results
+                  </h2>
+                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                    {filteredChannels.length} channel{filteredChannels.length !== 1 ? "s" : ""} found
+                  </p>
+                </div>
+
+                {filteredChannels.length === 0 ? (
+                  <LiveTvEmptyState
+                    title="No channels found"
+                    description="Try a different search term or category."
+                    actionLabel="Clear filters"
+                    onAction={() => {
+                      setSearchQuery("");
+                      setActiveCategory("all");
+                    }}
+                  />
+                ) : (
+                  <LiveTvChannelGrid channels={filteredChannels} {...gridProps} />
+                )}
+              </section>
+            ) : (
+              <>
+                <ChannelSection
+                  title="Sri Lankan Local TV"
+                  subtitle="National broadcasters and local networks"
+                  icon={
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
                   }
+                  channels={localChannels}
+                  {...gridProps}
+                />
+
+                <ChannelSection
+                  title="International Channels"
+                  subtitle="Sports, news, entertainment worldwide"
+                  icon={
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="2" y1="12" x2="22" y2="12" />
+                      <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                    </svg>
+                  }
+                  channels={internationalChannels}
+                  {...gridProps}
                 />
               </>
             )}
-
-            <section>
-              <div className="mb-5 flex items-end justify-between gap-4">
-                <div>
-                  <h2 className="font-[var(--font-playfair)] text-xl font-bold text-[var(--text-primary)] sm:text-2xl">
-                    {searchQuery.trim() || activeCategory !== "all"
-                      ? "Search Results"
-                      : "All Channels"}
-                  </h2>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                    {filteredChannels.length} channel{filteredChannels.length !== 1 ? "s" : ""} available
-                  </p>
-                </div>
-              </div>
-
-              {filteredChannels.length === 0 ? (
-                <LiveTvEmptyState
-                  title="No channels found"
-                  description="Try a different search term or category filter to find what you're looking for."
-                  actionLabel="Clear filters"
-                  onAction={() => {
-                    setSearchQuery("");
-                    setActiveCategory("all");
-                  }}
-                />
-              ) : (
-                <LiveTvChannelGrid
-                  channels={filteredChannels}
-                  selectedChannelId={selectedChannel?.id}
-                  favoriteIds={favoriteIds}
-                  onSelect={handleSelectChannel}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              )}
-            </section>
-          </>
-        )}
+        </>
       </div>
     </div>
   );
