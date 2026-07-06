@@ -58,8 +58,13 @@
   --color-bg-dark: var(--bg-dark);
   --color-bg-card: var(--bg-card);
   --font-playfair: var(--font-playfair);
-  --font-cinzel: var(--font-playfair);
+  --font-cinzel: var(--font-cinzel);
   --font-cormorant: var(--font-playfair);
+  --color-parchment: #e8d5b7;
+  --color-parchment-muted: #9c8b74;
+  --color-accent-gold: #c9943a;
+  --color-accent-ember: #8b3a2a;
+  --color-accent-jade: #2e6b5e;
 }
 
 html {
@@ -184,10 +189,135 @@ body::before {
 }
 
 .player-screen-glow {
+  container-type: size;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.08),
     0 26px 80px rgba(0, 0, 0, 0.44),
     0 0 55px rgba(232, 164, 74, 0.14);
+}
+
+.player-cinema-frame {
+  border: 1px solid rgba(201, 106, 43, 0.38);
+  box-shadow:
+    0 0 0 1px rgba(232, 164, 74, 0.12),
+    inset 0 0 80px rgba(201, 106, 43, 0.06),
+    0 26px 80px rgba(0, 0, 0, 0.5),
+    0 0 48px rgba(232, 164, 74, 0.1);
+}
+
+.player-cinema-bar {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(201, 106, 43, 0.2) 12%,
+    rgba(232, 164, 74, 0.95) 50%,
+    rgba(201, 106, 43, 0.2) 88%,
+    transparent 100%
+  );
+}
+
+.player-cinema-bar--trailer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 20%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 255, 255, 0.12) 80%,
+    transparent 100%
+  );
+}
+
+/* Keep embed aligned 1:1 with the frame so timeline clicks land correctly. */
+.player-embed-iframe {
+  border: 0;
+}
+
+.player-stage:fullscreen {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+  border: none;
+  background: #000;
+  padding: 0;
+}
+
+.player-stage:fullscreen .player-video-fit {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: auto;
+}
+
+.player-stage:fullscreen .player-embed-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.player-loading-overlay {
+  background: #0f0d0b;
+}
+
+.player-loading-poster {
+  animation: playerPosterPulse 2.8s ease-in-out infinite;
+}
+
+.player-loading-progress-track {
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.player-loading-progress-bar {
+  height: 100%;
+  width: 42%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(201, 106, 43, 0.2), #e8a44a, rgba(232, 164, 74, 0.35));
+  animation: playerLoadingBar 1.8s ease-in-out infinite;
+}
+
+@keyframes playerPosterPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 22px 56px rgba(201, 106, 43, 0.22);
+  }
+}
+
+@keyframes playerLoadingBar {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+/* Fits 16:9 inside the modal — width-limited or height-limited. */
+.player-video-fit {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+@container (aspect-ratio > 16 / 9) {
+  .player-video-fit {
+    width: auto;
+    height: 100%;
+  }
 }
 
 .player-control-dot {
@@ -468,4 +598,43 @@ input,
 
 .nav-progress-glow {
   box-shadow: 0 0 8px rgba(201, 106, 43, 0.5);
+}
+
+.toast-stack {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast-item {
+  pointer-events: auto;
+  border-radius: 9999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  padding: 0.65rem 1.1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-md);
+  animation: toastIn 0.3s ease-out;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.font-sinhala {
+  font-family: var(--font-sinhala), var(--font-inter), system-ui, sans-serif;
 }

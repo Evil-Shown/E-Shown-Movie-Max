@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, Playfair_Display } from "next/font/google";
+import { Cinzel, Geist_Mono, Inter, Noto_Sans_Sinhala, Playfair_Display } from "next/font/google";
 import BackToTop from "@/components/BackToTop";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import NavigationProgress from "@/components/NavigationProgress";
 import PageTransition from "@/components/PageTransition";
+import QueryProvider from "@/components/QueryProvider";
 import QuickViewProvider from "@/components/QuickViewProvider";
 import SplashScreen from "@/components/ChithraRekha/SplashScreen";
+import UserLibraryProvider from "@/components/UserLibraryProvider";
 import VideoPlayerProvider from "@/components/VideoPlayerProvider";
 import "@/components/ChithraRekha/SplashScreen.css";
 import "./globals.css";
@@ -29,6 +31,18 @@ const playfair = Playfair_Display({
   weight: ["400", "700"],
 });
 
+const cinzel = Cinzel({
+  variable: "--font-cinzel",
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+});
+
+const notoSinhala = Noto_Sans_Sinhala({
+  variable: "--font-sinhala",
+  subsets: ["sinhala"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
   title: {
     default: "E-Shown Movie Max",
@@ -46,21 +60,25 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
+      className={`${inter.variable} ${geistMono.variable} ${playfair.variable} ${cinzel.variable} ${notoSinhala.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <SplashScreen />
-        <VideoPlayerProvider>
-          <QuickViewProvider>
-            <NavigationProgress />
-            <Header />
-            <main className="site-main flex-1">
-              <PageTransition>{children}</PageTransition>
-            </main>
-            <Footer />
-            <BackToTop />
-          </QuickViewProvider>
-        </VideoPlayerProvider>
+        <QueryProvider>
+          <UserLibraryProvider>
+            <VideoPlayerProvider>
+              <QuickViewProvider>
+                <NavigationProgress />
+                <Header />
+                <main className="site-main flex-1">
+                  <PageTransition>{children}</PageTransition>
+                </main>
+                <Footer />
+                <BackToTop />
+              </QuickViewProvider>
+            </VideoPlayerProvider>
+          </UserLibraryProvider>
+        </QueryProvider>
       </body>
     </html>
   );

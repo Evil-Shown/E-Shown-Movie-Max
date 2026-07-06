@@ -1,6 +1,15 @@
 import type { Genre } from "@/lib/types";
 import { genreToTmdbId } from "./genres";
-import type { TmdbMovieDetail, TmdbPagedResponse, TmdbMovieListItem, TmdbMultiSearchItem, TmdbTvDetail, TmdbTvListItem } from "./types";
+import type {
+  TmdbMovieDetail,
+  TmdbPagedResponse,
+  TmdbMovieListItem,
+  TmdbMultiSearchItem,
+  TmdbSeasonDetail,
+  TmdbTvDetail,
+  TmdbTvListItem,
+  TmdbTvSeasonsResponse,
+} from "./types";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 
@@ -117,6 +126,29 @@ export async function fetchSimilarTv(id: number, page = 1) {
 }
 
 export type BrowseSort = "popular" | "top_rated" | "now_playing";
+
+export async function fetchTrendingDay(page = 1) {
+  return tmdbFetch<TmdbPagedResponse<TmdbMultiSearchItem>>("/trending/all/day", {
+    page: String(page),
+  });
+}
+
+export async function discoverSinhalaCinema(page = 1) {
+  return tmdbFetch<TmdbPagedResponse<TmdbMovieListItem>>("/discover/movie", {
+    page: String(page),
+    sort_by: "popularity.desc",
+    with_original_language: "si",
+    include_adult: "false",
+  });
+}
+
+export async function fetchTvSeasons(tvId: number) {
+  return tmdbFetch<TmdbTvSeasonsResponse>(`/tv/${tvId}`, {});
+}
+
+export async function fetchTvSeason(tvId: number, season: number) {
+  return tmdbFetch<TmdbSeasonDetail>(`/tv/${tvId}/season/${season}`, {});
+}
 
 export async function fetchBrowsePage(
   page: number,

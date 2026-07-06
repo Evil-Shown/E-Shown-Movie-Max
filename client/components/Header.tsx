@@ -1,5 +1,7 @@
 "use client";
 
+import InstantSearch from "@/components/InstantSearch";
+import { useUserLibrary } from "@/components/UserLibraryProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -7,7 +9,9 @@ import styles from "./Header.module.css";
 
 const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/browse", label: "Browse" },
+  { href: "/browse", label: "Movies" },
+  { href: "/browse?type=tv", label: "Series" },
+  { href: "/watchlist", label: "Watchlist" },
   { href: "/search", label: "Search" },
 ];
 
@@ -23,6 +27,7 @@ function NavLink({ href, label }: { href: string; label: string }) {
 }
 
 export default function Header() {
+  const { watchlistCount } = useUserLibrary();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -122,7 +127,22 @@ export default function Header() {
           </Link>
 
           <div className={styles.rightActions}>
-            <Link href="/search" aria-label="Search" className={styles.searchButton}>
+            <div className="hidden md:block">
+              <InstantSearch />
+            </div>
+
+            <Link href="/watchlist" aria-label="Watchlist" className={`${styles.searchButton} relative`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+              {watchlistCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent-primary)] px-1 text-[9px] font-bold text-white">
+                  {watchlistCount > 9 ? "9+" : watchlistCount}
+                </span>
+              )}
+            </Link>
+
+            <Link href="/search" aria-label="Search" className={`${styles.searchButton} md:hidden`}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.3-4.3" />
