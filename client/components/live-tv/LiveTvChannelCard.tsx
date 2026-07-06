@@ -2,6 +2,7 @@
 
 import { memo, useRef } from "react";
 import { LIVE_TV_CATEGORY_LABELS } from "@/lib/live-tv/channels";
+import { getChannelPosterStyles } from "@/lib/live-tv/posters";
 import { prefetchChannelStream } from "@/lib/live-tv/stream-cache";
 import { getStreamForChannel } from "@/lib/live-tv/streams";
 import type { LiveTvChannel } from "@/lib/live-tv/types";
@@ -27,6 +28,7 @@ function LiveTvChannelCard({
   onToggleFavorite,
 }: LiveTvChannelCardProps) {
   const hasStream = Boolean(channel.stream ?? getStreamForChannel(channel.id));
+  const posterStyle = getChannelPosterStyles(channel);
   const cardRef = useRef<HTMLButtonElement>(null);
   const moveRafRef = useRef<number | null>(null);
 
@@ -94,6 +96,10 @@ function LiveTvChannelCard({
       aria-pressed={isSelected}
       aria-label={`Watch ${channel.name}`}
       style={{
+        backgroundColor: posterStyle.backgroundColor,
+        backgroundImage: posterStyle.backgroundImage,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
         transformStyle: "preserve-3d",
         transform:
           "perspective(1100px) translate3d(var(--card-tx, 0px), var(--card-ty, 0px), 0) rotateX(var(--card-rx, 0deg)) rotateY(var(--card-ry, 0deg)) scale(var(--card-scale, 1))",
@@ -103,6 +109,15 @@ function LiveTvChannelCard({
           "transform 400ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 400ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 400ms ease",
       }}
     >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(2,6,23,0.10) 0%, rgba(2,6,23,0.18) 36%, rgba(2,6,23,0.74) 100%)",
+        }}
+      />
+
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300"
@@ -122,7 +137,7 @@ function LiveTvChannelCard({
         aria-hidden
         className="pointer-events-none absolute inset-0 transition-opacity duration-300 ease-out"
         style={{
-          opacity: "var(--card-spot-opacity, 0)",
+          opacity: "var(--card-spot-opacity, 0) ",
           background:
             "radial-gradient(circle at var(--card-spot-x, 50%) var(--card-spot-y, 38%), rgba(245,158,11,0.18), transparent 45%)",
           mixBlendMode: "screen",
@@ -143,9 +158,8 @@ function LiveTvChannelCard({
         }}
       />
 
-      {/* Logo stage â€” matches hero featured tiles */}
       <div
-        className={`relative flex w-full items-center justify-center bg-[var(--bg-secondary)] transition-transform duration-300 ease-out ${
+        className={`relative flex w-full items-center justify-center bg-transparent transition-transform duration-300 ease-out ${
           compact ? "aspect-square p-3" : "aspect-[4/3] p-4 sm:p-5"
         }`}
         style={{
@@ -156,10 +170,10 @@ function LiveTvChannelCard({
       >
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-80"
+          className="pointer-events-none absolute inset-0 opacity-90"
           style={{
             background:
-              "radial-gradient(circle at 50% 38%, rgba(201, 106, 43, 0.1), transparent 52%)",
+              "radial-gradient(circle at 50% 34%, rgba(255,255,255,0.08), transparent 40%), radial-gradient(circle at 50% 38%, rgba(201, 106, 43, 0.08), transparent 56%)",
           }}
         />
 
@@ -258,20 +272,20 @@ function LiveTvChannelCard({
       </div>
 
       <div
-        className={`border-t border-[var(--border)] bg-[var(--bg-card)] ${
+        className={`border-t border-white/10 bg-[rgba(2,6,23,0.66)] backdrop-blur-[1px] ${
           compact ? "px-2 py-1.5" : "px-2.5 py-2"
         }`}
       >
         <h3
-          className={`truncate font-medium leading-tight text-[var(--text-primary)] ${
+          className={`truncate font-medium leading-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)] ${
             compact ? "text-[10px]" : "text-xs sm:text-[13px]"
           }`}
         >
           {channel.name}
         </h3>
-        <p className="mt-0.5 truncate text-[9px] text-[var(--text-muted)]">
+        <p className="mt-0.5 truncate text-[9px] text-white/70">
           {LIVE_TV_CATEGORY_LABELS[channel.category]}
-          {channel.region === "local" ? " Â· LK" : ""}
+          {channel.region === "local" ? " · LK" : ""}
         </p>
       </div>
     </button>
