@@ -1,4 +1,4 @@
-import type { LiveTvCategory, LiveTvChannel } from "./types";
+import type { LiveTvCategory, LiveTvChannel, LiveTvCinematicStyle } from "./types";
 
 export const LIVE_TV_CATEGORY_LABELS: Record<LiveTvCategory, string> = {
   local: "Local",
@@ -8,6 +8,73 @@ export const LIVE_TV_CATEGORY_LABELS: Record<LiveTvCategory, string> = {
   documentary: "Documentary",
   kids: "Kids",
 };
+
+function getCinematicStyle(id: string, category: LiveTvCategory): LiveTvCinematicStyle {
+  let primaryLight = "rgba(99, 102, 241, 0.4)"; // Indigo
+  let secondaryLight = "rgba(14, 165, 233, 0.3)"; // Sky
+  let mood = "neutral professional blue-white tone";
+  let contrast = "110%";
+
+  if (category === "news") {
+    primaryLight = "rgba(59, 130, 246, 0.5)"; // Blue
+    secondaryLight = "rgba(255, 255, 255, 0.2)"; // White
+    mood = "cold blue + white light, high clarity, low saturation";
+    contrast = "120%";
+  } else if (category === "entertainment") {
+    primaryLight = "rgba(168, 85, 247, 0.5)"; // Purple
+    secondaryLight = "rgba(236, 72, 153, 0.3)"; // Pink
+    mood = "purple + pink neon glow, medium contrast";
+    contrast = "115%";
+  } else if (category === "sports") {
+    primaryLight = "rgba(239, 68, 68, 0.5)"; // Red
+    secondaryLight = "rgba(249, 115, 22, 0.4)"; // Orange
+    mood = "red + orange dynamic lighting, high energy contrast";
+    contrast = "125%";
+  } else if (category === "documentary") {
+    primaryLight = "rgba(20, 184, 166, 0.4)"; // Teal
+    secondaryLight = "rgba(245, 158, 11, 0.3)"; // Amber
+    mood = "teal + orange cinematic grading";
+    contrast = "115%";
+  } else if (category === "kids") {
+    primaryLight = "rgba(56, 189, 248, 0.5)"; // Sky blue
+    secondaryLight = "rgba(253, 224, 71, 0.4)"; // Yellow
+    mood = "bright pastel glow, soft shadows, low contrast";
+    contrast = "105%";
+  }
+
+  // Personality Overrides
+  if (id === "hiru-tv") {
+    primaryLight = "rgba(239, 68, 68, 0.5)";
+    secondaryLight = "rgba(249, 115, 22, 0.4)";
+    mood = "energetic orange-red sports/news hybrid lighting";
+  } else if (id === "tv-derana") {
+    primaryLight = "rgba(37, 99, 235, 0.5)";
+    secondaryLight = "rgba(255, 255, 255, 0.2)";
+    mood = "cool blue modern news glow";
+  } else if (id === "sirasa-tv") {
+    primaryLight = "rgba(168, 85, 247, 0.5)";
+    secondaryLight = "rgba(236, 72, 153, 0.4)";
+    mood = "purple-pink entertainment neon vibe";
+  } else if (id === "itn") {
+    primaryLight = "rgba(14, 165, 233, 0.4)";
+    secondaryLight = "rgba(255, 255, 255, 0.3)";
+    mood = "neutral professional blue-white tone";
+  } else if (id === "mtv") {
+    primaryLight = "rgba(236, 72, 153, 0.6)";
+    secondaryLight = "rgba(14, 165, 233, 0.5)";
+    mood = "vibrant neon gradients, animated feel";
+  }
+
+  return {
+    mood,
+    primaryLight,
+    secondaryLight,
+    contrast,
+    vignette: "radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.85) 100%)",
+    overlayGradient: `radial-gradient(circle at top left, ${primaryLight}, transparent 65%), linear-gradient(to bottom right, transparent, ${secondaryLight})`,
+    hoverEffect: "group-hover:brightness-110 group-hover:saturate-150 group-hover:after:translate-x-full",
+  };
+}
 
 function channel(
   id: string,
@@ -38,6 +105,7 @@ function channel(
     description:
       options.description ??
       `Watch ${name} live — ${LIVE_TV_CATEGORY_LABELS[category]} channel on CHITHRA Cinema.`,
+    cinematicStyle: getCinematicStyle(id, category),
   };
 }
 
