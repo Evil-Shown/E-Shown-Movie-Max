@@ -155,7 +155,7 @@ function createMainWindow() {
     minWidth: 1024,
     minHeight: 680,
     show: false,
-    title: "Chithra Cinema",
+    title: "CHITHRA - CINEMA",
     backgroundColor: "#f7f4ef",
     autoHideMenuBar: true,
     icon: path.join(__dirname, "assets", "icon.ico"),
@@ -163,7 +163,7 @@ function createMainWindow() {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: false
     }
   });
 
@@ -171,7 +171,7 @@ function createMainWindow() {
 
   mainWindow.on("page-title-updated", (event) => {
     event.preventDefault();
-    mainWindow?.setTitle("Chithra Cinema");
+    mainWindow?.setTitle("CHITHRA - CINEMA");
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -186,14 +186,16 @@ function createMainWindow() {
     }
   });
 
-  mainWindow.once("ready-to-show", () => {
-    splashWindow?.close();
-    splashWindow = null;
-    mainWindow?.show();
-    mainWindow?.focus();
+  mainWindow.webContents.once("did-finish-load", () => {
+    setTimeout(() => {
+      splashWindow?.close();
+      splashWindow = null;
+      mainWindow?.show();
+      mainWindow?.focus();
+    }, 500);
   });
 
-  mainWindow.loadURL(WEB_URL);
+  mainWindow.loadURL(`${WEB_URL}?app=desktop`);
 }
 
 function createTray() {
@@ -201,11 +203,11 @@ function createTray() {
   if (!fs.existsSync(iconPath)) return;
 
   tray = new Tray(nativeImage.createFromPath(iconPath));
-  tray.setToolTip("Chithra Cinema");
+  tray.setToolTip("CHITHRA - CINEMA");
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {
-        label: "Show Chithra Cinema",
+        label: "Show CHITHRA - CINEMA",
         click: () => {
           mainWindow?.show();
           mainWindow?.focus();

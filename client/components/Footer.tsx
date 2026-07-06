@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BRAND_DEVELOPER, BRAND_NAME, BRAND_NAME_SINHALA, BRAND_TAGLINE } from "@/lib/brand";
 
 const exploreLinks = [
   { href: "/", label: "Home" },
@@ -15,10 +16,11 @@ export default function Footer() {
         <div className="grid gap-10 md:grid-cols-4">
           <div>
             <p className="font-[var(--font-playfair)] text-xl font-bold tracking-wide text-[var(--text-primary)]">
-              E-SHOWN
+              {BRAND_NAME}
             </p>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">{BRAND_NAME_SINHALA}</p>
             <p className="mt-3 max-w-xs text-[13px] italic leading-relaxed text-[var(--text-muted)]">
-              A warm, curated destination for finding the films worth your next evening.
+              {BRAND_TAGLINE}
             </p>
           </div>
 
@@ -69,9 +71,10 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col justify-between gap-3 border-t border-[var(--border)] pt-6 text-[11px] text-[var(--text-muted)] sm:flex-row">
-          <p>(c) {new Date().getFullYear()} Damitha Samarakoon</p>
-          <p>Built for cinema discovery.</p>
+        <div className="mt-10 border-t border-[var(--border)] pt-6 text-center text-[11px] text-[var(--text-muted)]">
+          <p>
+            (c) {new Date().getFullYear()} {BRAND_NAME} · Developed by {BRAND_DEVELOPER}
+          </p>
         </div>
       </div>
     </footer>

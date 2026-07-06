@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { BRAND_NAME } from "@/lib/brand";
 import FloatingIcons from "./FloatingIcons";
 import ProjectorSVG from "./ProjectorSVG";
 import "./cinema-intro.css";
 
-const STORAGE_KEY = "chithra_intro_seen";
+const BROWSER_STORAGE_KEY = "chithra_intro_seen";
+const DESKTOP_SESSION_KEY = "chithra_intro_dismissed";
 const TOTAL_MS = 5000;
 
 const SPARKLES = [
@@ -19,36 +21,70 @@ const SPARKLES = [
   { left: "55%", bottom: "42%", delay: "0.25s" }
 ];
 
+function isDesktopApp() {
+  if (typeof window === "undefined") return false;
+  return Boolean(
+    window.chithraDesktop?.isDesktopApp ||
+      new URLSearchParams(window.location.search).get("app") === "desktop"
+  );
+}
+
+function hasSeenIntro() {
+  if (typeof window === "undefined") return true;
+  if (isDesktopApp()) {
+    return sessionStorage.getItem(DESKTOP_SESSION_KEY) === "1";
+  }
+  return localStorage.getItem(BROWSER_STORAGE_KEY) === "1";
+}
+
+function markIntroSeen() {
+  if (isDesktopApp()) {
+    sessionStorage.setItem(DESKTOP_SESSION_KEY, "1");
+    return;
+  }
+  localStorage.setItem(BROWSER_STORAGE_KEY, "1");
+}
+
 export default function CinemaIntro() {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [phase, setPhase] = useState<1 | 2 | 3>(1);
   const [hasVideo, setHasVideo] = useState(false);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearTimers = useCallback(() => {
+    for (const timer of timersRef.current) {
+      clearTimeout(timer);
+    }
+    timersRef.current = [];
+  }, []);
 
   const dismiss = useCallback(() => {
     setExiting(true);
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setVisible(false);
-      localStorage.setItem(STORAGE_KEY, "1");
+      markIntroSeen();
       document.body.style.overflow = "";
     }, 500);
+    timersRef.current.push(timer);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (hasSeenIntro()) return;
+    document.body.style.overflow = "hidden";
+    setVisible(true);
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (localStorage.getItem(STORAGE_KEY)) return;
-
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    setVisible(true);
+    if (!visible || hasSeenIntro()) return undefined;
 
     fetch("/intro-video.mp4", { method: "HEAD" })
       .then((r) => setHasVideo(r.ok))
       .catch(() => setHasVideo(false));
 
-    const t2 = setTimeout(() => setPhase(2), 1500);
-    const t3 = setTimeout(() => setPhase(3), 3500);
-    const tEnd = setTimeout(dismiss, TOTAL_MS);
+    timersRef.current.push(setTimeout(() => setPhase(2), 1500));
+    timersRef.current.push(setTimeout(() => setPhase(3), 3500));
+    timersRef.current.push(setTimeout(() => dismiss(), TOTAL_MS));
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") dismiss();
@@ -56,13 +92,11 @@ export default function CinemaIntro() {
     window.addEventListener("keydown", onKey);
 
     return () => {
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(tEnd);
+      clearTimers();
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
+      document.body.style.overflow = "";
     };
-  }, [dismiss]);
+  }, [visible, dismiss, clearTimers]);
 
   if (!visible) return null;
 
@@ -70,7 +104,7 @@ export default function CinemaIntro() {
     <div
       className={`cinema-intro-overlay${exiting ? " cinema-intro-exit" : ""}`}
       role="dialog"
-      aria-label="CHITHRA — CINEMA intro"
+      aria-label={`${BRAND_NAME} intro`}
     >
       <button type="button" className="cinema-intro-skip" onClick={dismiss}>
         Skip
@@ -106,7 +140,7 @@ export default function CinemaIntro() {
         <>
           <FloatingIcons />
           <div className="cinema-phase-content">
-            <p className="cinema-line-1">🎬 CHITHRA — CINEMA</p>
+            <p className="cinema-line-1">🎬 {BRAND_NAME}</p>
             <p className="cinema-line-2">Unlimited Entertainment</p>
             <p className="cinema-line-3">Free · No Registration · No Subscription</p>
           </div>
@@ -126,7 +160,7 @@ export default function CinemaIntro() {
           </p>
           <p className="cinema-legal">Content availability varies. Comply with your local laws.</p>
           <button type="button" className="cinema-enter-btn" onClick={dismiss}>
-            Enter CHITHRA — CINEMA
+            Enter {BRAND_NAME}
           </button>
         </div>
       )}

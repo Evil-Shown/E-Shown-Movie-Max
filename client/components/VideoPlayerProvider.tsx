@@ -1,6 +1,7 @@
 "use client";
 
 import type { Movie } from "@/lib/types";
+import { BRAND_NAME } from "@/lib/brand";
 import { backdropUrl, posterUrl } from "@/lib/movies";
 import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from "@/lib/providers";
 import { getBestProvider, recordProviderLoad } from "@/lib/storage/provider-performance";
@@ -56,7 +57,7 @@ function formatResumeTime(seconds: number): string {
 }
 
 const MOVIE_LOADING_MESSAGES = [
-  "Connecting to Chithra Cinema…",
+  `Connecting to ${BRAND_NAME}…`,
   "Finding your stream source…",
   "Buffering video — this can take a moment…",
   "Almost ready — your film is loading…",
@@ -420,7 +421,7 @@ function VideoPlayerModal({
                   <div className={`player-cinema-bar ${isTrailer ? "player-cinema-bar--trailer" : ""}`} />
                   <div className="flex items-center justify-between px-3 py-2">
                     <span className="font-[var(--font-cinzel)] text-[10px] font-semibold uppercase tracking-[0.28em] text-[#f4c27a]/90">
-                      {isTrailer ? "Preview" : "Chithra Cinema"}
+                      {isTrailer ? "Preview" : BRAND_NAME}
                     </span>
                     <span className="rounded-full border border-[rgba(232,164,74,0.28)] bg-[rgba(28,25,23,0.72)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f4c27a]/85 backdrop-blur">
                       {isTrailer ? "Trailer" : isTvShow(movie) ? "Streaming · TV" : "Now Playing"}

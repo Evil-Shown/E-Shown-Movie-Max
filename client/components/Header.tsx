@@ -2,6 +2,7 @@
 
 import InstantSearch from "@/components/InstantSearch";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { BRAND_NAME, BRAND_NAME_SINHALA } from "@/lib/brand";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -97,7 +98,7 @@ export default function Header() {
             </svg>
           </button>
 
-          <Link href="/" className={styles.logo} aria-label="Chithra streaming platform home">
+          <Link href="/" className={styles.logo} aria-label={`${BRAND_NAME} home`}>
             <svg
               className={styles.logoVimana}
               width="120"
@@ -122,8 +123,7 @@ export default function Header() {
             <span className={styles.logoTitle}>
               CHITH<span>RA</span>
             </span>
-            <span className={styles.logoSubtitle}>චිත්‍ර · රේඛා</span>
-            <span className={styles.logoRegion}>Hela - Sri Lanka</span>
+            <span className={styles.logoSubtitle}>{BRAND_NAME_SINHALA}</span>
           </Link>
 
           <div className={styles.rightActions}>
