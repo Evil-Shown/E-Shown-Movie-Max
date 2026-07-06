@@ -1,35 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Dimensions,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, fonts, radii, spacing } from '@/constants/theme';
+import { formatRuntime } from '@/lib/format';
 import type { Movie } from '@/lib/tmdb-types';
 
-const { width, height } = Dimensions.get('window');
-
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
-const HERO_HEIGHT = Math.min(height * 0.55, 450);
-
 const PLAY_PATH = 'M8 5v14l11-7z';
-
-function backdropUrl(path: string) {
-  return `${BACKDROP_BASE}${path}`;
-}
+const INFO_PATH = 'M11 9h2V7h-2m1 13c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8m0-18A10 10 0 002 12a10 10 0 0010 10 10 10 0 0010-10A10 10 0 0012 2m-1 15h2v-6h-2z';
 
 interface HeroCarouselProps {
   movies: Movie[];
   onPlay?: (movie: Movie) => void;
   onTrailer?: (movie: Movie) => void;
 }
+
+const HERO_HEIGHT = 520;
 
 export default function HeroCarousel({
   movies,
@@ -43,10 +34,11 @@ export default function HeroCarousel({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const movie = movies[index] ?? movies[0];
+
   const primaryGenre = movie?.genres?.[0];
 
   const next = useCallback(() => {
-    setIndex((prev) => (prev + 1) % movies.length);
+    setIndex((i) => (i + 1) % movies.length);
   }, [movies.length]);
 
   useEffect(() => {
@@ -55,20 +47,17 @@ export default function HeroCarousel({
     timerRef.current = setInterval(next, 7000);
 
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [next, movies.length]);
+  }, [movies.length, next]);
 
   if (!movie) return null;
-console.log('Movie:', movie.title);
-console.log('Backdrop:', movie.backdropPath);
+
   return (
     <View style={styles.hero}>
       <Image
         source={{
-          uri: backdropUrl(movie.backdropPath),
+          uri: `${BACKDROP_BASE}${movie.backdropPath}`,
         }}
         style={styles.backdrop}
         contentFit="cover"
@@ -78,16 +67,18 @@ console.log('Backdrop:', movie.backdropPath);
       <LinearGradient
         colors={[
           'transparent',
-          'rgba(0,0,0,0.35)',
-          'rgba(0,0,0,0.75)',
+          'rgba(0,0,0,0.25)',
+          'rgba(0,0,0,0.65)',
           colors.bgPrimary,
         ]}
-        locations={[0, 0.45, 0.75, 1]}
+        locations={[0, 0.35, 0.7, 1]}
         style={styles.overlay}
       />
 
       <View style={styles.content}>
-        <Text style={styles.badge}>NOW PLAYING</Text>
+        <Text style={styles.badge}>
+          NOW PLAYING
+        </Text>
 
         <Text
           numberOfLines={2}
@@ -101,15 +92,24 @@ console.log('Backdrop:', movie.backdropPath);
             ★ {movie.rating.toFixed(1)}
           </Text>
 
-          <View style={styles.separator} />
+          <View style={styles.metaDot} />
 
           <Text style={styles.metaText}>
             {movie.year}
           </Text>
 
+          {movie.runtime > 0 && (
+            <>
+              <View style={styles.metaDot} />
+              <Text style={styles.metaText}>
+                {formatRuntime(movie.runtime)}
+              </Text>
+            </>
+          )}
+
           {primaryGenre && (
             <>
-              <View style={styles.separator} />
+              <View style={styles.metaDot} />
               <Text style={styles.metaText}>
                 {primaryGenre}
               </Text>
@@ -126,7 +126,7 @@ console.log('Backdrop:', movie.backdropPath);
 
         <View style={styles.buttonRow}>
           <Pressable
-            style={styles.playButton}
+            style={styles.playBtn}
             onPress={() => onPlay?.(movie)}
           >
             <Svg
@@ -140,27 +140,27 @@ console.log('Backdrop:', movie.backdropPath);
               />
             </Svg>
 
-            <Text style={styles.playText}>
+            <Text style={styles.playBtnText}>
               Play
             </Text>
           </Pressable>
 
           <Pressable
-            style={styles.trailerButton}
+            style={styles.secondaryBtn}
             onPress={() => onTrailer?.(movie)}
           >
-            <Text style={styles.trailerText}>
+            <Text style={styles.secondaryBtnText}>
               Trailer
             </Text>
           </Pressable>
 
           <Pressable
-            style={styles.infoButton}
+            style={styles.secondaryBtn}
             onPress={() =>
               router.push(`/movie/${movie.id}`)
             }
           >
-            <Text style={styles.infoText}>
+            <Text style={styles.secondaryBtnText}>
               Details
             </Text>
           </Pressable>
@@ -175,7 +175,8 @@ console.log('Backdrop:', movie.backdropPath);
               onPress={() => setIndex(i)}
               style={[
                 styles.dot,
-                i === index && styles.activeDot,
+                i === index &&
+                  styles.dotActive,
               ]}
             />
           ))}
@@ -187,60 +188,62 @@ console.log('Backdrop:', movie.backdropPath);
 
 const styles = StyleSheet.create({
   hero: {
+    width: SCREEN_WIDTH,
     height: HERO_HEIGHT,
-    position: 'relative',
     backgroundColor: colors.bgPrimary,
+    overflow: 'hidden',
   },
 
   backdrop: {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-},
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
 
   overlay: {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-},
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
 
   content: {
     flex: 1,
     justifyContent: 'flex-end',
-    paddingHorizontal: spacing.md,
-    paddingBottom: 70,
+    paddingHorizontal: 22,
+    paddingBottom: 85,
   },
 
   badge: {
     color: '#f97316',
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.5,
+    fontWeight: '800',
+    letterSpacing: 2,
     marginBottom: 12,
   },
 
   title: {
-    color: '#fff',
-    fontSize: width > 380 ? 34 : 28,
-    lineHeight: width > 380 ? 40 : 34,
     fontFamily: fonts.headingBlack,
+    fontSize: 38,
+    lineHeight: 42,
+    color: '#fff',
     marginBottom: 12,
   },
 
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    flexWrap: 'wrap',
+    marginBottom: 14,
   },
 
   rating: {
     color: '#fbbf24',
-    fontSize: 13,
     fontWeight: '700',
+    fontSize: 14,
   },
 
   metaText: {
@@ -249,19 +252,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  separator: {
+  metaDot: {
     width: 4,
     height: 4,
-    borderRadius: 99,
-    backgroundColor: '#aaa',
+    borderRadius: 999,
+    backgroundColor: '#999',
     marginHorizontal: 8,
   },
 
   description: {
     color: '#d4d4d4',
-    fontSize: 13,
-    lineHeight: 20,
-    marginBottom: 18,
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 22,
     maxWidth: '95%',
   },
 
@@ -270,67 +273,66 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  playButton: {
+  playBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
     backgroundColor: '#fff',
-    paddingHorizontal: 18,
-    paddingVertical: 11,
-    borderRadius: radii.md,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 14,
     marginRight: 10,
   },
 
-  playText: {
+  playBtnText: {
     color: '#000',
     fontWeight: '700',
-    marginLeft: 6,
+    fontSize: 14,
   },
 
-  trailerButton: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  secondaryBtn: {
+    backgroundColor:
+      'rgba(255,255,255,0.15)',
+
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+
+    borderColor:
+      'rgba(255,255,255,0.25)',
+
     paddingHorizontal: 18,
-    paddingVertical: 11,
-    borderRadius: radii.md,
+    paddingVertical: 12,
+    borderRadius: 14,
     marginRight: 10,
   },
 
-  trailerText: {
+  secondaryBtnText: {
     color: '#fff',
     fontWeight: '600',
-  },
-
-  infoButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 11,
-  },
-
-  infoText: {
-    color: '#d4d4d4',
-    fontWeight: '600',
+    fontSize: 14,
   },
 
   dots: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 28,
     left: 0,
     right: 0,
 
     flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
   },
 
   dot: {
     width: 8,
     height: 8,
-    borderRadius: 99,
-    backgroundColor: 'rgba(255,255,255,0.35)',
+    borderRadius: 999,
+    backgroundColor:
+      'rgba(255,255,255,0.35)',
     marginHorizontal: 4,
   },
 
-  activeDot: {
-    width: 24,
+  dotActive: {
+    width: 26,
     backgroundColor: '#fff',
   },
 });
