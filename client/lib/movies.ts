@@ -8,6 +8,13 @@ export const posterUrl = (path: string, size: "w342" | "w500" | "w780" = "w500")
 export const backdropUrl = (path: string) =>
   path.startsWith("http") ? path : `${TMDB}/w1280${path}`;
 
+export const stillUrl = (
+  path: string | null | undefined,
+  size: "w185" | "w300" | "w500" = "w300"
+) => (path ? (path.startsWith("http") ? path : `${TMDB}/${size}${path}`) : null);
+
+export const formatDisplayYear = (year: number) => (year > 0 ? String(year) : null);
+
 export const movies: Movie[] = [
   {
     id: "interstellar",
