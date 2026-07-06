@@ -52,7 +52,7 @@ function VideoPlayerModal({
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 12 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="gold-glow relative w-full max-w-5xl overflow-hidden border border-[var(--border-mid)] bg-[var(--bg-void)]"
+        className="gold-glow relative w-full max-w-5xl overflow-hidden border border-[var(--border-mid)] bg-[var(--bg-elevated)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
@@ -68,9 +68,10 @@ function VideoPlayerModal({
             type="button"
             onClick={onClose}
             aria-label="Close player"
-            className="flex h-10 w-10 items-center justify-center border border-[var(--border-mid)] text-[var(--text-secondary)] transition hover:border-[var(--gold-primary)] hover:text-[var(--gold-primary)]"
+            data-cursor="link"
+            className="group flex h-10 w-10 items-center justify-center border border-[var(--border-mid)] text-[var(--text-secondary)] transition hover:border-[var(--gold-primary)] hover:text-[var(--gold-primary)] active:scale-95"
           >
-            ✕
+            <span className="reel-close-icon" aria-hidden />
           </button>
         </div>
 

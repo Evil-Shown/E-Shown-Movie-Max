@@ -50,7 +50,7 @@ export default function FloatingCard({
             ? undefined
             : `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateZ(8px)`,
           transformStyle: "preserve-3d",
-          transition: prefersReducedMotion ? undefined : "transform 0.6s ease",
+          transition: prefersReducedMotion ? undefined : "transform 0.12s ease-out",
         }}
       >
         {children}

@@ -20,16 +20,17 @@ export default function PlayButton({
 
   const base =
     variant === "primary"
-      ? "font-cinzel inline-flex min-w-[160px] h-12 items-center justify-center gap-2 bg-[#C9A84C] px-8 text-sm font-bold uppercase tracking-[0.15em] text-black transition hover:bg-[var(--gold-bright)] hover:shadow-[0_8px_30px_rgba(201,168,76,0.25)]"
+      ? "font-cinzel inline-flex min-w-[160px] h-12 items-center justify-center gap-2 rounded-full bg-[#D4A843] px-8 text-sm font-bold uppercase tracking-[0.15em] text-black shadow-[0_12px_30px_rgba(212,168,67,0.22)] transition hover:bg-[var(--gold-bright)] hover:shadow-[0_14px_36px_rgba(212,168,67,0.3)]"
       : variant === "ghost"
-        ? "inline-flex h-12 items-center justify-center gap-2 border border-[rgba(201,168,76,0.4)] px-8 text-sm text-[rgba(240,237,228,0.8)] transition hover:border-[var(--border-hot)] hover:text-[var(--text-primary)]"
-        : "flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(201,168,76,0.6)] bg-black/40 backdrop-blur-sm transition hover:scale-105 hover:bg-[var(--gold-primary)] hover:text-black";
+        ? "inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[rgba(201,168,76,0.45)] bg-[rgba(32,38,54,0.45)] px-8 text-sm text-[var(--text-secondary)] transition hover:border-[var(--border-hot)] hover:bg-[rgba(212,168,67,0.08)] hover:text-[var(--text-primary)]"
+        : "flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(201,168,76,0.65)] bg-[rgba(32,38,54,0.72)] backdrop-blur-sm transition hover:scale-105 hover:bg-[var(--gold-primary)] hover:text-black";
 
   return (
     <button
       type="button"
+      data-cursor="play"
       onClick={() => openPlayer(movie)}
-      className={`${base} ${className}`}
+      className={`${base} active:scale-95 ${className}`}
     >
       {variant !== "circle" && label}
       <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">

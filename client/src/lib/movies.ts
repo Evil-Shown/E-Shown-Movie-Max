@@ -3,9 +3,10 @@ import type { Genre, Movie } from "./types";
 const TMDB = "https://image.tmdb.org/t/p";
 
 export const posterUrl = (path: string, size: "w342" | "w500" | "w780" = "w500") =>
-  `${TMDB}/${size}${path}`;
+  path.startsWith("http") ? path : `${TMDB}/${size}${path}`;
 
-export const backdropUrl = (path: string) => `${TMDB}/w1280${path}`;
+export const backdropUrl = (path: string) =>
+  path.startsWith("http") ? path : `${TMDB}/w1280${path}`;
 
 export const movies: Movie[] = [
   {

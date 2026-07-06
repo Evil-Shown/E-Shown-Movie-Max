@@ -38,9 +38,9 @@ export default function PosterImage({
   onLoad,
 }: PosterImageProps) {
   const [failed, setFailed] = useState(false);
-  const src = posterUrl(posterPath, "w342");
+  const src = posterPath ? posterUrl(posterPath, "w342") : "";
 
-  if (failed) {
+  if (failed || !src) {
     return <FilmStripFallback title={title} />;
   }
 

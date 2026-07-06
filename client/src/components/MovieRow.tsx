@@ -13,6 +13,7 @@ interface MovieRowProps {
   movies: Movie[];
   priorityFirst?: boolean;
   showRank?: boolean;
+  embedded?: boolean;
 }
 
 export default function MovieRow({
@@ -22,6 +23,7 @@ export default function MovieRow({
   movies,
   priorityFirst = false,
   showRank = false,
+  embedded = false,
 }: MovieRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScroll, setCanScroll] = useState(false);
@@ -51,17 +53,17 @@ export default function MovieRow({
   if (movies.length === 0) return null;
 
   return (
-    <section className="group/row relative py-10">
+    <section className={`group/row relative ${embedded ? "py-0" : "py-10"}`}>
       <div className="mx-auto mb-6 max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="border-l-4 border-[var(--gold-primary)] pl-4">
+        <div className="rounded-2xl border border-white/10 bg-[rgba(32,38,54,0.36)] px-5 py-4 shadow-[0_14px_36px_rgba(0,0,0,0.14)] backdrop-blur-sm sm:border-l-4 sm:border-l-[var(--gold-primary)]">
           {eyebrow && (
-            <p className="font-cinzel text-[0.6rem] uppercase tracking-[0.3em] text-[var(--gold-primary)]">
+            <p className="font-cinzel text-[0.6rem] uppercase tracking-[0.3em] text-[var(--gold-bright)]">
               {eyebrow}
             </p>
           )}
           <h2 className="font-cinzel text-2xl text-[var(--text-primary)] sm:text-3xl">{title}</h2>
           <div
-            className="mt-2 h-px bg-[var(--border-mid)] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="mt-2 h-px bg-gradient-to-r from-[var(--gold-primary)] via-[var(--border-mid)] to-transparent transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{ width: `${lineWidth}%`, maxWidth: "100%" }}
           />
           {subtitle && (
@@ -78,8 +80,9 @@ export default function MovieRow({
             <button
               type="button"
               aria-label="Scroll left"
+              data-cursor="link"
               onClick={() => scrollBy(-600)}
-              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[rgba(201,168,76,0.25)] bg-[rgba(2,2,10,0.85)] text-[var(--gold-primary)] opacity-0 transition-opacity duration-200 hover:bg-[var(--gold-primary)] hover:text-black group-hover/row:opacity-100 md:flex"
+              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-mid)] bg-[rgba(32,38,54,0.88)] text-[var(--gold-primary)] opacity-0 shadow-[0_12px_28px_rgba(0,0,0,0.24)] backdrop-blur-md transition-opacity duration-200 hover:bg-[var(--gold-primary)] hover:text-black group-hover/row:opacity-100 active:scale-95 md:flex"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
                 <path d="M15 18l-6-6 6-6" />
@@ -88,8 +91,9 @@ export default function MovieRow({
             <button
               type="button"
               aria-label="Scroll right"
+              data-cursor="link"
               onClick={() => scrollBy(600)}
-              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-[rgba(201,168,76,0.25)] bg-[rgba(2,2,10,0.85)] text-[var(--gold-primary)] opacity-0 transition-opacity duration-200 hover:bg-[var(--gold-primary)] hover:text-black group-hover/row:opacity-100 md:flex"
+              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-[var(--border-mid)] bg-[rgba(32,38,54,0.88)] text-[var(--gold-primary)] opacity-0 shadow-[0_12px_28px_rgba(0,0,0,0.24)] backdrop-blur-md transition-opacity duration-200 hover:bg-[var(--gold-primary)] hover:text-black group-hover/row:opacity-100 active:scale-95 md:flex"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
                 <path d="M9 18l6-6-6-6" />
@@ -100,7 +104,8 @@ export default function MovieRow({
 
         <motion.div
           ref={scrollRef}
-          className="row-scroll flex gap-4 overflow-x-auto px-4 pb-2 sm:px-6 lg:px-8"
+          data-cursor="grab"
+          className="row-scroll flex gap-5 overflow-x-auto px-4 pb-4 pt-1 sm:px-6 lg:px-8"
           variants={prefersReducedMotion ? undefined : staggerContainer}
           initial="hidden"
           whileInView="visible"

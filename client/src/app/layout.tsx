@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { Cinzel, Cormorant_Garamond, Geist_Mono, Inter } from "next/font/google";
+import AmbientAudio from "@/components/AmbientAudio";
 import BackToTop from "@/components/BackToTop";
 import CinematicGrain from "@/components/CinematicGrain";
+import CustomCursor from "@/components/CustomCursor";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import NavigationProgress from "@/components/NavigationProgress";
 import PageTransition from "@/components/PageTransition";
+import QuickViewProvider from "@/components/QuickViewProvider";
 import VideoPlayerProvider from "@/components/VideoPlayerProvider";
 import "./globals.css";
 
@@ -51,17 +54,20 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${geistMono.variable} ${cinzel.variable} ${cormorant.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-[var(--bg-void)] text-[var(--text-primary)]">
+      <body className="flex min-h-full flex-col bg-[var(--bg-base)] text-[var(--text-primary)]">
         <VideoPlayerProvider>
-          <NavigationProgress />
-          <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_20%_0%,_rgba(201,168,76,0.04),_transparent_50%),radial-gradient(ellipse_at_80%_100%,_rgba(26,143,255,0.04),_transparent_50%)]" />
-          <CinematicGrain />
-          <Header />
-          <main className="flex-1 pt-[72px]">
-            <PageTransition>{children}</PageTransition>
-          </main>
-          <Footer />
-          <BackToTop />
+          <QuickViewProvider>
+            <CustomCursor />
+            <NavigationProgress />
+            <CinematicGrain />
+            <Header />
+            <main className="flex-1 pt-[72px]">
+              <PageTransition>{children}</PageTransition>
+            </main>
+            <Footer />
+            <BackToTop />
+            <AmbientAudio />
+          </QuickViewProvider>
         </VideoPlayerProvider>
       </body>
     </html>

@@ -6,17 +6,21 @@ import { Canvas } from "@react-three/fiber";
 
 const ParticleField = dynamic(() => import("./ParticleField"), { ssr: false });
 
-export default function HeroParticles() {
-  const [show, setShow] = useState(false);
+interface HeroParticlesProps {
+  scrollProgress?: number;
+}
+
+export default function HeroParticles({ scrollProgress = 0 }: HeroParticlesProps) {
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
-    setShow(window.innerWidth >= 768);
-    const onResize = () => setShow(window.innerWidth >= 768);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    const update = () => setCount(window.innerWidth >= 768 ? 300 : 80);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
-  if (!show) return null;
+  if (count === 0) return null;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[1]">
@@ -26,7 +30,7 @@ export default function HeroParticles() {
           gl={{ antialias: true, alpha: true }}
           style={{ position: "absolute", inset: 0 }}
         >
-          <ParticleField />
+          <ParticleField count={count} scrollProgress={scrollProgress} />
         </Canvas>
       </Suspense>
     </div>
