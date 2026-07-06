@@ -5,9 +5,16 @@ import FloatingIcons from "@/components/CinemaIntro/FloatingIcons";
 import ProjectorSVG from "@/components/CinemaIntro/ProjectorSVG";
 import { BRAND_NAME, BRAND_NAME_SINHALA } from "@/lib/brand";
 import {
+  getStartupSplashMode,
+  markFullIntroCompleted,
+  markStartupSplashStarted,
+  type StartupSplashMode,
+} from "@/lib/storage/startup-splash";
+import {
   CINEMA_INTRO_PHASE2_MS,
   CINEMA_INTRO_PHASE3_MS,
   CINEMA_INTRO_TOTAL_MS,
+  desktopSplineOnlyTotalMs,
   desktopStartupTotalMs,
   hasValidSplineStartupUrl,
   isSplineMyDesignUrl,
@@ -16,7 +23,6 @@ import {
   SPLINE_STARTUP_FADE_MS,
   SPLINE_STARTUP_SCENE_URL,
 } from "@/lib/spline-config";
-import { useSearchParams } from "next/navigation";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import "../CinemaIntro/cinema-intro.css";
 import "./startup-splash.css";
@@ -123,19 +129,8 @@ function CinemaIntroStage({
   );
 }
 
-function detectDesktopApp(searchAppParam: string | null): boolean {
-  if (typeof window === "undefined") return false;
-  return Boolean(
-    window.chithraDesktop?.isDesktopApp ||
-      searchAppParam === "desktop" ||
-      new URLSearchParams(window.location.search).get("app") === "desktop"
-  );
-}
-
 export default function StartupSplash() {
-  const searchParams = useSearchParams();
-  const searchApp = searchParams.get("app");
-
+  const splashModeRef = useRef<StartupSplashMode>("none");
   const [active, setActive] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [stage, setStage] = useState<StartupStage>("cinema");
@@ -148,6 +143,7 @@ export default function StartupSplash() {
   const reducedMotionRef = useRef(false);
 
   const sceneUrl = SPLINE_STARTUP_SCENE_URL;
+  const splashMode = splashModeRef.current;
   const includeSpline =
     hasValidSplineStartupUrl(sceneUrl) && !reducedMotionRef.current;
 
@@ -175,6 +171,10 @@ export default function StartupSplash() {
     setSplineVisible(false);
     setCinemaExiting(true);
 
+    if (splashModeRef.current === "full") {
+      markFullIntroCompleted();
+    }
+
     timersRef.current.push(
       setTimeout(() => {
         setActive(false);
@@ -185,49 +185,64 @@ export default function StartupSplash() {
 
   useLayoutEffect(() => {
     reducedMotionRef.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const mode = getStartupSplashMode();
+    splashModeRef.current = mode;
 
-    if (!detectDesktopApp(searchApp)) {
+    if (mode === "none") {
       setActive(false);
       return undefined;
     }
 
-    sequenceRef.current += 1;
-    const sequenceId = sequenceRef.current;
+    markStartupSplashStarted(mode);
 
+    sequenceRef.current += 1;
     dismissedRef.current = false;
     document.body.style.overflow = "hidden";
     setActive(true);
     setExiting(false);
-    setStage("cinema");
-    setCinemaPhase(1);
     setCinemaExiting(false);
     setSplineVisible(false);
     clearTimers();
 
-    const playSpline = hasValidSplineStartupUrl(sceneUrl) && !reducedMotionRef.current;
+    const playSpline = includeSpline;
+    const isFullIntro = mode === "full";
 
-    schedule(() => setCinemaPhase(2), CINEMA_INTRO_PHASE2_MS);
-    schedule(() => setCinemaPhase(3), CINEMA_INTRO_PHASE3_MS);
-    schedule(() => setCinemaExiting(true), CINEMA_INTRO_TOTAL_MS);
+    if (isFullIntro) {
+      setStage("cinema");
+      setCinemaPhase(1);
 
-    if (playSpline) {
-      schedule(() => {
-        setStage("spline");
-        setSplineVisible(true);
-      }, CINEMA_INTRO_TOTAL_MS + SPLINE_STAGE_TRANSITION_MS);
-      schedule(() => dismiss(), desktopStartupTotalMs(true));
+      schedule(() => setCinemaPhase(2), CINEMA_INTRO_PHASE2_MS);
+      schedule(() => setCinemaPhase(3), CINEMA_INTRO_PHASE3_MS);
+      schedule(() => setCinemaExiting(true), CINEMA_INTRO_TOTAL_MS);
+
+      if (playSpline) {
+        schedule(() => {
+          setStage("spline");
+          setSplineVisible(true);
+        }, CINEMA_INTRO_TOTAL_MS + SPLINE_STAGE_TRANSITION_MS);
+        schedule(() => dismiss(), desktopStartupTotalMs(true));
+      } else {
+        schedule(() => dismiss(), desktopStartupTotalMs(false));
+      }
     } else {
-      schedule(() => dismiss(), desktopStartupTotalMs(false));
+      setStage("spline");
+
+      if (playSpline) {
+        schedule(() => setSplineVisible(true), 120);
+        schedule(() => dismiss(), desktopSplineOnlyTotalMs());
+      } else {
+        dismiss();
+      }
     }
 
     return () => {
-      if (sequenceId === sequenceRef.current) {
-        sequenceRef.current += 1;
-      }
+      sequenceRef.current += 1;
       clearTimers();
       document.body.style.overflow = "";
     };
-  }, [searchApp, clearTimers, dismiss, sceneUrl, schedule]);
+    // Run once per page load — never on in-app route changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useLayoutEffect(() => {
     if (!active || dismissedRef.current) return undefined;
@@ -250,7 +265,7 @@ export default function StartupSplash() {
 
   if (!active) return null;
 
-  const showCinema = stage === "cinema" && !exiting;
+  const showCinema = splashMode === "full" && stage === "cinema" && !exiting;
   const showSplineLayer = includeSpline && stage === "spline";
 
   return (
