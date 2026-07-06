@@ -1,4 +1,4 @@
-# Builds CHITHRA — CINEMA Windows installer (Electron + NSIS)
+# Builds CHITHRA - CINEMA Windows installer (Electron + NSIS)
 # Output: release/desktop/Chithra-Cinema-Setup-1.0.0.exe
 $ErrorActionPreference = "Stop"
 
@@ -50,11 +50,12 @@ function Prepare-ClientEnvForPackage {
     }
   }
 
+  $siteName = "CHITHRA $([char]0x2014) CINEMA"
   $required = [ordered]@{
     "NEXT_PUBLIC_API_BASE_URL"     = "http://127.0.0.1:5000"
     "NEXT_PUBLIC_GODS_EYE_API_URL" = "http://127.0.0.1:5000"
     "NEXT_PUBLIC_TBOOM_API_URL"    = "http://127.0.0.1:5000"
-    "NEXT_PUBLIC_SITE_NAME"        = "CHITHRA — CINEMA"
+    "NEXT_PUBLIC_SITE_NAME"        = $siteName
   }
 
   if ($tmdbKey -and -not ($lines -match '^\s*NEXT_PUBLIC_TMDB_KEY=')) {
@@ -71,7 +72,7 @@ function Prepare-ClientEnvForPackage {
 }
 
 Write-Host ""
-Write-Host "=== CHITHRA — CINEMA - Desktop Installer Build ===" -ForegroundColor Cyan
+Write-Host "=== CHITHRA - CINEMA - Desktop Installer Build ===" -ForegroundColor Cyan
 Write-Host ""
 
 if (-not (Test-Path $clientEnvFile)) {

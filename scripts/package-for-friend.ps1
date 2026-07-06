@@ -64,11 +64,12 @@ function Prepare-ClientEnvForPackage {
     }
   }
 
+  $siteName = "CHITHRA $([char]0x2014) CINEMA"
   $required = [ordered]@{
     "NEXT_PUBLIC_API_BASE_URL"      = "http://localhost:5000"
     "NEXT_PUBLIC_GODS_EYE_API_URL"  = "http://localhost:5000"
     "NEXT_PUBLIC_TBOOM_API_URL"     = "http://localhost:5000"
-    "NEXT_PUBLIC_SITE_NAME"         = "CHITHRA — CINEMA"
+    "NEXT_PUBLIC_SITE_NAME"         = $siteName
   }
 
   if ($tmdbKey -and -not ($lines -match '^\s*NEXT_PUBLIC_TMDB_KEY=')) {
@@ -85,7 +86,7 @@ function Prepare-ClientEnvForPackage {
 }
 
 Write-Host ""
-Write-Host "=== CHITHRA — CINEMA - package for friend ===" -ForegroundColor Cyan
+Write-Host "=== CHITHRA - CINEMA - package for friend ===" -ForegroundColor Cyan
 Write-Host ""
 
 if (-not (Test-Path $client)) {
