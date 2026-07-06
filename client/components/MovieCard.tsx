@@ -6,7 +6,6 @@ import { useQuickView } from "@/components/QuickViewProvider";
 import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { scaleInVariant } from "@/lib/motion";
 import { useState } from "react";
 import styles from "./MovieCard.module.css";
 
@@ -24,7 +23,7 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
 
   return (
     <motion.div
-      variants={scaleInVariant}
+      initial={false}
       whileHover={prefersReducedMotion ? undefined : { y: -2 }}
       transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
       className={styles.card}
@@ -40,8 +39,7 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
           View {movie.title}
         </Link>
 
-        <motion.div
-          layoutId={`poster-${movie.id}`}
+        <div
           role="button"
           tabIndex={0}
           onClick={() => openQuickView(movie)}
@@ -92,7 +90,7 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
               <span className={styles.rating}>★ {movie.rating.toFixed(1)}</span>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </motion.div>
   );

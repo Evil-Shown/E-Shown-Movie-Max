@@ -42,7 +42,6 @@ export default function MovieQuickView({ movie, onClose }: MovieQuickViewProps) 
             onClick={onClose}
           />
           <motion.div
-            layoutId={`poster-${movie.id}`}
             initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }}
@@ -62,7 +61,7 @@ export default function MovieQuickView({ movie, onClose }: MovieQuickViewProps) 
             </div>
 
             <div className="flex flex-col gap-6 md:flex-row">
-              <motion.div layoutId={`poster-img-${movie.id}`} className="mx-auto w-[140px] shrink-0 md:mx-0">
+              <div className="mx-auto w-[140px] shrink-0 md:mx-0">
                 <div className="relative aspect-[2/3] overflow-hidden rounded-xl shadow-[0_16px_42px_rgba(28,25,23,0.22)] ring-1 ring-[var(--border-strong)]">
                   <Image
                     src={posterUrl(movie.posterPath, "w500")}
@@ -72,7 +71,7 @@ export default function MovieQuickView({ movie, onClose }: MovieQuickViewProps) 
                     sizes="140px"
                   />
                 </div>
-              </motion.div>
+              </div>
 
               <div className="flex-1">
                 <h2 className="font-[var(--font-playfair)] text-2xl text-[var(--text-primary)] md:text-3xl">

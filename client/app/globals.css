@@ -83,10 +83,6 @@ body {
   }
 }
 
-body.header-hidden .site-main {
-  padding-top: 0;
-}
-
 body::before {
   content: "";
   position: fixed;
