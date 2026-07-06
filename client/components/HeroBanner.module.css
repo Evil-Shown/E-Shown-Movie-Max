@@ -1,0 +1,453 @@
+.hero {
+  position: relative;
+  min-height: 88vh;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.backdropWrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.backdropImage {
+  object-fit: cover;
+  object-position: center top;
+  opacity: 0.84;
+  transform: scale(1.06);
+  filter: blur(4px) contrast(1.14) saturate(1.12);
+}
+
+.gradientLeft {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    rgba(245, 239, 228, 0.94) 0%,
+    rgba(245, 239, 228, 0.72) 28%,
+    rgba(245, 239, 228, 0.32) 48%,
+    transparent 62%
+  );
+}
+
+.gradientBottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  height: 140px;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(235, 225, 210, 0.28) 0%, transparent 100%);
+}
+
+.gradientTop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  height: 80px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(245, 239, 228, 0.18) 0%, transparent 100%);
+}
+
+.inner {
+  position: relative;
+  z-index: 10;
+  margin: 0 auto;
+  display: flex;
+  min-height: 88vh;
+  max-width: 1280px;
+  align-items: center;
+  padding: 6rem 1.5rem;
+}
+
+.grid {
+  display: grid;
+  width: 100%;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: 55% 45%;
+  }
+}
+
+.contentCard {
+  position: relative;
+  z-index: 5;
+  max-width: 520px;
+  padding: 1.5rem 1.75rem;
+  background: rgba(252, 248, 242, 0.72);
+  border: 1px solid rgba(28, 25, 23, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(28, 25, 23, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.badge {
+  margin: 0 0 16px;
+  padding-left: 12px;
+  border-left: 3px solid #b85c24;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #9a4f1f;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.title {
+  margin: 0 0 16px;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.6px;
+  color: #0f0702;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ratingPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: 1px solid rgba(201, 106, 43, 0.45);
+  border-radius: 20px;
+  background: rgba(201, 106, 43, 0.16);
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #7a3a12;
+}
+
+.metaText {
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1c1917;
+}
+
+.metaDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(28, 25, 23, 0.35);
+}
+
+.genrePill {
+  padding: 5px 12px;
+  border: 1px solid rgba(28, 25, 23, 0.14);
+  border-radius: 20px;
+  background: rgba(28, 25, 23, 0.06);
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1c1917;
+}
+
+.description {
+  display: -webkit-box;
+  margin: 0 0 26px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.7;
+  color: #2a2218;
+}
+
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.watchButton,
+.trailerButton,
+.moreButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 8px;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.watchButton {
+  padding: 13px 26px;
+  border: none;
+  background: #c96a2b;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(201, 106, 43, 0.35);
+}
+
+.watchButton:hover {
+  background: #b85c24;
+  box-shadow: 0 6px 20px rgba(201, 106, 43, 0.45);
+  transform: translateY(-1px);
+}
+
+.trailerButton {
+  padding: 13px 22px;
+  border: 1px solid rgba(28, 25, 23, 0.18);
+  background: rgba(255, 252, 247, 0.95);
+  color: #1c1917;
+}
+
+.trailerButton:hover {
+  background: #fff;
+  border-color: rgba(28, 25, 23, 0.28);
+}
+
+.moreButton {
+  padding: 13px 22px;
+  border: 1px solid rgba(28, 25, 23, 0.18);
+  background: rgba(255, 252, 247, 0.95);
+  color: #1c1917;
+}
+
+.moreButton:hover {
+  background: #fff;
+  border-color: rgba(28, 25, 23, 0.28);
+}
+
+.posterCol {
+  display: none;
+  justify-content: center;
+  align-self: flex-end;
+}
+
+@media (min-width: 1024px) {
+  .posterCol {
+    display: flex;
+  }
+}
+
+.posterWrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-bottom: -3.5rem;
+}
+
+.posterGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 5;
+  width: 280px;
+  height: 340px;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at center, rgba(201, 106, 43, 0.12) 0%, transparent 65%);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.posterFrame {
+  position: relative;
+  z-index: 6;
+  width: 200px;
+  height: 290px;
+  overflow: hidden;
+  border-radius: 16px;
+  transform: rotate(1.5deg);
+  opacity: 0;
+  box-shadow:
+    0 32px 80px rgba(20, 10, 0, 0.45),
+    0 0 0 0.5px rgba(201, 106, 43, 0.25),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  transition: transform 0.3s ease;
+  animation: posterIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
+}
+
+.posterFrame:hover {
+  transform: rotate(0deg) translateY(-4px);
+}
+
+.posterImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.posterSheen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.03) 60%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.posterBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    #C96A2B 40%,
+    #F0CC78 50%,
+    #C96A2B 60%,
+    transparent
+  );
+}
+
+.posterFrame {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transform: translateX(-50%);
+}
+
+.scrollLabel {
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(60, 35, 10, 0.3);
+}
+
+.scrollLine {
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(60, 35, 10, 0.2), transparent);
+}
+
+.scrollChevron {
+  width: 10px;
+  height: 6px;
+  border-right: 1px solid rgba(60, 35, 10, 0.25);
+  border-bottom: 1px solid rgba(60, 35, 10, 0.25);
+  transform: rotate(45deg);
+  animation: bounceDown 1.8s ease-in-out infinite;
+}
+
+.fadeItem {
+  opacity: 0;
+  animation: fadeUp 0.5s ease-out forwards;
+}
+
+.fadeBadge {
+  animation-delay: 0.1s;
+}
+
+.fadeTitle {
+  animation-duration: 0.6s;
+  animation-delay: 0.2s;
+}
+
+.fadeMeta {
+  animation-delay: 0.35s;
+}
+
+.fadeDescription {
+  animation-delay: 0.45s;
+}
+
+.fadeButtons {
+  animation-delay: 0.55s;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes posterIn {
+  from {
+    opacity: 0;
+    transform: rotate(3deg) translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(1.5deg) translateX(0);
+  }
+}
+
+@keyframes bounceDown {
+  0%,
+  100% {
+    transform: translateY(0) rotate(45deg);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(4px) rotate(45deg);
+    opacity: 0.6;
+  }
+}
+
+@media (max-width: 768px) {
+  .contentCard {
+    padding: 1.25rem 1.35rem;
+  }
+
+  .title {
+    font-size: 38px;
+  }
+
+  .description {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 30px;
+  }
+
+  .badge {
+    font-size: 10px;
+  }
+
+  .trailerButton {
+    display: none;
+  }
+}
