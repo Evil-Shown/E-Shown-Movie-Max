@@ -35,7 +35,8 @@ function Sync-DesktopShell {
     "release-notes.js",
     "block-ad-nav.js",
     "embed-headers.js",
-    "splash.html"
+    "splash.html",
+    "telemetry.js"
   )
   if (-not (Test-Path $desktopShell)) {
     throw "Missing $desktopShell - Electron shell templates are required."
