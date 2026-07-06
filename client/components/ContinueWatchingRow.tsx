@@ -1,11 +1,11 @@
 "use client";
 
+import PosterImage from "@/components/PosterImage";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { useVideoPlayer } from "@/components/VideoPlayerProvider";
-import PosterImage from "@/components/PosterImage";
 
 export default function ContinueWatchingRow() {
-  const { continueWatching, removeContinueItem } = useUserLibrary();
+  const { continueWatching, removeContinueItem, clearContinueWatching } = useUserLibrary();
   const { openMovie } = useVideoPlayer();
 
   if (!continueWatching.length) return null;
@@ -13,13 +13,20 @@ export default function ContinueWatchingRow() {
   return (
     <section className="section-elevated py-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-5 flex items-end justify-between">
+        <div className="mb-5 flex items-end justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
               Pick Up Where You Left Off
             </p>
             <h2 className="font-[var(--font-playfair)] text-2xl text-[var(--text-primary)]">Continue Watching</h2>
           </div>
+          <button
+            type="button"
+            onClick={clearContinueWatching}
+            className="rounded-full border border-[var(--border-strong)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
+          >
+            Clear history
+          </button>
         </div>
 
         <div className="flex gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -31,7 +38,7 @@ export default function ContinueWatchingRow() {
                 onClick={() => removeContinueItem(item.id)}
                 className="absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-xs text-white opacity-0 transition group-hover:opacity-100"
               >
-                ×
+                x
               </button>
               <button
                 type="button"

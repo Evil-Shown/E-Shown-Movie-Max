@@ -6,10 +6,12 @@ import {
 import { getRankedProviders } from "@/lib/storage/provider-performance";
 
 export const PROVIDER_ORIGINS: Record<StreamProvider, string[]> = {
-  vidsrc: ["https://vsembed.ru"],
+  vidfast: ["https://vidfast.pro"],
   vidlink: ["https://vidlink.pro"],
   superembed: ["https://multiembed.mov"],
-  embedsu: ["https://embed.su"],
+  autoembed: ["https://autoembed.co"],
+  vidsrcpm: ["https://vidsrc.pm"],
+  vidsrc: ["https://vidsrc.cc"],
 };
 
 const warmedOrigins = new Set<string>();
@@ -33,8 +35,15 @@ export function isSlowConnection(): boolean {
   return false;
 }
 
-export function getStreamLoadTimeoutMs(): number {
-  return isSlowConnection() ? 6500 : 9000;
+export function getStreamLoadTimeoutMs(provider?: StreamProvider): number {
+  const base = isSlowConnection() ? 6000 : 8000;
+  if (provider === "vidsrc" || provider === "vidsrcpm") return Math.min(base, 6000);
+  return base;
+}
+
+/** How long to wait after iframe shell loads before switching if playback never starts. */
+export function getPlaybackConfirmTimeoutMs(): number {
+  return isSlowConnection() ? 14_000 : 11_000;
 }
 
 export function getProvidersInOrder(current: StreamProvider): StreamProvider[] {
@@ -73,11 +82,20 @@ export function warmStreamProviders(providers: StreamProvider[] = STREAM_PROVIDE
 
 export function getStabilityTip(): string | null {
   if (isSlowConnection()) {
-    return "Slow connection detected — we’ll auto-pick the fastest stream source for you.";
+    return "Slow connection — we'll auto-rotate sources until one plays.";
   }
   return null;
 }
 
 export function formatProviderSwitchMessage(next: StreamProvider): string {
-  return `Switching to ${PROVIDER_LABELS[next]} for a smoother stream…`;
+  return `Blocked or empty on this host — switching to ${PROVIDER_LABELS[next]}…`;
+}
+
+/** True when an embed player reports playback started (VidSrc family). */
+export function isEmbedPlaybackMessage(data: unknown): boolean {
+  if (!data || typeof data !== "object") return false;
+  const payload = data as { type?: string; event?: string; data?: { event?: string } };
+  if (payload.type === "PLAYER_EVENT" && payload.data?.event === "play") return true;
+  if (payload.event === "play") return true;
+  return false;
 }

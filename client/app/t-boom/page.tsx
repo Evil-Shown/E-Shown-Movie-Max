@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BRAND_NAME } from "@/lib/brand";
+import GodsEyeHero from "@/components/GodsEyeHero";
 import TBoomResultCard from "@/components/TBoom/ResultCard";
 import EmptyState from "@/components/TBoom/EmptyState";
 import ErrorState from "@/components/TBoom/ErrorState";
@@ -296,6 +297,11 @@ function loadContinueWatching(): ContinueWatching | null {
   }
 }
 
+function clearContinueWatching() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(CONTINUE_KEY);
+}
+
 export default function TBoomPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<TorrentResult[]>([]);
@@ -325,6 +331,11 @@ export default function TBoomPage() {
   const [subtitleTracks, setSubtitleTracks] = useState<Array<{ label: string; src: string }>>([]);
   const [resolvingMagnetName, setResolvingMagnetName] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ type: "info" | "success" | "warning"; text: string } | null>(null);
+  const [torrentNotice, setTorrentNotice] = useState<{
+    title: string;
+    message: string;
+    tips: string[];
+  } | null>(null);
   const [checkingSecurityName, setCheckingSecurityName] = useState<string | null>(null);
   const [showMagnetHelp, setShowMagnetHelp] = useState(false);
   const [downloadState, setDownloadState] = useState<{
@@ -360,11 +371,67 @@ export default function TBoomPage() {
 
   const trimmedQuery = useMemo(() => query.trim(), [query]);
 
+  const stopStreaming = useCallback(async () => {
+    const client = clientRef.current as { destroy: () => Promise<void> | void } | null;
+    setIsStopping(true);
+
+    // Instant user feedback and immediate playback stop.
+    setStreamingMagnet(null);
+    setStreamingTitle("");
+    setStreamReady(false);
+    setStreamStats({ peers: 0, progress: 0, speedMbps: 0 });
+    setIsPlaying(false);
+    setPlaybackTime(0);
+    setDuration(0);
+    setVolume(1);
+    setPlaybackRate(1);
+    setSubtitleTracks([]);
+    setError("");
+
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+      } catch {
+        /* ignore */
+      }
+      videoRef.current.removeAttribute("src");
+      videoRef.current.load();
+    }
+
+    clientRef.current = null;
+
+    if (client) {
+      await Promise.resolve(client.destroy()).catch(() => undefined);
+    }
+
+    setIsStopping(false);
+    setDownloadState((prev) =>
+      prev.status === "idle"
+        ? prev
+        : {
+            status: "idle",
+            title: "",
+            message: "",
+            progress: 0,
+            peers: 0,
+            speedMbps: 0,
+          }
+    );
+  }, []);
+
   function showActionMessage(type: "info" | "success" | "warning", text: string) {
     setActionMessage({ type, text });
     window.setTimeout(() => {
       setActionMessage((current) => (current?.text === text ? null : current));
     }, 2800);
+  }
+
+  function showTorrentNotice(title: string, message: string, tips: string[] = []) {
+    setTorrentNotice({ title, message, tips });
+  }
+
+  function dismissTorrentNotice() {
+    setTorrentNotice(null);
   }
 
   function extractInfoHash(input?: string) {
@@ -436,6 +503,16 @@ export default function TBoomPage() {
     window.setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
   }
 
+  function pickBestTorrentFile(files: Array<{ name: string; length?: number; getBlob?: (cb: (error: Error | null, blob: Blob) => void) => void }>) {
+    const videoPattern = /\.(mp4|mkv|webm|avi|mov|m4v|ts|m2ts|mpg|mpeg|wmv|flv)$/i;
+    const scored = [...files].sort((a, b) => Number(b.length || 0) - Number(a.length || 0));
+    const video = scored.find((file) => videoPattern.test(file.name));
+    if (video) return video;
+
+    const blobCapable = scored.find((file) => typeof file.getBlob === "function");
+    return blobCapable ?? scored[0];
+  }
+
   async function startBrowserDownload(torrent: TorrentResult) {
     const magnetHref = normalizeMagnet(torrent.magnet);
     const title = torrent.name || "Download";
@@ -485,7 +562,7 @@ export default function TBoomPage() {
         numPeers?: number;
         progress?: number;
         downloadSpeed?: number;
-        on?: (event: string, cb: () => void) => void;
+        on?: (event: string, cb: (...args: unknown[]) => void) => void;
         files: TorrentFile[];
       };
 
@@ -517,13 +594,37 @@ export default function TBoomPage() {
         updateDownloadStats();
         torrentInstance.on?.("download", updateDownloadStats);
         torrentInstance.on?.("wire", updateDownloadStats);
+        torrentInstance.on?.("warning", (warning: unknown) => {
+          const message = warning instanceof Error ? warning.message : String(warning || "Unknown torrent warning.");
+          showTorrentNotice("Torrent warning", message, [
+            "Try a different upload with more seeders.",
+            "Use Resolve Magnet again if the source link changed.",
+            "Open the magnet in qBittorrent or Free Download Manager for a more stable transfer."
+          ]);
+        });
+        torrentInstance.on?.("error", (torrentError: unknown) => {
+          const message =
+            torrentError instanceof Error ? torrentError.message : String(torrentError || "Unknown torrent error.");
+          setDownloadState({
+            status: "failed",
+            title,
+            message: message || "Torrent download failed.",
+            progress: 0,
+            peers: Number(torrentInstance.numPeers || 0),
+            speedMbps: 0
+          });
+          showTorrentNotice("Download failed", message, [
+            "Try another upload with more seeders.",
+            "Use Open in Torrent App for a native torrent client.",
+            "If the magnet keeps failing, the source may be dead or changed."
+          ]);
+          stopBrowserDownload(true).catch(() => undefined);
+        });
 
         torrentInstance.on?.("done", () => {
           clearDownloadTimeout();
           const files = torrentInstance.files || [];
-          const chosenFile =
-            files.find((file) => /\.(mp4|mkv|webm|avi|mov|mkv)$/i.test(file.name)) ||
-            files.sort((a, b) => Number(b.length || 0) - Number(a.length || 0))[0];
+          const chosenFile = pickBestTorrentFile(files);
 
           if (!chosenFile?.getBlob) {
             setDownloadState({
@@ -534,6 +635,11 @@ export default function TBoomPage() {
               peers: Number(torrentInstance.numPeers || 0),
               speedMbps: 0
             });
+            showTorrentNotice("No playable file", "The torrent completed, but we could not find a video file to save.", [
+              "This upload may contain samples, extras, or non-video files only.",
+              "Try another source with a clearer movie release name.",
+              "Use the in-app stream only when the torrent contains a playable video file."
+            ]);
             return;
           }
 
@@ -556,6 +662,11 @@ export default function TBoomPage() {
                 peers: Number(torrentInstance.numPeers || 0),
                 speedMbps: 0
               });
+              showTorrentNotice("Save failed", "The torrent finished, but the browser could not extract the file.", [
+                "This often happens with huge files or browser memory limits.",
+                "Try a native torrent app if the file is very large.",
+                "Use a source with a smaller or better-seeded release."
+              ]);
               return;
             }
 
@@ -573,6 +684,7 @@ export default function TBoomPage() {
               (downloadClientRef.current as { destroy: () => Promise<void> | void } | null)?.destroy()
             ).catch(() => undefined);
             downloadClientRef.current = null;
+            dismissTorrentNotice();
           });
         });
       });
@@ -587,6 +699,11 @@ export default function TBoomPage() {
         speedMbps: 0
       });
       showActionMessage("warning", "Download could not start in browser.");
+      showTorrentNotice("Browser download unavailable", "The browser torrent engine could not initialize.", [
+        "Try refreshing and start again.",
+        "If this keeps happening, use the desktop app or a native torrent client.",
+        "Open in Torrent App is usually the most reliable option."
+      ]);
     }
   }
 
@@ -899,7 +1016,7 @@ export default function TBoomPage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [streamingMagnet, query]);
+  }, [streamingMagnet, query, stopStreaming]);
 
   function formatTime(seconds: number) {
     const safe = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
@@ -918,46 +1035,6 @@ export default function TBoomPage() {
     setPlaybackTime(0);
     setDuration(0);
     setPlaybackRate(1);
-  }
-
-  function clearVideoElement() {
-    if (!videoRef.current) return;
-    const video = videoRef.current;
-    if (timeUpdateHandlerRef.current) {
-      video.removeEventListener("timeupdate", timeUpdateHandlerRef.current);
-      timeUpdateHandlerRef.current = null;
-    }
-    video.pause();
-    video.removeAttribute("src");
-    while (video.firstChild) {
-      video.removeChild(video.firstChild);
-    }
-    video.load();
-  }
-
-  async function stopStreaming() {
-    const client = clientRef.current as { destroy: () => Promise<void> | void } | null;
-    setIsStopping(true);
-
-    // Instant user feedback and immediate playback stop.
-    clearVideoElement();
-    setStreamingMagnet(null);
-    setStreamingTitle("");
-    resetPlayerUiState();
-
-    if (!client) {
-      setIsStopping(false);
-      return;
-    }
-
-    clientRef.current = null;
-    Promise.resolve(client.destroy())
-      .catch(() => {
-        // Ignore destroy errors after forced UI stop.
-      })
-      .finally(() => {
-        setIsStopping(false);
-      });
   }
 
   function handleTogglePlay() {
@@ -1215,69 +1292,49 @@ export default function TBoomPage() {
   return (
     <div className="section-base min-h-full px-6 py-16">
       <div className="mx-auto max-w-[980px]">
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-sm)] sm:p-8">
-          {/* Hero */}
-          <div className="relative mb-2 rounded-xl border border-[var(--border-strong)] bg-gradient-to-br from-[var(--accent-cool)]/[0.07] via-[var(--bg-card)] to-[var(--accent-primary)]/[0.09] px-5 py-7 sm:px-8 sm:py-9">
-            <div
-              className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-[var(--accent-cool)]/10 blur-3xl"
-              aria-hidden="true"
-            />
-            <div
-              className="pointer-events-none absolute -bottom-10 -left-6 h-36 w-36 rounded-full bg-[var(--accent-primary)]/12 blur-3xl"
-              aria-hidden="true"
-            />
-
-            <div className="relative flex flex-col items-center text-center">
-              <div className="mb-4 flex items-center gap-3">
-                <span className="h-px w-10 bg-gradient-to-r from-transparent to-[var(--accent-cool)]/60 sm:w-14" />
-                <svg
-                  className="h-7 w-7 text-[var(--accent-cool)] drop-shadow-[0_0_12px_rgba(74,124,142,0.45)]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M12 5C7 5 3.2 8.1 2 12c1.2 3.9 5 7 10 7s8.8-3.1 10-7c-1.2-3.9-5-7-10-7z"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  />
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" />
-                  <circle cx="12" cy="12" r="1" fill="var(--accent-primary)" />
-                </svg>
-                <span className="h-px w-10 bg-gradient-to-l from-transparent to-[var(--accent-cool)]/60 sm:w-14" />
-              </div>
-
-              <h1 className="font-[var(--font-cinzel)] text-[clamp(1.65rem,4.8vw,2.65rem)] font-bold uppercase leading-[1.08] tracking-[0.18em]">
-                <span className="bg-gradient-to-r from-[var(--accent-cool)] via-[var(--text-primary)] to-[var(--accent-primary)] bg-clip-text text-transparent">
-                  The God&apos;s Eye
-                </span>
-              </h1>
-
-              <p className="mt-3 max-w-xl font-[var(--font-playfair)] text-[clamp(1.05rem,2.4vw,1.35rem)] italic leading-snug text-[var(--text-secondary)]">
-                The World&apos;s{" "}
-                <span className="font-semibold not-italic text-[var(--accent-primary)]">Infinite</span> Search Engine.
-              </p>
-
-              <p className="mt-3 max-w-lg text-xs uppercase tracking-[0.22em] text-[var(--text-muted)] sm:text-[11px]">
-                Discover · Stream · Download
-              </p>
-            </div>
-          </div>
-
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-0 shadow-[var(--shadow-sm)]">
+          <GodsEyeHero />
+          <div className="px-5 pb-6 sm:px-6">
           {continueWatching && (
             <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg-main)] p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-cool)]">
-                Continue Watching
-              </p>
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-medium text-[var(--text-primary)]">{continueWatching.title}</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-cool)]">
+                  Continue Watching
+                </p>
                 <button
                   type="button"
-                  onClick={() => startTorrent(continueWatching.magnetURI, continueWatching.title)}
-                  className="rounded-full bg-[var(--accent-primary)] px-4 py-1.5 text-xs font-semibold text-white"
+                  onClick={() => {
+                    clearContinueWatching();
+                    setContinueWatching(null);
+                    showActionMessage("info", "Continue Watching history cleared.");
+                  }}
+                  className="rounded-full border border-[var(--border-strong)] px-3 py-1 text-[10px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
                 >
-                  Resume
+                  Clear
                 </button>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-medium text-[var(--text-primary)]">{continueWatching.title}</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => startTorrent(continueWatching.magnetURI, continueWatching.title)}
+                    className="rounded-full bg-[var(--accent-primary)] px-4 py-1.5 text-xs font-semibold text-white"
+                  >
+                    Resume
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearContinueWatching();
+                      setContinueWatching(null);
+                      showActionMessage("info", "Continue Watching history cleared.");
+                    }}
+                    className="rounded-full border border-[var(--border-strong)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition hover:border-red-400 hover:text-red-600"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -1429,25 +1486,10 @@ export default function TBoomPage() {
               {groupedResults.length === 1 ? "" : "s"} for &quot;{activeQuery}&quot;.
             </p>
           )}
-          {(providerMeta.providersUsed.length > 0 || providerMeta.providersFailed.length > 0) && (
-            <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              {providerMeta.providersUsed.map((provider) => (
-                <span
-                  key={`used-${provider}`}
-                  className="rounded-full border border-[var(--accent-primary)]/35 bg-[var(--accent-primary)]/10 px-3 py-1 text-[var(--accent-primary)]"
-                >
-                  Provider: {provider}
-                </span>
-              ))}
-              {providerMeta.providersFailed.map((provider) => (
-                <span
-                  key={`failed-${provider}`}
-                  className="rounded-full border border-[var(--border-strong)] bg-[var(--bg-main)] px-3 py-1 text-[var(--text-secondary)]"
-                >
-                  Failover used ({provider} down)
-                </span>
-              ))}
-            </div>
+          {providerMeta.providersFailed.length > 0 && (
+            <p className="mt-3 text-xs text-[var(--text-secondary)]">
+              Some search sources were slow or unavailable — showing the best results we could find.
+            </p>
           )}
           {Object.keys(activeOperators).length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -1487,6 +1529,7 @@ export default function TBoomPage() {
               />
             </div>
           )}
+          </div>
         </div>
 
         {actionMessage && (
@@ -1501,6 +1544,59 @@ export default function TBoomPage() {
               }`}
             >
               {actionMessage.text}
+            </div>
+          </div>
+        )}
+
+        {torrentNotice && (
+          <div className="fixed inset-0 z-[155] flex items-center justify-center bg-black/55 p-4">
+            <div className="w-full max-w-lg rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
+                    Torrent Notice
+                  </p>
+                  <h3 className="mt-1 font-[var(--font-playfair)] text-2xl text-[var(--text-primary)]">
+                    {torrentNotice.title}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={dismissTorrentNotice}
+                  className="rounded-full border border-[var(--border-strong)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]"
+                >
+                  Close
+                </button>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{torrentNotice.message}</p>
+              {torrentNotice.tips.length > 0 && (
+                <ul className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
+                  {torrentNotice.tips.map((tip) => (
+                    <li key={tip} className="rounded-xl border border-[var(--border)] bg-[var(--bg-main)] px-3 py-2">
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="mt-5 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMagnetHelp(true);
+                    dismissTorrentNotice();
+                  }}
+                  className="rounded-full border border-[var(--border-strong)] px-4 py-2 text-sm font-medium text-[var(--text-primary)]"
+                >
+                  Open Help
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissTorrentNotice}
+                  className="rounded-full bg-[var(--accent-primary)] px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Got it
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1876,3 +1972,4 @@ export default function TBoomPage() {
     </div>
   );
 }
+

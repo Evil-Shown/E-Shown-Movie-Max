@@ -4,12 +4,14 @@ import type { Movie } from "@/lib/types";
 import { BRAND_NAME } from "@/lib/brand";
 import { backdropUrl, formatDisplayYear, posterUrl } from "@/lib/movies";
 import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from "@/lib/providers";
-import { getBestProvider, recordProviderLoad } from "@/lib/storage/provider-performance";
+import { getBestProvider, recordProviderFailure, recordProviderLoad } from "@/lib/storage/provider-performance";
 import {
   formatProviderSwitchMessage,
   getNextProvider,
+  getPlaybackConfirmTimeoutMs,
   getStreamLoadTimeoutMs,
   getStabilityTip,
+  isEmbedPlaybackMessage,
   warmStreamProviders,
 } from "@/lib/stream-optimizer";
 import { getMovieEmbedUrl, isTvShow } from "@/lib/streaming";
@@ -211,8 +213,11 @@ function VideoPlayerModal({
   const [autoSwitchMessage, setAutoSwitchMessage] = useState<string | null>(null);
   const [playerEngaged, setPlayerEngaged] = useState(false);
   const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const playbackWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadStartedAtRef = useRef(Date.now());
   const failoverAttemptsRef = useRef(0);
+  const playbackConfirmedRef = useRef(false);
+  const playerEngagedRef = useRef(false);
   const stageRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const stabilityTip = getStabilityTip();
@@ -238,9 +243,48 @@ function VideoPlayerModal({
   const episodeLabel =
     season && episode ? `S${season} · E${episode}` : null;
 
+  const clearPlaybackWatchdog = useCallback(() => {
+    if (playbackWatchdogRef.current) {
+      clearTimeout(playbackWatchdogRef.current);
+      playbackWatchdogRef.current = null;
+    }
+  }, []);
+
+  const switchToNextProvider = useCallback(() => {
+    if (failoverAttemptsRef.current >= STREAM_PROVIDERS.length - 1) {
+      setLoadFailed(true);
+      setAutoSwitchMessage(null);
+      return false;
+    }
+
+    recordProviderFailure(provider);
+    const next = getNextProvider(provider);
+    failoverAttemptsRef.current += 1;
+    setAutoSwitchMessage(formatProviderSwitchMessage(next));
+    setLoaded(false);
+    setLoadFailed(false);
+    playbackConfirmedRef.current = false;
+    onProviderChange(next);
+    setProvider(next);
+    return true;
+  }, [onProviderChange, provider, setProvider]);
+
+  const schedulePlaybackWatchdog = useCallback(() => {
+    clearPlaybackWatchdog();
+    playbackWatchdogRef.current = setTimeout(() => {
+      if (playbackConfirmedRef.current || playerEngagedRef.current) return;
+      switchToNextProvider();
+    }, getPlaybackConfirmTimeoutMs());
+  }, [clearPlaybackWatchdog, switchToNextProvider]);
+
+  useEffect(() => {
+    playerEngagedRef.current = playerEngaged;
+  }, [playerEngaged]);
+
   useEffect(() => {
     warmStreamProviders();
     failoverAttemptsRef.current = 0;
+    playbackConfirmedRef.current = false;
     setAutoSwitchMessage(null);
     setPlayerEngaged(false);
   }, [movie.id, mode]);
@@ -251,35 +295,51 @@ function VideoPlayerModal({
   }, [isTrailer, movie.id]);
 
   useEffect(() => {
+    if (isTrailer) return;
+
+    const onMessage = (event: MessageEvent) => {
+      if (isEmbedPlaybackMessage(event.data)) {
+        playbackConfirmedRef.current = true;
+        clearPlaybackWatchdog();
+      }
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [clearPlaybackWatchdog, isTrailer, iframeSrc]);
+
+  useEffect(() => {
     setPlayerEngaged(false);
-  }, [season, episode, provider, iframeSrc]);
+    playbackConfirmedRef.current = false;
+    clearPlaybackWatchdog();
+  }, [season, episode, provider, iframeSrc, clearPlaybackWatchdog]);
 
   useEffect(() => {
     setLoaded(false);
     setLoadFailed(false);
+    playbackConfirmedRef.current = false;
     loadStartedAtRef.current = Date.now();
+    clearPlaybackWatchdog();
 
     if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
     if (!isTrailer && iframeSrc) {
       loadTimerRef.current = setTimeout(() => {
-        if (failoverAttemptsRef.current >= STREAM_PROVIDERS.length - 1) {
-          setLoadFailed(true);
-          setAutoSwitchMessage(null);
-          return;
-        }
-
-        const next = getNextProvider(provider);
-        failoverAttemptsRef.current += 1;
-        setAutoSwitchMessage(formatProviderSwitchMessage(next));
-        onProviderChange(next);
-        setProvider(next);
-      }, getStreamLoadTimeoutMs());
+        if (!switchToNextProvider()) return;
+      }, getStreamLoadTimeoutMs(provider));
     }
 
     return () => {
       if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+      clearPlaybackWatchdog();
     };
-  }, [iframeSrc, isTrailer, provider, onProviderChange, setProvider]);
+  }, [iframeSrc, isTrailer, provider, switchToNextProvider, clearPlaybackWatchdog]);
+
+  useEffect(() => {
+    if (playerEngaged) {
+      playbackConfirmedRef.current = true;
+      clearPlaybackWatchdog();
+    }
+  }, [playerEngaged, clearPlaybackWatchdog]);
 
   useEffect(() => {
     if (!isTrailer && loaded && movieEmbedUrl) {
@@ -348,13 +408,8 @@ function VideoPlayerModal({
   }
 
   function handleProviderSwitch() {
-    const next = getNextProvider(provider);
-    onProviderChange(next);
-    setProvider(next);
-    setLoaded(false);
-    setLoadFailed(false);
-    setAutoSwitchMessage(formatProviderSwitchMessage(next));
-    failoverAttemptsRef.current += 1;
+    recordProviderFailure(provider);
+    switchToNextProvider();
   }
 
   return (
@@ -519,14 +574,18 @@ function VideoPlayerModal({
                     />
                   )}
                   {loadFailed && !loaded && (
-                    <div className="absolute inset-0 z-[3] flex flex-col items-center justify-center gap-3 bg-black/80 px-6 text-center">
-                      <p className="text-sm text-stone-200">Stream is taking too long or unavailable on {PROVIDER_LABELS[provider]}.</p>
+                    <div className="absolute inset-0 z-[3] flex flex-col items-center justify-center gap-4 bg-black/85 px-6 text-center">
+                      <p className="font-[var(--font-playfair)] text-xl text-stone-100">No stream on this source</p>
+                      <p className="max-w-sm text-sm leading-relaxed text-stone-300">
+                        {PROVIDER_LABELS[provider]} doesn&apos;t have this title right now. We&apos;ll try the next source
+                        automatically, or you can switch manually.
+                      </p>
                       <button
                         type="button"
                         onClick={handleProviderSwitch}
                         className="rounded-full bg-[#f4c27a] px-5 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-stone-950 hover:bg-white"
                       >
-                        Try Next Provider
+                        Try Next Source
                       </button>
                     </div>
                   )}
@@ -536,16 +595,18 @@ function VideoPlayerModal({
                     src={iframeSrc}
                     title={isTrailer ? `${movie.title} trailer` : `${movie.title} stream`}
                     tabIndex={0}
-                    referrerPolicy="origin"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    referrerPolicy="no-referrer"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share"
                     allowFullScreen
                     onLoad={() => {
                       recordProviderLoad(provider, Date.now() - loadStartedAtRef.current);
                       setLoaded(true);
                       setLoadFailed(false);
-                      setAutoSwitchMessage(null);
                       setShowKeyboardHint(true);
                       if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+                      if (!isTrailer) {
+                        schedulePlaybackWatchdog();
+                      }
                     }}
                     onPointerDown={focusPlayer}
                     className="player-embed-iframe absolute inset-0 z-[1] h-full w-full border-0"

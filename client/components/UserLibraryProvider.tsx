@@ -6,6 +6,7 @@ import { resolveTmdbId } from "@/lib/streaming";
 import {
   getContinueItem,
   getContinueWatching,
+  clearContinueWatching,
   removeFromContinueWatching,
   upsertContinueWatching,
 } from "@/lib/storage/continue-watching";
@@ -55,6 +56,7 @@ interface UserLibraryContextValue {
     duration?: number;
   }) => void;
   removeContinueItem: (id: string) => void;
+  clearContinueWatching: () => void;
   getResumeTime: (id: string) => number;
   preferredProvider: StreamProvider;
   setProvider: (provider: StreamProvider) => void;
@@ -91,7 +93,7 @@ function movieToWatchlistItem(movie: Movie): WatchlistItem | null {
 export default function UserLibraryProvider({ children }: { children: ReactNode }) {
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [continueWatching, setContinueWatching] = useState<ContinueWatchingItem[]>([]);
-  const [preferredProvider, setPreferredProviderState] = useState<StreamProvider>("vidsrc");
+  const [preferredProvider, setPreferredProviderState] = useState<StreamProvider>("vidfast");
   const [watchedEpisodes, setWatchedEpisodes] = useState<Record<string, boolean>>({});
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -182,6 +184,11 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
     []
   );
 
+  const clearContinueItems = useCallback(() => {
+    clearContinueWatching();
+    setContinueWatching([]);
+  }, []);
+
   const getResumeTime = useCallback((id: string) => {
     return getContinueItem(id)?.currentTime ?? 0;
   }, []);
@@ -210,6 +217,7 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
       continueWatching: hydrated ? continueWatching : [],
       savePlayback,
       removeContinueItem,
+      clearContinueWatching: clearContinueItems,
       getResumeTime,
       preferredProvider,
       setProvider,
@@ -227,6 +235,7 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
       continueWatching,
       savePlayback,
       removeContinueItem,
+      clearContinueItems,
       getResumeTime,
       preferredProvider,
       setProvider,

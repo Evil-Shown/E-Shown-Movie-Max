@@ -10,8 +10,7 @@ function getEmbedProxyApiBase(): string | null {
 }
 
 export function isEmbedProxyEnabled(): boolean {
-  if (process.env.NEXT_PUBLIC_USE_EMBED_PROXY === "false") return false;
-  return Boolean(getEmbedProxyApiBase());
+  return process.env.NEXT_PUBLIC_USE_EMBED_PROXY === "true";
 }
 
 /** Route embed iframe loads through the backend proxy (UA/referrer rotation + caching). */

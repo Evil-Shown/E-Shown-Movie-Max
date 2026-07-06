@@ -6,7 +6,7 @@ import Link from "next/link";
 import type { Movie } from "@/lib/types";
 
 export default function WatchlistPageClient() {
-  const { watchlist, removeWatchlistItem } = useUserLibrary();
+  const { watchlist } = useUserLibrary();
 
   if (!watchlist.length) {
     return (

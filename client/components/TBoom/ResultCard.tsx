@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export type TorrentCardData = {
   name?: string;
   seeders?: number | string;
@@ -68,7 +70,14 @@ export default function TBoomResultCard({
       <div className="flex gap-4">
         <div className="relative h-[110px] w-[80px] shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-card)]">
           {result.posterUrl ? (
-            <img src={result.posterUrl} alt="" className="h-full w-full object-cover" />
+            <Image
+              src={result.posterUrl}
+              alt=""
+              fill
+              sizes="80px"
+              unoptimized
+              className="object-cover"
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#7C3AED]/30 to-[#F59E0B]/20 text-2xl font-bold text-[var(--accent-primary)]">
               {initial}

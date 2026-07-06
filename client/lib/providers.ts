@@ -1,12 +1,30 @@
-export type StreamProvider = "vidsrc" | "vidlink" | "superembed" | "embedsu";
+export type StreamProvider =
+  | "vidfast"
+  | "vidlink"
+  | "superembed"
+  | "autoembed"
+  | "vidsrcpm"
+  | "vidsrc";
 
-export const STREAM_PROVIDERS: StreamProvider[] = ["vidsrc", "vidlink", "superembed", "embedsu"];
+/** VidFast first — best uptime in current embed catalog. */
+export const DEFAULT_STREAM_PROVIDER: StreamProvider = "vidfast";
+
+export const STREAM_PROVIDERS: StreamProvider[] = [
+  "vidfast",
+  "vidlink",
+  "superembed",
+  "autoembed",
+  "vidsrcpm",
+  "vidsrc",
+];
 
 export const PROVIDER_LABELS: Record<StreamProvider, string> = {
-  vidsrc: "VidSrc",
+  vidfast: "VidFast",
   vidlink: "VidLink",
   superembed: "SuperEmbed",
-  embedsu: "Embed.su",
+  autoembed: "AutoEmbed",
+  vidsrcpm: "VidSrc.pm",
+  vidsrc: "VidSrc",
 };
 
 /** Site palette passed to embed players so controls match Chithra. */
@@ -38,17 +56,19 @@ export function buildEmbedUrl(
   const seek = options?.seek;
 
   switch (provider) {
-    case "vidsrc": {
+    case "vidfast": {
       const path =
         type === "movie"
-          ? `https://vsembed.ru/embed/movie/${mediaId}`
-          : `https://vsembed.ru/embed/tv/${mediaId}/${season}/${episode}`;
+          ? `https://vidfast.pro/movie/${mediaId}`
+          : `https://vidfast.pro/tv/${mediaId}/${season}/${episode}`;
       return appendQuery(path, {
-        autoplay: autoPlay ? "1" : "0",
-        seek: seek ? String(seek) : undefined,
-        color: PLAYER_THEME.accent,
-        poster: "0",
-        title: "0",
+        autoPlay: autoPlay ? "true" : "false",
+        startAt: seek ? String(seek) : undefined,
+        primaryColor: PLAYER_THEME.accent,
+        secondaryColor: PLAYER_THEME.background,
+        iconColor: PLAYER_THEME.icon,
+        title: "false",
+        poster: "false",
       });
     }
     case "vidlink": {
@@ -73,11 +93,35 @@ export function buildEmbedUrl(
       }
       return `https://multiembed.mov/directstream.php?video_id=${mediaId}&tmdb=1&s=${season}&e=${episode}`;
     }
-    case "embedsu": {
+    case "autoembed": {
       if (type === "movie") {
-        return `https://embed.su/embed/movie/${mediaId}`;
+        return `https://autoembed.co/movie/tmdb/${mediaId}`;
       }
-      return `https://embed.su/embed/tv/${mediaId}/${season}/${episode}`;
+      return `https://autoembed.co/tv/tmdb/${mediaId}-${season}-${episode}`;
+    }
+    case "vidsrcpm": {
+      const path =
+        type === "movie"
+          ? `https://vidsrc.pm/embed/movie/${mediaId}`
+          : `https://vidsrc.pm/embed/tv/${mediaId}/${season}/${episode}`;
+      return appendQuery(path, {
+        ...(autoPlay ? {} : { autoPlay: "false" }),
+        ...(seek ? { startAt: String(seek) } : {}),
+        color: PLAYER_THEME.accent,
+        poster: "false",
+      });
+    }
+    case "vidsrc": {
+      const path =
+        type === "movie"
+          ? `https://vidsrc.cc/v2/embed/movie/${mediaId}`
+          : `https://vidsrc.cc/v2/embed/tv/${mediaId}/${season}/${episode}`;
+      return appendQuery(path, {
+        ...(autoPlay ? {} : { autoPlay: "false" }),
+        ...(seek ? { startAt: String(seek) } : {}),
+        color: PLAYER_THEME.accent,
+        poster: "false",
+      });
     }
   }
 }
@@ -85,4 +129,21 @@ export function buildEmbedUrl(
 export function nextProvider(current: StreamProvider): StreamProvider {
   const index = STREAM_PROVIDERS.indexOf(current);
   return STREAM_PROVIDERS[(index + 1) % STREAM_PROVIDERS.length];
+}
+
+export function getProviderOrigin(provider: StreamProvider): string {
+  switch (provider) {
+    case "vidfast":
+      return "https://vidfast.pro";
+    case "vidlink":
+      return "https://vidlink.pro";
+    case "superembed":
+      return "https://multiembed.mov";
+    case "autoembed":
+      return "https://autoembed.co";
+    case "vidsrcpm":
+      return "https://vidsrc.pm";
+    case "vidsrc":
+      return "https://vidsrc.cc";
+  }
 }
