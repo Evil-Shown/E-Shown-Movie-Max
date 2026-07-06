@@ -4,6 +4,7 @@ import type { Movie } from "@/lib/types";
 import { backdropUrl, formatRuntime, posterUrl } from "@/lib/movies";
 import HeroParticles from "@/components/3d/HeroParticles";
 import FloatingCard from "@/components/3d/FloatingCard";
+import PlayButton from "@/components/PlayButton";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
@@ -53,6 +54,7 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
     offset: ["start start", "end start"],
   });
   const backdropY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  const runtimePct = Math.min(100, Math.round((movie.runtime / 200) * 100));
 
   return (
     <section ref={sectionRef} className="relative h-screen min-h-[700px] overflow-hidden">
@@ -124,45 +126,49 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
             {movie.overview}
           </motion.p>
 
-          <motion.div variants={prefersReducedMotion ? undefined : fadeUpVariant} className="mt-8 flex flex-wrap gap-4">
+          <motion.div variants={prefersReducedMotion ? undefined : fadeUpVariant} className="mt-6 flex flex-wrap gap-4">
+            <PlayButton movie={movie} label="Play Now" />
             <Link
               href={`/movie/${movie.id}`}
-              className="font-cinzel inline-flex items-center gap-3 bg-[var(--gold-primary)] py-3.5 pl-8 pr-6 text-sm font-bold uppercase tracking-wider text-black transition hover:scale-[1.01] hover:bg-[var(--gold-bright)] hover:shadow-[0_8px_30px_rgba(201,168,76,0.25)]"
-            >
-              Play Now
-              <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </Link>
-            <Link
-              href={`/movie/${movie.id}`}
-              className="inline-flex items-center border border-[var(--border-mid)] px-8 py-3.5 text-sm font-medium text-[var(--text-secondary)] transition hover:border-[var(--border-hot)] hover:text-[var(--text-primary)]"
+              className="inline-flex h-12 min-w-[160px] items-center justify-center border border-[rgba(201,168,76,0.4)] px-8 text-sm text-[rgba(240,237,228,0.8)] transition hover:border-[var(--border-hot)] hover:text-[var(--text-primary)]"
             >
               More Info
             </Link>
+          </motion.div>
+
+          <motion.div variants={prefersReducedMotion ? undefined : fadeUpVariant} className="mt-6">
+            <p className="text-[9px] uppercase tracking-[0.3em] text-[var(--text-dim)]">Runtime</p>
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">{formatRuntime(movie.runtime)}</p>
+            <div className="mt-2 h-0.5 w-[200px] bg-[rgba(201,168,76,0.15)]">
+              <div
+                className="h-full bg-[var(--gold-primary)]"
+                style={{ width: `${runtimePct}%` }}
+              />
+            </div>
           </motion.div>
         </motion.div>
 
         <div className="absolute bottom-24 right-8 hidden lg:block">
           <FloatingCard>
             <div className="animate-float">
-              <div className="relative h-[390px] w-[260px] overflow-hidden rounded-xl ring-1 ring-[var(--border-mid)]">
-                <Image
+              <div className="h-[390px] w-[260px] overflow-hidden rounded-xl ring-1 ring-[var(--border-mid)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={posterUrl(movie.posterPath, "w500")}
                   alt={movie.title}
-                  fill
-                  sizes="260px"
-                  priority
-                  className="object-cover"
+                  width={260}
+                  height={390}
+                  className="h-full w-full object-cover"
                 />
               </div>
-              <div className="poster-reflection relative mt-2 h-16 w-[260px] overflow-hidden rounded-xl">
-                <Image
+              <div className="poster-reflection relative mt-2 h-16 w-[260px] overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={posterUrl(movie.posterPath, "w500")}
                   alt=""
-                  fill
-                  sizes="260px"
-                  className="object-cover"
+                  width={260}
+                  height={64}
+                  className="h-full w-full object-cover"
                 />
               </div>
             </div>
@@ -171,8 +177,12 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
       </div>
 
       <div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2">
-        <span className="text-[9px] uppercase tracking-[0.4em] text-[var(--text-dim)]">Scroll</span>
-        <span className="block h-8 w-px animate-pulse bg-[var(--gold-primary)]/50" />
+        <span className="text-[10px] uppercase tracking-[0.4em] text-[rgba(240,237,228,0.3)]">
+          Scroll
+        </span>
+        <div className="relative h-10 w-px bg-[rgba(201,168,76,0.2)]">
+          <div className="scroll-line-indicator absolute inset-0 bg-[var(--gold-primary)]" />
+        </div>
       </div>
     </section>
   );

@@ -34,6 +34,10 @@
   --font-cormorant: var(--font-cormorant);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html,
 body {
   background-color: var(--bg-void);
@@ -204,6 +208,116 @@ body {
 }
 
 ::selection {
-  background: rgba(201, 168, 76, 0.25);
-  color: var(--text-primary);
+  background: rgba(201, 168, 76, 0.2);
+  color: #e8c96d;
+}
+
+*:focus-visible {
+  outline: 1px solid rgba(201, 168, 76, 0.6);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.card-hover-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-hover-shimmer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  transition: none;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.card-hover-shimmer:hover::before {
+  animation: shimmerOnce 0.45s ease forwards;
+}
+
+@keyframes shimmerOnce {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.card-3d-tilt {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card-3d-tilt:hover {
+  transform: perspective(800px) rotateX(2deg) rotateY(-3deg);
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #07071a 25%, #0d0d2b 50%, #07071a 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.search-bg-text {
+  font-family: var(--font-cinzel);
+  font-size: clamp(6rem, 18vw, 16rem);
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(201, 168, 76, 0.08);
+  user-select: none;
+  pointer-events: none;
+  position: absolute;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+}
+
+.search-bg-text-secondary {
+  font-family: var(--font-cinzel);
+  font-size: clamp(3rem, 10vw, 8rem);
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(201, 168, 76, 0.05);
+  user-select: none;
+  pointer-events: none;
+  position: absolute;
+  white-space: nowrap;
+  top: 62%;
+  left: 58%;
+  transform: translate(-50%, -50%);
+}
+
+.genre-pills-scroll,
+.row-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.genre-pills-scroll::-webkit-scrollbar,
+.row-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes scrollLine {
+  0% {
+    clip-path: inset(0 0 100% 0);
+  }
+  50% {
+    clip-path: inset(0 0 0% 0);
+  }
+  100% {
+    clip-path: inset(100% 0 0% 0);
+  }
+}
+
+.scroll-line-indicator {
+  animation: scrollLine 2s ease-in-out infinite;
 }

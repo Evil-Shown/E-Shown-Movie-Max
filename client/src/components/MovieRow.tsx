@@ -2,13 +2,14 @@
 
 import type { Movie } from "@/lib/types";
 import MovieCard from "./MovieCard";
-import { motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { staggerContainer } from "@/lib/motion";
 
 interface MovieRowProps {
   title: string;
   subtitle?: string;
+  eyebrow?: string;
   movies: Movie[];
   priorityFirst?: boolean;
   showRank?: boolean;
@@ -17,35 +18,34 @@ interface MovieRowProps {
 export default function MovieRow({
   title,
   subtitle,
+  eyebrow,
   movies,
   priorityFirst = false,
   showRank = false,
 }: MovieRowProps) {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const [constraints, setConstraints] = useState({ left: 0, right: 0 });
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [canScroll, setCanScroll] = useState(false);
+  const [lineWidth, setLineWidth] = useState(0);
   const prefersReducedMotion = useReducedMotion();
-  const x = useMotionValue(0);
-  const opacity = useTransform(x, [-20, 0], [0.95, 1]);
 
-  function updateConstraints() {
-    if (!rowRef.current) return;
-    const { scrollWidth, offsetWidth } = rowRef.current;
-    const max = Math.max(0, scrollWidth - offsetWidth);
-    setConstraints({ left: -max, right: 0 });
-    setCanScroll(max > 0);
+  function updateScrollState() {
+    if (!scrollRef.current) return;
+    const { scrollWidth, clientWidth } = scrollRef.current;
+    setCanScroll(scrollWidth > clientWidth + 4);
   }
 
   function scrollBy(delta: number) {
-    const current = x.get();
-    const next = Math.min(0, Math.max(constraints.left, current + delta));
-    x.set(next);
+    scrollRef.current?.scrollBy({ left: delta, behavior: "smooth" });
   }
 
   useEffect(() => {
-    updateConstraints();
-    window.addEventListener("resize", updateConstraints);
-    return () => window.removeEventListener("resize", updateConstraints);
+    updateScrollState();
+    window.addEventListener("resize", updateScrollState);
+    const t = setTimeout(() => setLineWidth(100), 200);
+    return () => {
+      window.removeEventListener("resize", updateScrollState);
+      clearTimeout(t);
+    };
   }, [movies.length]);
 
   if (movies.length === 0) return null;
@@ -53,13 +53,22 @@ export default function MovieRow({
   return (
     <section className="group/row relative py-10">
       <div className="mx-auto mb-6 max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between gap-4 border-l-4 border-[var(--gold-primary)] pl-4">
-          <div>
-            <h2 className="font-cinzel text-2xl text-[var(--text-primary)] sm:text-3xl">{title}</h2>
-            {subtitle && (
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p>
-            )}
-          </div>
+        <div className="border-l-4 border-[var(--gold-primary)] pl-4">
+          {eyebrow && (
+            <p className="font-cinzel text-[0.6rem] uppercase tracking-[0.3em] text-[var(--gold-primary)]">
+              {eyebrow}
+            </p>
+          )}
+          <h2 className="font-cinzel text-2xl text-[var(--text-primary)] sm:text-3xl">{title}</h2>
+          <div
+            className="mt-2 h-px bg-[var(--border-mid)] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            style={{ width: `${lineWidth}%`, maxWidth: "100%" }}
+          />
+          {subtitle && (
+            <p className="font-cormorant mt-2 text-sm italic text-[var(--text-secondary)]">
+              {subtitle}
+            </p>
+          )}
         </div>
       </div>
 
@@ -69,41 +78,36 @@ export default function MovieRow({
             <button
               type="button"
               aria-label="Scroll left"
-              onClick={() => scrollBy(320)}
-              className="absolute left-2 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--bg-elevated)]/90 text-[var(--gold-primary)] opacity-0 transition hover:bg-[var(--gold-primary)] hover:text-black group-hover/row:opacity-100 md:flex"
+              onClick={() => scrollBy(-600)}
+              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[rgba(201,168,76,0.25)] bg-[rgba(2,2,10,0.85)] text-[var(--gold-primary)] opacity-0 transition-opacity duration-200 hover:bg-[var(--gold-primary)] hover:text-black group-hover/row:opacity-100 md:flex"
             >
-              ‹
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
             </button>
             <button
               type="button"
               aria-label="Scroll right"
-              onClick={() => scrollBy(-320)}
-              className="absolute right-2 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--bg-elevated)]/90 text-[var(--gold-primary)] opacity-0 transition hover:bg-[var(--gold-primary)] hover:text-black group-hover/row:opacity-100 md:flex"
+              onClick={() => scrollBy(600)}
+              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-[rgba(201,168,76,0.25)] bg-[rgba(2,2,10,0.85)] text-[var(--gold-primary)] opacity-0 transition-opacity duration-200 hover:bg-[var(--gold-primary)] hover:text-black group-hover/row:opacity-100 md:flex"
             >
-              ›
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
             </button>
           </>
         )}
 
         <motion.div
-          ref={rowRef}
-          style={{ x, opacity: prefersReducedMotion ? 1 : opacity }}
-          drag={prefersReducedMotion ? false : "x"}
-          dragConstraints={constraints}
-          dragElastic={0.08}
-          onDragStart={updateConstraints}
-          onPointerEnter={updateConstraints}
-          className="flex cursor-grab gap-4 overflow-hidden px-4 active:cursor-grabbing sm:px-6 lg:px-8"
+          ref={scrollRef}
+          className="row-scroll flex gap-4 overflow-x-auto px-4 pb-2 sm:px-6 lg:px-8"
           variants={prefersReducedMotion ? undefined : staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-40px" }}
         >
           {movies.map((movie, i) => (
-            <div
-              key={movie.id}
-              className="relative w-[150px] sm:w-[175px] md:w-[200px]"
-            >
+            <div key={movie.id} className="relative w-[150px] shrink-0 sm:w-[175px] md:w-[200px]">
               <MovieCard
                 movie={movie}
                 priority={priorityFirst && i < 4}

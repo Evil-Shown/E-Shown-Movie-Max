@@ -1,7 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { useScroll, useTransform, motion, useReducedMotion } from "framer-motion";
 import { useRef } from "react";
 
 interface MovieDetailHeroProps {
@@ -11,16 +10,14 @@ interface MovieDetailHeroProps {
 export default function MovieDetailHero({ backdropSrc }: MovieDetailHeroProps) {
   const ref = useRef<HTMLElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"],
-  });
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "40%"]);
+  const { scrollY } = useScroll();
+  const y = useTransform(scrollY, [0, 600], [0, 240]);
 
   return (
     <section ref={ref} className="relative min-h-[70vh] overflow-hidden">
       <motion.div className="absolute inset-0" style={{ y: prefersReducedMotion ? 0 : y }}>
-        <Image src={backdropSrc} alt="" fill priority sizes="100vw" className="object-cover" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={backdropSrc} alt="" className="h-[120%] w-full object-cover" />
       </motion.div>
       <div className="hero-overlay-detail absolute inset-0" />
     </section>
