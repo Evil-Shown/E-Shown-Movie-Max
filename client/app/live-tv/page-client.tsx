@@ -12,7 +12,6 @@ import { getFeaturedChannels, LIVE_TV_CHANNELS } from "@/lib/live-tv/channels";
 import {
   getContinueWatchingChannels,
   getFavoriteChannelIds,
-  isFavoriteChannel,
   toggleFavoriteChannel,
   upsertContinueWatching,
 } from "@/lib/live-tv/storage";
@@ -210,7 +209,7 @@ export default function LiveTvPageClient() {
         <div ref={playerRef} className="relative mx-auto max-w-[1100px] scroll-mt-24">
           <LiveTvPlayer
             channel={selectedChannel}
-            isFavorite={selectedChannel ? isFavoriteChannel(selectedChannel.id) : false}
+            isFavorite={selectedChannel ? favoriteIds.has(selectedChannel.id) : false}
             onToggleFavorite={handleToggleFavorite}
           />
           <p className="mt-3 text-center text-xs text-[var(--text-muted)]">

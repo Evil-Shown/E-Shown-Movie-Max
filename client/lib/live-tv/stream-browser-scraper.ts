@@ -24,7 +24,12 @@ function collectFromManifestBody(text: string, bucket: Set<string>) {
 
 /** Headless browser scrape — intercepts and inspects network traffic for manifests */
 export async function scrapePageWithBrowser(target: ScrapeTarget): Promise<string[]> {
-  const puppeteer = await import("puppeteer").catch(() => null);
+  let puppeteer;
+  try {
+    puppeteer = await (new Function('return import("puppeteer")'))();
+  } catch {
+    puppeteer = null;
+  }
   if (!puppeteer) return [];
 
   const found = new Set<string>();
@@ -67,7 +72,7 @@ export async function scrapePageWithBrowser(target: ScrapeTarget): Promise<strin
 
     await page.setRequestInterception(true);
 
-    page.on("request", (req) => {
+    page.on("request", (req: any) => {
       collectM3u8(req.url(), found);
 
       const headers = {
@@ -82,7 +87,7 @@ export async function scrapePageWithBrowser(target: ScrapeTarget): Promise<strin
       req.continue({ headers }).catch(() => req.continue().catch(() => undefined));
     });
 
-    page.on("response", async (res) => {
+    page.on("response", async (res: any) => {
       const url = res.url();
       collectM3u8(url, found);
 
