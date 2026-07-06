@@ -1,5 +1,7 @@
 "use client";
 
+import { buildSearchPath, parseSearchPageParams } from "@/lib/search-params";
+import { recordSearchQuery } from "@/lib/storage/taste-signals";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
@@ -40,12 +42,26 @@ export default function SearchBar({
   function handleSubmit(e?: FormEvent) {
     e?.preventDefault();
     const trimmed = query.trim();
-    const params = new URLSearchParams();
-    if (trimmed) params.set("q", trimmed);
-    const type = searchParams.get("type");
-    if (type === "tv" || type === "all") params.set("type", type);
-    const qs = params.toString();
-    router.push(qs ? `/search?${qs}` : "/search");
+    const current = parseSearchPageParams({
+      q: searchParams.get("q") ?? undefined,
+      type: searchParams.get("type") ?? undefined,
+      genre: searchParams.get("genre") ?? undefined,
+      year: searchParams.get("year") ?? undefined,
+      sort: searchParams.get("sort") ?? undefined,
+      rating: searchParams.get("rating") ?? undefined,
+    });
+
+    router.push(
+      buildSearchPath(
+        {
+          q: trimmed,
+          page: 1,
+        },
+        { ...current, q: trimmed }
+      )
+    );
+
+    recordSearchQuery(trimmed, current.genre ? [current.genre] : undefined);
   }
 
   const placeholder = PLACEHOLDERS[placeholderIndex];

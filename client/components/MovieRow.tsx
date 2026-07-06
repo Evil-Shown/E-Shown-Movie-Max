@@ -14,6 +14,7 @@ interface MovieRowProps {
   priorityFirst?: boolean;
   showRank?: boolean;
   embedded?: boolean;
+  seeAllHref?: string;
 }
 
 export default function MovieRow({
@@ -24,6 +25,7 @@ export default function MovieRow({
   priorityFirst = false,
   showRank = false,
   embedded = false,
+  seeAllHref = "/browse",
 }: MovieRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScroll, setCanScroll] = useState(false);
@@ -57,7 +59,7 @@ export default function MovieRow({
             <h2 className={styles.title}>{title}</h2>
             {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
           </div>
-          <Link href="/browse" className={styles.seeAll}>
+          <Link href={seeAllHref} className={styles.seeAll}>
             See all →
           </Link>
         </div>

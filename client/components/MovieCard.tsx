@@ -9,6 +9,7 @@ import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
+import { recordPosterDwell } from "@/lib/storage/taste-signals";
 import { useEffect, useRef, useState } from "react";
 import styles from "./MovieCard.module.css";
 
@@ -26,6 +27,8 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
   const [loaded, setLoaded] = useState(false);
   const [externalRatings, setExternalRatings] = useState(movie.externalRatings ?? null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const dwellStartRef = useRef<number | null>(null);
+  const dwellRecordedRef = useRef(false);
 
   const progress = continueWatching.find((item) => item.id === movie.id)?.progress ?? 0;
 
@@ -59,6 +62,28 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
     return () => observer.disconnect();
   }, [externalRatings, movie.title, movie.year]);
 
+  function handlePointerEnter() {
+    dwellStartRef.current = Date.now();
+  }
+
+  function handlePointerLeave() {
+    if (dwellRecordedRef.current || dwellStartRef.current === null) return;
+    const seconds = (Date.now() - dwellStartRef.current) / 1000;
+    if (seconds >= 2) {
+      dwellRecordedRef.current = true;
+      recordPosterDwell(
+        {
+          id: movie.id,
+          title: movie.title,
+          genres: movie.genres,
+          mediaType: movie.mediaType,
+        },
+        seconds
+      );
+    }
+    dwellStartRef.current = null;
+  }
+
   return (
     <motion.div
       ref={cardRef}
@@ -66,6 +91,10 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
       whileHover={prefersReducedMotion ? undefined : { y: -2 }}
       transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
       className={styles.card}
+      onMouseEnter={handlePointerEnter}
+      onMouseLeave={handlePointerLeave}
+      onFocus={handlePointerEnter}
+      onBlur={handlePointerLeave}
     >
       {rank !== undefined && (
         <span aria-hidden className={styles.rank}>

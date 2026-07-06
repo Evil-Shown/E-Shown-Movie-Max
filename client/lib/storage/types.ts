@@ -1,4 +1,4 @@
-import type { MediaType } from "@/lib/types";
+import type { MediaType, Genre } from "@/lib/types";
 import type { StreamProvider } from "@/lib/providers";
 
 export interface WatchlistItem {
@@ -9,6 +9,7 @@ export interface WatchlistItem {
   tmdbId: string;
   year: number;
   rating: number;
+  genres?: Genre[];
   addedAt: number;
 }
 
@@ -18,6 +19,7 @@ export interface ContinueWatchingItem {
   posterPath: string;
   mediaType: MediaType;
   tmdbId: string;
+  genres?: Genre[];
   progress: number;
   currentTime: number;
   duration: number;

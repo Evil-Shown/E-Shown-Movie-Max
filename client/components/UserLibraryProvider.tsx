@@ -86,6 +86,7 @@ function movieToWatchlistItem(movie: Movie): WatchlistItem | null {
     tmdbId: tmdbId ?? movie.id,
     year: movie.year,
     rating: movie.rating,
+    genres: movie.genres.length ? movie.genres : undefined,
     addedAt: Date.now(),
   };
 }
@@ -156,6 +157,7 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
         posterPath: movie.posterPath,
         mediaType: movie.mediaType ?? "movie",
         tmdbId,
+        genres: movie.genres.length ? movie.genres : undefined,
         progress,
         currentTime,
         duration,
