@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import type { Genre } from "@/lib/types";
+import { motion, useReducedMotion } from "framer-motion";
+import { fadeUpVariant, staggerContainer } from "@/lib/motion";
 
 interface GenrePillsProps {
   genres: Genre[];
@@ -12,34 +16,44 @@ export default function GenrePills({
   activeGenre,
   basePath = "/browse",
 }: GenrePillsProps) {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
-    <div className="flex flex-wrap gap-2">
-      <Link
-        href={basePath}
-        className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-          !activeGenre
-            ? "bg-amber-500 text-black"
-            : "border border-white/10 text-zinc-400 hover:border-amber-500/40 hover:text-white"
-        }`}
-      >
-        All
-      </Link>
+    <motion.div
+      className="flex flex-wrap gap-2"
+      variants={prefersReducedMotion ? undefined : staggerContainer}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.div variants={prefersReducedMotion ? undefined : fadeUpVariant}>
+        <Link
+          href={basePath}
+          className={`inline-block px-4 py-2 text-[10px] font-medium uppercase tracking-[0.15em] transition duration-150 ${
+            !activeGenre
+              ? "bg-[var(--gold-primary)] text-black"
+              : "border border-[var(--border-mid)] text-[var(--text-secondary)] hover:border-[var(--border-hot)] hover:text-[var(--gold-primary)]"
+          }`}
+        >
+          All
+        </Link>
+      </motion.div>
       {genres.map((genre) => {
         const isActive = activeGenre === genre;
         return (
-          <Link
-            key={genre}
-            href={`${basePath}?genre=${encodeURIComponent(genre)}`}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              isActive
-                ? "bg-amber-500 text-black"
-                : "border border-white/10 text-zinc-400 hover:border-amber-500/40 hover:text-white"
-            }`}
-          >
-            {genre}
-          </Link>
+          <motion.div key={genre} variants={prefersReducedMotion ? undefined : fadeUpVariant}>
+            <Link
+              href={`${basePath}?genre=${encodeURIComponent(genre)}`}
+              className={`inline-block px-4 py-2 text-[10px] font-medium uppercase tracking-[0.15em] transition duration-150 ${
+                isActive
+                  ? "bg-[var(--gold-primary)] text-black"
+                  : "border border-[var(--border-mid)] text-[var(--text-secondary)] hover:border-[var(--border-hot)] hover:text-[var(--gold-primary)]"
+              }`}
+            >
+              {genre}
+            </Link>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }

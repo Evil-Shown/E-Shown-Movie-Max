@@ -1,69 +1,178 @@
+"use client";
+
 import type { Movie } from "@/lib/types";
-import { backdropUrl, formatRuntime } from "@/lib/movies";
+import { backdropUrl, formatRuntime, posterUrl } from "@/lib/movies";
+import HeroParticles from "@/components/3d/HeroParticles";
+import FloatingCard from "@/components/3d/FloatingCard";
 import Image from "next/image";
 import Link from "next/link";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
+import { fadeUpVariant, staggerContainer } from "@/lib/motion";
 
 interface HeroBannerProps {
   movie: Movie;
 }
 
-export default function HeroBanner({ movie }: HeroBannerProps) {
-  return (
-    <section className="relative min-h-[85vh] overflow-hidden">
-      <Image
-        src={backdropUrl(movie.backdropPath)}
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover object-top"
-      />
-      <div className="hero-overlay absolute inset-0" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(245,158,11,0.12),_transparent_50%)]" />
+function AnimatedTitle({ title }: { title: string }) {
+  const prefersReducedMotion = useReducedMotion();
 
-      <div className="relative mx-auto flex min-h-[85vh] max-w-7xl flex-col justify-end px-4 pb-16 pt-32 sm:px-6 lg:px-8">
-        <div className="max-w-2xl animate-fade-up">
-          <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium uppercase tracking-widest text-amber-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-            Now Featured
-          </p>
-          <h1 className="font-display text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
-            {movie.title}
-          </h1>
-          <p className="mt-3 font-display text-lg italic text-amber-200/80 sm:text-xl">
+  if (prefersReducedMotion) {
+    return (
+      <h1 className="font-cinzel text-5xl font-bold leading-[1.05] text-[var(--text-primary)] sm:text-6xl lg:text-7xl xl:text-8xl">
+        {title}
+      </h1>
+    );
+  }
+
+  return (
+    <h1
+      className="font-cinzel text-5xl font-bold leading-[1.05] text-[var(--text-primary)] sm:text-6xl lg:text-7xl xl:text-8xl"
+      style={{ textShadow: "0 0 80px rgba(201,168,76,0.3)" }}
+    >
+      {title.split("").map((char, i) => (
+        <motion.span
+          key={`${char}-${i}`}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.04 * i, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="inline-block"
+        >
+          {char === " " ? "\u00A0" : char}
+        </motion.span>
+      ))}
+    </h1>
+  );
+}
+
+export default function HeroBanner({ movie }: HeroBannerProps) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const prefersReducedMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+  const backdropY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+
+  return (
+    <section ref={sectionRef} className="relative h-screen min-h-[700px] overflow-hidden">
+      <motion.div style={{ y: prefersReducedMotion ? 0 : backdropY }} className="absolute inset-0 scale-105">
+        <Image
+          src={backdropUrl(movie.backdropPath)}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+      </motion.div>
+
+      <div className="hero-overlay absolute inset-0" />
+      <HeroParticles />
+      <div className="scanline" />
+
+      <div className="relative z-10 mx-auto flex h-full max-w-7xl items-end px-4 pb-20 pt-28 sm:px-6 lg:px-8">
+        <motion.div
+          className="max-w-2xl"
+          variants={prefersReducedMotion ? undefined : staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div variants={prefersReducedMotion ? undefined : fadeUpVariant} className="mb-4 flex items-center gap-3">
+            <span className="h-px w-8 bg-[var(--gold-primary)]" />
+            <p className="text-[10px] uppercase tracking-[0.4em] text-[var(--gold-primary)]">
+              Now Featuring
+            </p>
+            <span className="h-px w-8 bg-[var(--gold-primary)]" />
+          </motion.div>
+
+          <motion.div variants={prefersReducedMotion ? undefined : fadeUpVariant}>
+            <AnimatedTitle title={movie.title} />
+          </motion.div>
+
+          <motion.p
+            variants={prefersReducedMotion ? undefined : fadeUpVariant}
+            className="font-cormorant mt-4 text-xl italic text-[var(--gold-bright)] opacity-[0.85] sm:text-2xl"
+          >
             &ldquo;{movie.tagline}&rdquo;
-          </p>
-          <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-zinc-300">
-            <span className="flex items-center gap-1 rounded-md bg-amber-500/20 px-2 py-0.5 font-semibold text-amber-400">
+          </motion.p>
+
+          <motion.div
+            variants={prefersReducedMotion ? undefined : fadeUpVariant}
+            className="mt-5 flex flex-wrap items-center gap-3 text-sm"
+          >
+            <span className="animate-pulse-ring inline-flex items-center gap-1 border border-[var(--gold-primary)] px-2 py-0.5 text-[var(--gold-primary)]">
               ★ {movie.rating.toFixed(1)}
             </span>
-            <span>{movie.year}</span>
-            <span className="text-zinc-600">·</span>
-            <span>{formatRuntime(movie.runtime)}</span>
-            <span className="text-zinc-600">·</span>
-            <span>{movie.genres.join(", ")}</span>
-          </div>
-          <p className="mt-5 line-clamp-3 max-w-xl text-base leading-relaxed text-zinc-400">
+            <span className="text-[var(--text-secondary)]">{movie.year}</span>
+            <span className="text-[var(--text-dim)]">·</span>
+            <span className="text-[var(--text-secondary)]">{formatRuntime(movie.runtime)}</span>
+            {movie.genres.map((genre) => (
+              <span
+                key={genre}
+                className="border border-[var(--border-subtle)] px-2 py-0.5 text-[10px] uppercase tracking-wider text-[var(--text-dim)]"
+              >
+                {genre}
+              </span>
+            ))}
+          </motion.div>
+
+          <motion.p
+            variants={prefersReducedMotion ? undefined : fadeUpVariant}
+            className="mt-5 line-clamp-3 max-w-xl text-base leading-relaxed text-[var(--text-secondary)]"
+          >
             {movie.overview}
-          </p>
-          <div className="mt-8 flex flex-wrap gap-4">
+          </motion.p>
+
+          <motion.div variants={prefersReducedMotion ? undefined : fadeUpVariant} className="mt-8 flex flex-wrap gap-4">
             <Link
               href={`/movie/${movie.id}`}
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-7 py-3.5 text-sm font-bold text-black shadow-xl shadow-amber-500/30 transition hover:from-amber-400 hover:to-amber-500"
+              className="font-cinzel inline-flex items-center gap-3 bg-[var(--gold-primary)] py-3.5 pl-8 pr-6 text-sm font-bold uppercase tracking-wider text-black transition hover:scale-[1.01] hover:bg-[var(--gold-bright)] hover:shadow-[0_8px_30px_rgba(201,168,76,0.25)]"
             >
-              <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+              Play Now
+              <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
                 <path d="M8 5v14l11-7z" />
               </svg>
-              Watch Now
             </Link>
             <Link
               href={`/movie/${movie.id}`}
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/10"
+              className="inline-flex items-center border border-[var(--border-mid)] px-8 py-3.5 text-sm font-medium text-[var(--text-secondary)] transition hover:border-[var(--border-hot)] hover:text-[var(--text-primary)]"
             >
               More Info
             </Link>
-          </div>
+          </motion.div>
+        </motion.div>
+
+        <div className="absolute bottom-24 right-8 hidden lg:block">
+          <FloatingCard>
+            <div className="animate-float">
+              <div className="relative h-[390px] w-[260px] overflow-hidden rounded-xl ring-1 ring-[var(--border-mid)]">
+                <Image
+                  src={posterUrl(movie.posterPath, "w500")}
+                  alt={movie.title}
+                  fill
+                  sizes="260px"
+                  priority
+                  className="object-cover"
+                />
+              </div>
+              <div className="poster-reflection relative mt-2 h-16 w-[260px] overflow-hidden rounded-xl">
+                <Image
+                  src={posterUrl(movie.posterPath, "w500")}
+                  alt=""
+                  fill
+                  sizes="260px"
+                  className="object-cover"
+                />
+              </div>
+            </div>
+          </FloatingCard>
         </div>
+      </div>
+
+      <div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2">
+        <span className="text-[9px] uppercase tracking-[0.4em] text-[var(--text-dim)]">Scroll</span>
+        <span className="block h-8 w-px animate-pulse bg-[var(--gold-primary)]/50" />
       </div>
     </section>
   );
