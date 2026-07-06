@@ -35,6 +35,7 @@
       "preload.js",
       "updater.js",
       "block-ad-nav.js",
+      "embed-headers.js",
       "splash.html",
       "assets/**"
     ],

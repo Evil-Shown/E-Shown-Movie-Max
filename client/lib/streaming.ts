@@ -1,5 +1,6 @@
 import type { Movie } from "@/lib/types";
 import { buildEmbedUrl, type StreamProvider } from "./providers";
+import { proxifyEmbedUrl } from "./embed-proxy";
 
 /** TMDB IDs for curated local slug-based movies */
 const LOCAL_TMDB_IDS: Record<string, string> = {
@@ -55,10 +56,12 @@ export function getTvEmbedUrl(
   episode: number,
   options?: { seek?: number }
 ): string {
-  return buildEmbedUrl(provider, tmdbId, "tv", season, episode, {
-    autoPlay: true,
-    seek: options?.seek,
-  });
+  return proxifyEmbedUrl(
+    buildEmbedUrl(provider, tmdbId, "tv", season, episode, {
+      autoPlay: true,
+      seek: options?.seek,
+    })
+  );
 }
 
 export function getMovieEmbedUrl(
@@ -73,14 +76,18 @@ export function getMovieEmbedUrl(
   if (tv) {
     const season = options?.season ?? 1;
     const episode = options?.episode ?? 1;
-    return buildEmbedUrl(provider, mediaId, "tv", season, episode, {
-      autoPlay: true,
-      seek: options?.seek,
-    });
+    return proxifyEmbedUrl(
+      buildEmbedUrl(provider, mediaId, "tv", season, episode, {
+        autoPlay: true,
+        seek: options?.seek,
+      })
+    );
   }
 
-  return buildEmbedUrl(provider, mediaId, "movie", undefined, undefined, {
-    autoPlay: true,
-    seek: options?.seek,
-  });
+  return proxifyEmbedUrl(
+    buildEmbedUrl(provider, mediaId, "movie", undefined, undefined, {
+      autoPlay: true,
+      seek: options?.seek,
+    })
+  );
 }

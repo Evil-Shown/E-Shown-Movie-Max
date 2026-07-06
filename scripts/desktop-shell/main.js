@@ -5,6 +5,7 @@ const http = require("http");
 const fs = require("fs");
 const { setupAutoUpdater, checkForUpdates } = require("./updater");
 const { isBlockedAdUrl } = require("./block-ad-nav");
+const { EMBED_HOST_PATTERNS, getRandomUserAgent, getRandomReferrer } = require("./embed-headers");
 
 const API_PORT = 5000;
 const WEB_PORT = 3000;
@@ -172,6 +173,44 @@ function configureAdBlocking() {
   });
 }
 
+function configureEmbedHeaders() {
+  session.defaultSession.webRequest.onBeforeSendHeaders(
+    { urls: EMBED_HOST_PATTERNS },
+    (details, callback) => {
+      const headers = { ...details.requestHeaders };
+      headers["User-Agent"] = getRandomUserAgent();
+      headers["Referer"] = getRandomReferrer();
+      callback({ requestHeaders: headers });
+    }
+  );
+
+  session.defaultSession.webRequest.onHeadersReceived({ urls: EMBED_HOST_PATTERNS }, (details, callback) => {
+    const headers = { ...details.responseHeaders };
+    delete headers["x-frame-options"];
+    delete headers["X-Frame-Options"];
+    delete headers["content-security-policy"];
+    delete headers["Content-Security-Policy"];
+    callback({ responseHeaders: headers });
+  });
+}
+
+function toggleDevTools(window) {
+  if (!window || window.isDestroyed()) return;
+  if (window.webContents.isDevToolsOpened()) {
+    window.webContents.closeDevTools();
+  } else {
+    window.webContents.openDevTools({ mode: "detach" });
+  }
+}
+
+function registerDevToolsShortcuts(window) {
+  window.webContents.on("before-input-event", (event, input) => {
+    if (input.type !== "keyDown" || input.key.toUpperCase() !== "F12") return;
+    event.preventDefault();
+    toggleDevTools(window);
+  });
+}
+
 function attachWindowGuards(window) {
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (isBlockedAdUrl(url)) {
@@ -215,6 +254,7 @@ function createMainWindow() {
   });
 
   attachWindowGuards(mainWindow);
+  registerDevToolsShortcuts(mainWindow);
 
   mainWindow.on("close", (event) => {
     if (!app.isQuitting) {
@@ -322,6 +362,7 @@ if (!gotLock) {
   app.whenReady().then(async () => {
     try {
       configureAdBlocking();
+      configureEmbedHeaders();
       setupAutoUpdater();
       checkForUpdates();
       await bootApplication();

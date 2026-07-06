@@ -3,6 +3,12 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const TorrentSearchApi = require("torrent-search-api");
+const {
+    proxyEmbedUrl,
+    stripFrameBlockingHeaders,
+    addCorsHeaders,
+    isAllowedEmbedUrl
+} = require("./embed-proxy");
 
 const app = express();
 
@@ -326,6 +332,43 @@ app.get("/api/health", (req, res) => {
     res.json({
         status: "ok"
     });
+});
+
+app.options("/api/embed/proxy", (req, res) => {
+    res.set(addCorsHeaders({ "Access-Control-Max-Age": "86400" }));
+    res.status(204).end();
+});
+
+app.get("/api/embed/proxy", rateLimit, async (req, res) => {
+    const targetUrl = sanitizeQuery(req.query.url);
+    if (!targetUrl) {
+        return res.status(400).json({ error: "Missing 'url' query parameter." });
+    }
+
+    if (!isAllowedEmbedUrl(targetUrl)) {
+        return res.status(400).json({ error: "Embed URL host is not allowed." });
+    }
+
+    try {
+        const proxied = await proxyEmbedUrl(targetUrl);
+        const outgoing = stripFrameBlockingHeaders({
+            "Content-Type": proxied.contentType,
+            "Cache-Control": proxied.fromCache ? "public, max-age=300" : "public, max-age=120",
+            "X-Embed-Proxy-Cache": proxied.fromCache ? "HIT" : "MISS",
+        });
+
+        res.set(addCorsHeaders(outgoing));
+        if (Buffer.isBuffer(proxied.body)) {
+            return res.send(proxied.body);
+        }
+        return res.send(proxied.body);
+    } catch (error) {
+        const statusCode = error.statusCode || error?.response?.status || 502;
+        console.error("Embed proxy error:", error.message);
+        return res.status(statusCode >= 400 && statusCode < 600 ? statusCode : 502).json({
+            error: "Unable to load embed content right now. Try another provider."
+        });
+    }
 });
 
 app.use("/api", rateLimit);
