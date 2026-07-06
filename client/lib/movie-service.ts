@@ -11,8 +11,8 @@ import {
 } from "@/lib/movies";
 import type { Genre, MediaType, Movie } from "@/lib/types";
 import { cache } from "react";
-import { fetchOmdbByImdbId, isOmdbConfigured, searchOmdb, searchOmdbSeries } from "@/lib/omdb/client";
-import { mapOmdbDetail, mapOmdbSearchItem } from "@/lib/omdb/map";
+import { fetchOmdbByImdbId, isOmdbConfigured } from "@/lib/omdb/client";
+import { mapOmdbDetail } from "@/lib/omdb/map";
 import {
   discoverMovies,
   discoverSinhalaCinema,
@@ -122,7 +122,20 @@ export async function resolveMovie(id: string): Promise<Movie | null> {
   if (/^\d+$/.test(id) && isTmdbConfigured()) {
     try {
       const detail = await fetchTmdbMovie(Number(id));
-      return mapTmdbDetail(detail);
+      const movie = mapTmdbDetail(detail);
+      if (!movie.imdbId || !isOmdbConfigured()) return movie;
+
+      try {
+        const omdb = await fetchOmdbByImdbId(movie.imdbId);
+        if (omdb.Response !== "True") return movie;
+        const enriched = mapOmdbDetail(omdb);
+        return {
+          ...movie,
+          externalRatings: enriched.externalRatings,
+        };
+      } catch {
+        return movie;
+      }
     } catch {
       return null;
     }
@@ -596,66 +609,21 @@ export async function searchCatalog(
 
   try {
     if (mediaFilter === "all") {
-      const [moviesRes, seriesRes] = await Promise.all([
-        searchOmdb(trimmed, safePage).catch(() => null),
-        searchOmdbSeries(trimmed, safePage).catch(() => null),
-      ]);
-
-      const remote = [
-        ...(moviesRes?.Response === "True" ? moviesRes.Search ?? [] : []),
-        ...(seriesRes?.Response === "True" ? seriesRes.Search ?? [] : []),
-      ].map(mapOmdbSearchItem);
-
-      const seen = new Set<string>();
-      const merged: Movie[] = [];
-
-      for (const movie of [...local, ...remote]) {
-        if (seen.has(movie.id)) continue;
-        seen.add(movie.id);
-        merged.push(movie);
-      }
-
-      const movieTotal = Number.parseInt(moviesRes?.totalResults ?? "0", 10) || 0;
-      const seriesTotal = Number.parseInt(seriesRes?.totalResults ?? "0", 10) || 0;
-      const totalResults = movieTotal + seriesTotal || merged.length;
-
       return {
-        movies: merged,
-        source: local.length ? "mixed" : "omdb",
+        movies: local,
+        source: "local",
         page: safePage,
-        totalPages: Math.max(1, Math.ceil(totalResults / 10)),
-        totalResults,
+        totalPages: 1,
+        totalResults: local.length,
       };
     }
 
-    const omdbSearch = mediaFilter === "tv" ? searchOmdbSeries : searchOmdb;
-
-    const response = await omdbSearch(trimmed, safePage);
-    if (response.Response !== "True" || !response.Search?.length) {
-      return emptyPage(local, local.length ? "mixed" : "local");
-    }
-
-    const allowedTypes =
-      mediaFilter === "tv" ? new Set(["series"]) : new Set(["movie"]);
-
-    const remote = response.Search.filter((item) => allowedTypes.has(item.Type)).map(mapOmdbSearchItem);
-    const seen = new Set<string>();
-    const merged: Movie[] = [];
-
-    for (const movie of [...local, ...remote]) {
-      if (seen.has(movie.id)) continue;
-      seen.add(movie.id);
-      merged.push(movie);
-    }
-
-    const totalResults = Number.parseInt(response.totalResults ?? "0", 10) || merged.length;
-
     return {
-      movies: merged,
-      source: local.length ? "mixed" : "omdb",
+      movies: local,
+      source: "local",
       page: safePage,
-      totalPages: Math.max(1, Math.ceil(totalResults / 10)),
-      totalResults,
+      totalPages: 1,
+      totalResults: local.length,
     };
   } catch {
     return emptyPage(local);

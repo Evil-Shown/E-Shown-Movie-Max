@@ -9,7 +9,7 @@ import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./MovieCard.module.css";
 
 interface MovieCardProps {
@@ -24,11 +24,44 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
   const { openQuickView } = useQuickView();
   const { continueWatching } = useUserLibrary();
   const [loaded, setLoaded] = useState(false);
+  const [externalRatings, setExternalRatings] = useState(movie.externalRatings ?? null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const progress = continueWatching.find((item) => item.id === movie.id)?.progress ?? 0;
 
+  useEffect(() => {
+    if (externalRatings || typeof window === "undefined") return;
+
+    const node = cardRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        observer.disconnect();
+
+        const params = new URLSearchParams({ title: movie.title });
+        if (movie.year > 0) params.set("year", String(movie.year));
+
+        fetch(`/api/tmdb/search?${params.toString()}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data?.externalRatings) {
+              setExternalRatings(data.externalRatings);
+            }
+          })
+          .catch(() => undefined);
+      },
+      { rootMargin: "250px" }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [externalRatings, movie.title, movie.year]);
+
   return (
     <motion.div
+      ref={cardRef}
       initial={false}
       whileHover={prefersReducedMotion ? undefined : { y: -2 }}
       transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
@@ -104,6 +137,20 @@ export default function MovieCard({ movie, priority = false, rank }: MovieCardPr
               <span className={styles.year}>{movie.year}</span>
               <RatingRing rating={movie.rating} size={28} />
             </div>
+            {externalRatings ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {typeof externalRatings.imdb === "number" ? (
+                  <span className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                    IMDb {externalRatings.imdb.toFixed(1)}
+                  </span>
+                ) : null}
+                {typeof externalRatings.rottenTomatoes === "number" ? (
+                  <span className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                    RT {externalRatings.rottenTomatoes}%
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

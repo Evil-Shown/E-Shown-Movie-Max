@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { BRAND_DEVELOPER, BRAND_NAME, BRAND_NAME_SINHALA, BRAND_TAGLINE } from "@/lib/brand";
 
 const exploreLinks = [
@@ -10,6 +13,15 @@ const exploreLinks = [
 const genres = ["Sci-Fi", "Drama", "Action", "Horror", "Comedy"];
 
 export default function Footer() {
+  const [desktopVersion, setDesktopVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    const version = window.chithraDesktop?.appVersion;
+    if (window.chithraDesktop?.isDesktopApp && version) {
+      setDesktopVersion(`Desktop v${version}`);
+    }
+  }, []);
+
   return (
     <footer className="mt-auto border-t border-[var(--border-strong)] bg-[var(--bg-secondary)]">
       <div className="mx-auto max-w-[1280px] px-6 py-12">
@@ -75,6 +87,7 @@ export default function Footer() {
           <p>
             (c) {new Date().getFullYear()} {BRAND_NAME} · Developed by {BRAND_DEVELOPER}
           </p>
+          {desktopVersion ? <p className="mt-1 text-[10px] uppercase tracking-[0.18em]">{desktopVersion}</p> : null}
         </div>
       </div>
     </footer>

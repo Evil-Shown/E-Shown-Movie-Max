@@ -1,4 +1,5 @@
 import type { Genre } from "@/lib/types";
+import { buildCacheKey, cacheJson } from "@/lib/cache/request-cache";
 import { genreToTmdbId } from "./genres";
 import type {
   TmdbMovieDetail,
@@ -12,6 +13,9 @@ import type {
 } from "./types";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
+const TMDB_LIST_TTL_MS = 6 * 60 * 60 * 1000;
+const TMDB_SEARCH_TTL_MS = 60 * 60 * 1000;
+const TMDB_DETAIL_TTL_MS = 24 * 60 * 60 * 1000;
 
 function getApiKey(): string | undefined {
   return process.env.TMDB_API_KEY;
@@ -26,12 +30,30 @@ async function tmdbFetch<T>(path: string, params: Record<string, string> = {}): 
   if (!key) throw new Error("TMDB_API_KEY is not configured");
 
   const search = new URLSearchParams({ api_key: key, language: "en-US", ...params });
-  const res = await fetch(`${TMDB_BASE}${path}?${search}`, {
-    next: { revalidate: 3600 },
-  });
+  const url = `${TMDB_BASE}${path}?${search}`;
+  const cacheKey = buildCacheKey("tmdb", path, { language: "en-US", ...params });
+  const ttlMs = getTmdbCacheTtl(path, params);
 
-  if (!res.ok) throw new Error(`TMDB request failed (${res.status})`);
-  return res.json() as Promise<T>;
+  return cacheJson(cacheKey, ttlMs, async () => {
+    const res = await fetch(url, {
+      cache: "force-cache",
+      next: { revalidate: Math.max(60, Math.floor(ttlMs / 1000)) },
+    });
+
+    if (!res.ok) throw new Error(`TMDB request failed (${res.status})`);
+    return res.json() as Promise<T>;
+  });
+}
+
+function getTmdbCacheTtl(path: string, params: Record<string, string>): number {
+  if (path.includes("/search/")) return TMDB_SEARCH_TTL_MS;
+  if (path.includes("/movie/") || path.includes("/tv/")) {
+    if (path.includes("/similar") || path.includes("/season/")) return TMDB_LIST_TTL_MS;
+    if (Object.prototype.hasOwnProperty.call(params, "append_to_response")) return TMDB_DETAIL_TTL_MS;
+    if (/\d+$/.test(path)) return TMDB_DETAIL_TTL_MS;
+  }
+  if (path.includes("/discover/") || path.includes("/trending/")) return TMDB_LIST_TTL_MS;
+  return TMDB_LIST_TTL_MS;
 }
 
 export async function fetchTvTopRated(page = 1) {

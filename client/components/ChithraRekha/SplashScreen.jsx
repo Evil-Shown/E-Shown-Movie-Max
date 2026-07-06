@@ -4,13 +4,20 @@ import { useEffect, useState } from "react";
 
 const HOLES = Array.from({ length: 16 });
 const LANGUAGES = ["සිංහල", "हिन्दी", "தமிழ்", "తెలుగు", "English"];
+const DESKTOP_LAUNCH_KEY = "chithra_desktop_splash_launch";
 
 export default function SplashScreen() {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
-    if (sessionStorage.getItem("chithra_splash_done")) {
+    const launchId = window.chithraDesktop?.launchId;
+    if (window.chithraDesktop?.isDesktopApp && launchId) {
+      if (sessionStorage.getItem(DESKTOP_LAUNCH_KEY) === launchId) {
+        return undefined;
+      }
+      sessionStorage.setItem(DESKTOP_LAUNCH_KEY, launchId);
+    } else if (sessionStorage.getItem("chithra_splash_done")) {
       return undefined;
     }
 
@@ -18,12 +25,14 @@ export default function SplashScreen() {
     document.body.style.overflow = "hidden";
     setVisible(true);
 
-    const exit = setTimeout(() => setExiting(true), 2600);
+    const exit = setTimeout(() => setExiting(true), 4200);
     const hide = setTimeout(() => {
       setVisible(false);
-      sessionStorage.setItem("chithra_splash_done", "1");
+      if (!window.chithraDesktop?.isDesktopApp) {
+        sessionStorage.setItem("chithra_splash_done", "1");
+      }
       document.body.style.overflow = previousOverflow;
-    }, 2900);
+    }, 4900);
 
     return () => {
       clearTimeout(exit);

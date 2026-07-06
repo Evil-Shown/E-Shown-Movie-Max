@@ -8,7 +8,7 @@ import "./cinema-intro.css";
 
 const BROWSER_STORAGE_KEY = "chithra_intro_seen";
 const DESKTOP_SESSION_KEY = "chithra_intro_dismissed";
-const TOTAL_MS = 5000;
+const TOTAL_MS = 7600;
 
 const SPARKLES = [
   { left: "35%", bottom: "28%", delay: "0s" },
@@ -32,14 +32,14 @@ function isDesktopApp() {
 function hasSeenIntro() {
   if (typeof window === "undefined") return true;
   if (isDesktopApp()) {
-    return sessionStorage.getItem(DESKTOP_SESSION_KEY) === "1";
+    return sessionStorage.getItem(DESKTOP_SESSION_KEY) === window.chithraDesktop?.launchId;
   }
   return localStorage.getItem(BROWSER_STORAGE_KEY) === "1";
 }
 
 function markIntroSeen() {
   if (isDesktopApp()) {
-    sessionStorage.setItem(DESKTOP_SESSION_KEY, "1");
+    sessionStorage.setItem(DESKTOP_SESSION_KEY, window.chithraDesktop?.launchId ?? "1");
     return;
   }
   localStorage.setItem(BROWSER_STORAGE_KEY, "1");
@@ -83,8 +83,8 @@ export default function CinemaIntro() {
       .then((r) => setHasVideo(r.ok))
       .catch(() => setHasVideo(false));
 
-    timersRef.current.push(setTimeout(() => setPhase(2), 1500));
-    timersRef.current.push(setTimeout(() => setPhase(3), 3500));
+    timersRef.current.push(setTimeout(() => setPhase(2), 2200));
+    timersRef.current.push(setTimeout(() => setPhase(3), 4600));
     timersRef.current.push(setTimeout(() => dismiss(), TOTAL_MS));
 
     const onKey = (e: KeyboardEvent) => {

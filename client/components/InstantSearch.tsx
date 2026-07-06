@@ -9,7 +9,7 @@ interface InstantSearchProps {
   className?: string;
 }
 
-interface SearchResult extends Movie {}
+type SearchResult = Movie;
 
 export default function InstantSearch({ className = "" }: InstantSearchProps) {
   const router = useRouter();

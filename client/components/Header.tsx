@@ -153,7 +153,7 @@ export default function Header() {
             </div>
 
             <Link href="/gods-eye" className={styles.tBoomButton}>
-              THE GOD'S EYE
+              THE GOD&apos;S EYE
             </Link>
 
             <Link href="/watchlist" aria-label="Watchlist" className={`${styles.searchButton} relative`}>
@@ -194,7 +194,7 @@ export default function Header() {
             </Link>
           ))}
           <Link href="/gods-eye" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
-            THE GOD'S EYE
+            THE GOD&apos;S EYE
           </Link>
           <Link href="/browse" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
             Watch Free
