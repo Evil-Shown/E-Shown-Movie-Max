@@ -126,6 +126,9 @@ export function inferRefererFromUrl(streamUrl: string): string | undefined {
     if (hostname.includes("peotv.com")) {
       return "https://webapp.peotv.com/";
     }
+    if (hostname.includes("talenttv.lk") || hostname.includes("cast.talenttv.lk")) {
+      return "https://talenttv.lk/";
+    }
     if (hostname.includes("dialog.lk")) {
       return "https://www.dialog.lk/";
     }

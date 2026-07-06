@@ -58,8 +58,10 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
     iptvChannelId: "NDTVLANKA.lk@SD",
   },
   "talent-tv": {
-    type: "hls",
-    url: "http://live.talenttv.lk:8080/hls/x8kd5n3tm8e8lsv/index.m3u8",
+    type: "iframe",
+    url: "https://talenttv.lk/",
+    referer: "https://talenttv.lk/",
+    fallbacks: ["https://cast.talenttv.lk/hls/mcrlo1ygwpu8x4bj/index.m3u8"],
     iptvChannelId: "TalentTV.lk@HD",
   },
   "imai-tv": {

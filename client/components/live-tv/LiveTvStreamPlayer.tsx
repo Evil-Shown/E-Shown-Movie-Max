@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import HlsVideoPlayer from "@/components/live-tv/HlsVideoPlayer";
 import LiveTvPlayerLoading from "@/components/live-tv/LiveTvPlayerLoading";
 import YouTubeLivePlayer from "@/components/live-tv/YouTubeLivePlayer";
@@ -74,6 +74,16 @@ export default function LiveTvStreamPlayer({ channel, className = "" }: LiveTvSt
   const embedUrl =
     stream?.embedFallback ??
     (stream?.type === "iframe" ? stream.url : undefined);
+
+  const handlePlaybackStatus = useCallback(
+    (next: PlayerStatus) => {
+      setStatus(next);
+      if (next === "error" && embedUrl) {
+        setUseEmbedFallback(true);
+      }
+    },
+    [embedUrl]
+  );
 
   if (needsResolve) {
     return (
@@ -187,12 +197,7 @@ export default function LiveTvStreamPlayer({ channel, className = "" }: LiveTvSt
       channel={channel}
       poster={stream.poster}
       className={className}
-      onStatusChange={(next) => {
-        setStatus(next);
-        if (next === "error" && embedUrl) {
-          setUseEmbedFallback(true);
-        }
-      }}
+      onStatusChange={handlePlaybackStatus}
     />
   );
 }
