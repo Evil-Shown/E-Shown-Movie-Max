@@ -3,6 +3,7 @@ const { spawn } = require("child_process");
 const path = require("path");
 const http = require("http");
 const fs = require("fs");
+const { setupAutoUpdater, checkForUpdates } = require("./updater");
 
 const API_PORT = 5000;
 const WEB_PORT = 3000;
@@ -214,6 +215,11 @@ function createTray() {
         }
       },
       {
+        label: "Check for updates...",
+        click: () => checkForUpdates({ manual: true })
+      },
+      { type: "separator" },
+      {
         label: "Quit",
         click: () => {
           app.isQuitting = true;
@@ -279,6 +285,8 @@ if (!gotLock) {
 
   app.whenReady().then(async () => {
     try {
+      setupAutoUpdater();
+      checkForUpdates();
       await bootApplication();
     } catch (error) {
       console.error(error);
