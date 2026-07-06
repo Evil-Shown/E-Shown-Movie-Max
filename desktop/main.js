@@ -1,9 +1,10 @@
-const { app, BrowserWindow, Menu, Tray, nativeImage, shell } = require("electron");
+const { app, BrowserWindow, Menu, Tray, nativeImage, shell, session } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const http = require("http");
 const fs = require("fs");
 const { setupAutoUpdater, checkForUpdates } = require("./updater");
+const { isBlockedAdUrl } = require("./block-ad-nav");
 
 const API_PORT = 5000;
 const WEB_PORT = 3000;
@@ -149,6 +150,44 @@ function createSplashWindow() {
   splashWindow.once("ready-to-show", () => splashWindow?.show());
 }
 
+function isAllowedAppUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return (
+      (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") &&
+      parsed.port === String(WEB_PORT)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function configureAdBlocking() {
+  session.defaultSession.webRequest.onBeforeRequest({ urls: ["*://*/*"] }, (details, callback) => {
+    if (isBlockedAdUrl(details.url)) {
+      callback({ cancel: true });
+      return;
+    }
+    callback({});
+  });
+}
+
+function attachWindowGuards(window) {
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    if (isBlockedAdUrl(url)) {
+      console.warn("[CHITHRA] Blocked ad popup:", url);
+      return { action: "deny" };
+    }
+    return { action: "deny" };
+  });
+
+  window.webContents.on("will-navigate", (event, url) => {
+    if (isBlockedAdUrl(url) || !isAllowedAppUrl(url)) {
+      event.preventDefault();
+    }
+  });
+}
+
 function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1360,
@@ -175,10 +214,7 @@ function createMainWindow() {
     mainWindow?.setTitle("CHITHRA - CINEMA");
   });
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: "deny" };
-  });
+  attachWindowGuards(mainWindow);
 
   mainWindow.on("close", (event) => {
     if (!app.isQuitting) {
@@ -285,6 +321,7 @@ if (!gotLock) {
 
   app.whenReady().then(async () => {
     try {
+      configureAdBlocking();
       setupAutoUpdater();
       checkForUpdates();
       await bootApplication();
