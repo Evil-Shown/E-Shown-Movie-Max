@@ -506,7 +506,7 @@ app.get("/api/security/virustotal/report", async (req, res) => {
     }
 });
 
-const PORT = 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 setInterval(async () => {
     const topQueries = getTopAnalytics(analytics.searched, 5).map((item) => item.query);

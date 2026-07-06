@@ -1,0 +1,8 @@
+{
+  "name": "chithra-cinema-monorepo",
+  "private": true,
+  "scripts": {
+    "package": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1",
+    "package:portable": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-for-friend.ps1"
+  }
+}
