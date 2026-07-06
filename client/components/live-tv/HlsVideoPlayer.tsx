@@ -5,7 +5,11 @@ import Hls from "hls.js";
 import LiveTvPlayerChrome from "@/components/live-tv/LiveTvPlayerChrome";
 import LiveTvPlayerLoading, { type LiveTvLoadingPhase } from "@/components/live-tv/LiveTvPlayerLoading";
 import { createHlsConfig, STREAM_ATTEMPT_TIMEOUT_MS } from "@/lib/live-tv/hls-config";
-import { getStreamSources, getProxiedStreamUrl, shouldProxyDirectly } from "@/lib/live-tv/streams";
+import {
+  getStreamSources,
+  resolveProxiedStreamUrl,
+  shouldProxyDirectly,
+} from "@/lib/live-tv/streams";
 import type { LiveTvChannel, LiveTvStream, StreamSource } from "@/lib/live-tv/types";
 
 interface HlsVideoPlayerProps {
@@ -78,8 +82,8 @@ export default function HlsVideoPlayer({
   }, [sources.length]);
 
   const getPlaybackUrl = useCallback(
-    (source: StreamSource, proxied: boolean) =>
-      proxied ? getProxiedStreamUrl(source) : source.url,
+    async (source: StreamSource, proxied: boolean) =>
+      proxied ? resolveProxiedStreamUrl(source) : source.url,
     []
   );
 
@@ -164,13 +168,13 @@ export default function HlsVideoPlayer({
       return;
     }
 
+    let cancelled = false;
     startedRef.current = false;
     setIsLoading(true);
     setBuffering(false);
     onStatusChangeRef.current?.("loading");
 
     const source = list[urlIndex];
-    const src = getPlaybackUrl(source, useProxy);
 
     destroyHls();
 
@@ -179,44 +183,72 @@ export default function HlsVideoPlayer({
       STREAM_ATTEMPT_TIMEOUT_MS
     );
 
-    if (Hls.isSupported()) {
-      const hls = new Hls(createHlsConfig());
-      hlsRef.current = hls;
-      hls.loadSource(src);
-      hls.attachMedia(video);
+    async function boot() {
+      const src = await getPlaybackUrl(source, useProxy);
+      if (cancelled || !videoRef.current) return;
 
-      hls.on(Hls.Events.FRAG_BUFFERED, () => {
-        if (video.readyState >= 2) {
+      const video = videoRef.current;
+
+      if (Hls.isSupported()) {
+        const hls = new Hls(createHlsConfig());
+        hlsRef.current = hls;
+        hls.loadSource(src);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.FRAG_BUFFERED, () => {
+          if (video.readyState >= 2) {
+            video.play().catch(() => {});
+            markPlaying();
+          }
+        });
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          setBuffering(true);
+          video.play().catch(() => {});
+        });
+
+        hls.on(Hls.Events.ERROR, (_, data) => {
+          if (!data.fatal) return;
+
+          if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            hls.recoverMediaError();
+            return;
+          }
+
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            if (
+              data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR ||
+              data.details === Hls.ErrorDetails.LEVEL_LOAD_ERROR
+            ) {
+              hls.startLoad(-1);
+              return;
+            }
+          }
+
+          clearLoadTimeout();
+          tryNextSource(urlIndex, useProxy);
+        });
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = src;
+        const onLoaded = () => {
           video.play().catch(() => {});
           markPlaying();
-        }
-      });
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        setBuffering(true);
-        video.play().catch(() => {});
-      });
-
-      hls.on(Hls.Events.ERROR, (_, data) => {
-        if (!data.fatal) return;
-        clearLoadTimeout();
-        tryNextSource(urlIndex, useProxy);
-      });
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = src;
-      const onLoaded = () => {
-        video.play().catch(() => {});
-        markPlaying();
-      };
-      const onErr = () => {
-        clearLoadTimeout();
-        tryNextSource(urlIndex, useProxy);
-      };
-      video.addEventListener("loadeddata", onLoaded, { once: true });
-      video.addEventListener("error", onErr, { once: true });
+        };
+        const onErr = () => {
+          clearLoadTimeout();
+          tryNextSource(urlIndex, useProxy);
+        };
+        video.addEventListener("loadeddata", onLoaded, { once: true });
+        video.addEventListener("error", onErr, { once: true });
+      }
     }
 
-    return destroyHls;
+    boot();
+
+    return () => {
+      cancelled = true;
+      destroyHls();
+    };
   }, [
     urlIndex,
     useProxy,

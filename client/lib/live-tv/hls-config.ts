@@ -21,14 +21,14 @@ export const FAST_START_HLS_CONFIG: Partial<HlsConfig> = {
   liveSyncDurationCount: 3,
   liveMaxLatencyDurationCount: 6,
 
-  manifestLoadingTimeOut: 8000,
-  manifestLoadingMaxRetry: 2,
-  manifestLoadingRetryDelay: 500,
-  levelLoadingTimeOut: 8000,
-  levelLoadingMaxRetry: 2,
-  fragLoadingTimeOut: 10000,
-  fragLoadingMaxRetry: 3,
-  fragLoadingRetryDelay: 500,
+  manifestLoadingTimeOut: 12_000,
+  manifestLoadingMaxRetry: 4,
+  manifestLoadingRetryDelay: 800,
+  levelLoadingTimeOut: 12_000,
+  levelLoadingMaxRetry: 4,
+  fragLoadingTimeOut: 14_000,
+  fragLoadingMaxRetry: 6,
+  fragLoadingRetryDelay: 600,
 
   abrEwmaDefaultEstimate: 500000,
   abrBandWidthFactor: 0.85,
@@ -41,4 +41,4 @@ export function createHlsConfig(): Partial<HlsConfig> {
   return { ...FAST_START_HLS_CONFIG };
 }
 
-export const STREAM_ATTEMPT_TIMEOUT_MS = 12_000;
+export const STREAM_ATTEMPT_TIMEOUT_MS = 18_000;

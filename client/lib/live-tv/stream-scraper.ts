@@ -1,10 +1,17 @@
 import { fetchStreamResource } from "@/lib/live-tv/stream-fetch";
 import {
+  buildDialogTvChannelPages,
+  buildPeotvChannelPages,
+  buildPeotvApiUrls,
   buildPeotvStreamUrls,
   DIALOG_SCRAPE_PAGES,
   getProviderOrigin,
   getProviderReferer,
+  PEOTV_API_ENDPOINTS,
   PEOTV_CHANNEL_IDS,
+  PEOTV_ORIGIN,
+  PEOTV_REFERER,
+  PEOTV_SCRAPE_PAGES,
   PROVIDER_SCRAPE_PAGES,
 } from "@/lib/live-tv/stream-providers";
 
@@ -80,6 +87,33 @@ export interface ScrapeTarget {
   origin?: string;
 }
 
+function collectStreamsFromJson(value: unknown, found: Set<string>): void {
+  if (!value) return;
+  if (typeof value === "string") {
+    if (value.includes(".m3u8") && value.startsWith("http")) found.add(value);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectStreamsFromJson(item, found);
+    return;
+  }
+  if (typeof value === "object") {
+    for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+      if (
+        typeof nested === "string" &&
+        nested.startsWith("http") &&
+        (key.toLowerCase().includes("m3u8") ||
+          key.toLowerCase().includes("hls") ||
+          key.toLowerCase().includes("stream") ||
+          nested.includes(".m3u8"))
+      ) {
+        found.add(nested);
+      }
+      collectStreamsFromJson(nested, found);
+    }
+  }
+}
+
 /** Fetch page and reverse-engineer stream URLs from embedded scripts */
 export async function scrapePage(target: ScrapeTarget): Promise<string[]> {
   try {
@@ -88,12 +122,66 @@ export async function scrapePage(target: ScrapeTarget): Promise<string[]> {
       origin: target.origin,
       retries: 2,
       mode: "document",
+      rotateReferer: true,
     });
 
     if (!response.ok) return [];
 
     const html = await response.text();
     return extractStreamUrlsFromContent(html);
+  } catch {
+    return [];
+  }
+}
+
+/** Probe PEOTV JSON APIs for channel manifest URLs */
+export async function scrapePeotvApis(channelId: string): Promise<string[]> {
+  const ids = PEOTV_CHANNEL_IDS[channelId];
+  if (!ids?.length) return [];
+
+  const endpoints = [
+    ...PEOTV_API_ENDPOINTS,
+    ...buildPeotvApiUrls(channelId),
+  ];
+
+  const found = new Set<string>();
+
+  await Promise.all(
+    endpoints.map(async (apiUrl) => {
+      try {
+        const response = await fetchStreamResource(apiUrl, {
+          referer: PEOTV_REFERER,
+          origin: PEOTV_ORIGIN,
+          retries: 1,
+          mode: "api",
+        });
+        if (!response.ok) return;
+        const body = await response.text();
+
+        for (const url of extractStreamUrlsFromContent(body)) {
+          found.add(url);
+        }
+
+        try {
+          const json = JSON.parse(body) as unknown;
+          collectStreamsFromJson(json, found);
+        } catch {
+          // not JSON
+        }
+      } catch {
+        // API may be geo-blocked or require auth
+      }
+    })
+  );
+
+  return [...found];
+}
+
+async function scrapeWithBrowserIfEnabled(targets: ScrapeTarget[]): Promise<string[]> {
+  if (process.env.STREAM_SCRAPER_BROWSER !== "1" || targets.length === 0) return [];
+  try {
+    const { scrapePagesWithBrowser } = await import("@/lib/live-tv/stream-browser-scraper");
+    return scrapePagesWithBrowser(targets);
   } catch {
     return [];
   }
@@ -131,29 +219,56 @@ export async function scrapeTalentTvAppBundle(): Promise<string[]> {
   }
 }
 
+/** All scrape targets for a channel (broadcaster + provider + per-channel deep links) */
+export function getScrapeTargets(channelId: string): ScrapeTarget[] {
+  const targets: ScrapeTarget[] = [];
+  const seen = new Set<string>();
+
+  const add = (target: ScrapeTarget) => {
+    const key = target.pageUrl;
+    if (seen.has(key)) return;
+    seen.add(key);
+    targets.push(target);
+  };
+
+  const broadcaster = BROADCASTER_PAGES[channelId];
+  if (broadcaster) add(broadcaster);
+
+  for (const page of PROVIDER_SCRAPE_PAGES[channelId] ?? []) add(page);
+
+  if (PEOTV_CHANNEL_IDS[channelId]) {
+    for (const page of DIALOG_SCRAPE_PAGES) add(page);
+    for (const page of PEOTV_SCRAPE_PAGES) add(page);
+    for (const page of buildDialogTvChannelPages(channelId)) add(page);
+    for (const page of buildPeotvChannelPages(channelId)) add(page);
+  }
+
+  return targets;
+}
+
 /** Scrape broadcaster + PEOTV / Dialog provider pages for a channel */
 export async function scrapeChannelStreams(channelId: string): Promise<string[]> {
   const providerUrls = getProviderStreamCandidates(channelId);
-  const targets: ScrapeTarget[] = [];
-
-  const broadcaster = BROADCASTER_PAGES[channelId];
-  if (broadcaster) targets.push(broadcaster);
-
-  for (const page of PROVIDER_SCRAPE_PAGES[channelId] ?? []) {
-    targets.push(page);
-  }
-
-  if (PEOTV_CHANNEL_IDS[channelId]) {
-    for (const dialogPage of DIALOG_SCRAPE_PAGES) {
-      targets.push(dialogPage);
-    }
-  }
+  const targets = getScrapeTargets(channelId);
 
   const talentBundle =
     channelId === "talent-tv" ? await scrapeTalentTvAppBundle() : [];
 
-  const scraped = await Promise.all(targets.map((t) => scrapePage(t)));
-  return [...new Set([...providerUrls, ...talentBundle, ...scraped.flat()])];
+  const [scraped, apiUrls, browserUrls] = await Promise.all([
+    Promise.all(targets.map((t) => scrapePage(t))),
+    scrapePeotvApis(channelId),
+    scrapeWithBrowserIfEnabled(targets),
+  ]);
+
+  return [
+    ...new Set([
+      ...providerUrls,
+      ...talentBundle,
+      ...apiUrls,
+      ...browserUrls,
+      ...scraped.flat(),
+    ]),
+  ];
 }
 
 export function getScrapeReferer(channelId: string): string | undefined {

@@ -1,9 +1,8 @@
-const USER_AGENTS = [
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15",
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0",
-  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-];
+import {
+  pickRotatedReferer,
+  pickUserAgentForAttempt,
+  refererToOrigin,
+} from "@/lib/live-tv/stream-headers";
 
 export type StreamFetchMode = "document" | "manifest" | "api";
 
@@ -12,6 +11,8 @@ export interface StreamFetchOptions {
   origin?: string;
   retries?: number;
   mode?: StreamFetchMode;
+  /** Allow decoy referer rotation on retries (document scraping only) */
+  rotateReferer?: boolean;
 }
 
 function sleep(ms: number) {
@@ -19,19 +20,45 @@ function sleep(ms: number) {
 }
 
 function isCloudflareChallenge(body: string, status: number): boolean {
-  if (status === 403 || status === 503) {
+  if (status === 403 || status === 503 || status === 429) {
     return (
       body.includes("cf-browser-verification") ||
       body.includes("Just a moment") ||
-      body.includes("challenge-platform")
+      body.includes("challenge-platform") ||
+      body.includes("cf-challenge") ||
+      body.includes("Checking your browser") ||
+      body.includes("Attention Required")
     );
   }
   return false;
 }
 
+function isGeoBlockPage(body: string, status: number): boolean {
+  if (status !== 403) return false;
+  return (
+    body.includes("Access denied") ||
+    body.includes("not available in your region") ||
+    body.includes("geo-restrict")
+  );
+}
+
+function parseExtraHeaders(): Record<string, string> {
+  const raw = process.env.STREAM_UPSTREAM_EXTRA_HEADERS;
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as Record<string, string>;
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 function buildHeaders(options: StreamFetchOptions, attempt: number): HeadersInit {
-  const ua = USER_AGENTS[attempt % USER_AGENTS.length];
+  const ua = pickUserAgentForAttempt(attempt);
   const mode = options.mode ?? "manifest";
+  const allowDecoy = options.rotateReferer ?? mode === "document";
+  const referer = pickRotatedReferer(attempt, options.referer, allowDecoy);
+
   const headers: Record<string, string> = {
     "User-Agent": ua,
     "Accept-Language": "en-US,en;q=0.9",
@@ -47,6 +74,11 @@ function buildHeaders(options: StreamFetchOptions, attempt: number): HeadersInit
     headers["Sec-Fetch-Site"] = options.referer ? "same-origin" : "none";
     headers["Sec-Fetch-User"] = "?1";
     headers["Upgrade-Insecure-Requests"] = "1";
+  } else if (mode === "api") {
+    headers.Accept = "application/json, text/plain, */*";
+    headers["Sec-Fetch-Dest"] = "empty";
+    headers["Sec-Fetch-Mode"] = "cors";
+    headers["Sec-Fetch-Site"] = options.referer ? "same-origin" : "cross-site";
   } else {
     headers.Accept = "*/*";
     headers["Sec-Fetch-Dest"] = "empty";
@@ -54,13 +86,9 @@ function buildHeaders(options: StreamFetchOptions, attempt: number): HeadersInit
     headers["Sec-Fetch-Site"] = options.referer ? "cross-site" : "none";
   }
 
-  if (options.referer) {
-    headers.Referer = options.referer;
-    try {
-      headers.Origin = options.origin ?? new URL(options.referer).origin;
-    } catch {
-      // ignore invalid referer
-    }
+  if (referer) {
+    headers.Referer = referer;
+    headers.Origin = options.origin ?? refererToOrigin(referer);
   }
 
   const cookies = process.env.STREAM_UPSTREAM_COOKIES;
@@ -68,12 +96,23 @@ function buildHeaders(options: StreamFetchOptions, attempt: number): HeadersInit
     headers.Cookie = cookies;
   }
 
+  const xff = process.env.STREAM_UPSTREAM_X_FORWARDED_FOR;
+  if (xff) {
+    headers["X-Forwarded-For"] = xff;
+    headers["X-Real-IP"] = xff.split(",")[0]?.trim() ?? xff;
+  }
+
+  Object.assign(headers, parseExtraHeaders());
+
   return headers;
 }
 
 /** Fetch upstream stream/manifest with retry + browser-like headers.
  * Optional server env:
  * - STREAM_UPSTREAM_COOKIES — cf_clearance / session cookies for protected origins
+ * - STREAM_UPSTREAM_X_FORWARDED_FOR — spoof client IP (Sri Lankan IP when geo-gated)
+ * - STREAM_UPSTREAM_EXTRA_HEADERS — JSON object merged into every upstream request
+ * - STREAM_HEADER_ROTATION=1 — random UA + decoy referer rotation on scrape retries
  * - HTTP_PROXY / HTTPS_PROXY — route through VPN or proxy (Node native fetch)
  */
 export async function fetchStreamResource(
@@ -96,6 +135,11 @@ export async function fetchStreamResource(
       const body = await response.clone().text().catch(() => "");
       if (isCloudflareChallenge(body, response.status) && attempt < retries - 1) {
         await sleep((attempt + 1) * 1200);
+        continue;
+      }
+
+      if (isGeoBlockPage(body, response.status) && attempt < retries - 1) {
+        await sleep((attempt + 1) * 1000);
         continue;
       }
 
