@@ -62,19 +62,14 @@ function LiveTvChannelCard({
     <button
       type="button"
       onClick={() => onSelect(channel)}
-      onMouseEnter={(e) => {
-        prefetchChannelStream(channel.id);
-        if (!isSelected) {
-          const el = e.currentTarget;
-          el.style.transform = "scale(1.02)";
-          el.style.border = "1.5px solid rgba(245,158,11,0.5)";
-          el.style.boxShadow =
-            "0 0 0 2px rgba(245,158,11,0.12), 0 0 14px 2px rgba(245,158,11,0.14), 0 10px 36px rgba(0,0,0,0.5)";
-        }
-      }}
+      onMouseEnter={() => prefetchChannelStream(channel.id)}
       onFocus={() => prefetchChannelStream(channel.id)}
-      className={`group relative flex w-full flex-col overflow-hidden rounded-xl text-left ${
+      className={`group relative flex w-full flex-col overflow-hidden rounded-xl text-left border-[1.5px] transition-[transform,box-shadow,border-color] duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] will-change-[transform,box-shadow,border-color] ${
         compact ? "min-w-[128px]" : ""
+      } ${
+        isSelected
+          ? "scale-100 border-[rgba(245,158,11,0.85)] shadow-[0_0_0_3px_rgba(245,158,11,0.18),0_0_18px_4px_rgba(234,88,12,0.22),0_8px_32px_rgba(0,0,0,0.55)]"
+          : "scale-100 border-[rgba(245,158,11,0.12)] shadow-[0_2px_8px_rgba(0,0,0,0.35)] hover:scale-[1.02] hover:border-[rgba(245,158,11,0.5)] hover:shadow-[0_0_0_2px_rgba(245,158,11,0.12),0_0_14px_2px_rgba(245,158,11,0.14),0_10px_36px_rgba(0,0,0,0.5)]"
       }`}
       aria-pressed={isSelected}
       aria-label={`Watch ${channel.name}`}
@@ -88,27 +83,6 @@ function LiveTvChannelCard({
           : posterStyle.backgroundImage,
         backgroundSize: "cover",
         backgroundPosition: "center",
-        // Premium border: amber/gold glow ring that intensifies on selected
-        border: isSelected
-          ? "1.5px solid rgba(245,158,11,0.85)"
-          : "1.5px solid rgba(245,158,11,0.12)",
-        // Layered shadow: depth + outer glow
-        boxShadow: isSelected
-          ? "0 0 0 3px rgba(245,158,11,0.18), 0 0 18px 4px rgba(234,88,12,0.22), 0 8px 32px rgba(0,0,0,0.55)"
-          : "0 2px 8px rgba(0,0,0,0.35)",
-        transform: "scale(1)",
-        willChange: "transform, box-shadow, border-color",
-        transition:
-          "transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 300ms ease, border-color 300ms ease",
-      }}
-      // Inline CSS vars for hover — avoids JS and keeps animations CSS-driven
-      onMouseLeave={(e) => {
-        if (!isSelected) {
-          const el = e.currentTarget;
-          el.style.transform = "scale(1)";
-          el.style.border = "1.5px solid rgba(245,158,11,0.12)";
-          el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.35)";
-        }
       }}
     >
       {/* Cinematic gradient overlay */}

@@ -3,6 +3,13 @@ import type { WatchlistItem } from './types';
 
 const KEY = 'chithra-watchlist';
 const MAX_ITEMS = 100;
+let writeChain: Promise<unknown> = Promise.resolve();
+
+function serialize<T>(fn: () => Promise<T>): Promise<T> {
+  const result = writeChain.then(fn, fn);
+  writeChain = result.catch(() => undefined);
+  return result;
+}
 
 async function read(): Promise<WatchlistItem[]> {
   try {
@@ -30,18 +37,22 @@ export async function isInWatchlist(id: string): Promise<boolean> {
 export async function toggleWatchlistItem(
   item: WatchlistItem
 ): Promise<'added' | 'removed'> {
-  const items = await read();
-  const index = items.findIndex((i) => i.id === item.id);
-  if (index >= 0) {
-    items.splice(index, 1);
-    await write(items);
-    return 'removed';
-  }
-  await write([{ ...item, addedAt: Date.now() }, ...items]);
-  return 'added';
+  return serialize(async () => {
+    const items = await read();
+    const index = items.findIndex((i) => i.id === item.id);
+    if (index >= 0) {
+      items.splice(index, 1);
+      await write(items);
+      return 'removed';
+    }
+    await write([{ ...item, addedAt: Date.now() }, ...items]);
+    return 'added';
+  });
 }
 
 export async function removeFromWatchlist(id: string): Promise<void> {
-  const items = await read();
-  await write(items.filter((item) => item.id !== id));
+  return serialize(async () => {
+    const items = await read();
+    await write(items.filter((item) => item.id !== id));
+  });
 }

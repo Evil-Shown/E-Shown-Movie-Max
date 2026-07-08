@@ -11,7 +11,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import type { Movie } from '@/lib/tmdb-types';
 import type { StreamProvider } from '@/lib/providers';
-import { resolveTmdbId } from '@/lib/streaming';
+import { isTvShow, resolveTmdbId } from '@/lib/streaming';
 import {
   getContinueItem,
   getContinueWatching,
@@ -182,8 +182,8 @@ export function UserLibraryProvider({ children }: { children: ReactNode }) {
         // can stay synchronous for callers (matches web app's API shape).
         setResumeTimes((prev) => ({ ...prev, [movie.id]: currentTime }));
 
-        if (season && episode && movie.id.startsWith('tv-')) {
-          const tvId = movie.id.slice(3);
+        if (season && episode && isTvShow(movie)) {
+          const tvId = movie.id.startsWith('tv-') ? movie.id.slice(3) : tmdbId;
           await markEpisodeWatched(tvId, season, episode);
           setWatchedEpisodes(await getWatchedEpisodes(tvId));
         }

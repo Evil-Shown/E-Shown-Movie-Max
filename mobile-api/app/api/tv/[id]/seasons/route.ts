@@ -25,13 +25,11 @@ export async function GET(_request: Request, { params }: RouteParams) {
 export async function POST(request: Request, { params }: RouteParams) {
   const { id } = await params;
   const tvId = Number(id.replace(/^tv-/, ''));
-  const body = (await request.json()) as { season?: number };
-
-  if (!Number.isFinite(tvId) || !body.season || !isTmdbConfigured()) {
-    return NextResponse.json({ episodes: [] });
-  }
-
   try {
+    const body = (await request.json()) as { season?: number };
+    if (!Number.isFinite(tvId) || body.season == null || !isTmdbConfigured()) {
+      return NextResponse.json({ episodes: [] });
+    }
     const data = await fetchTvSeason(tvId, body.season);
     return NextResponse.json({ episodes: data.episodes });
   } catch {

@@ -62,8 +62,6 @@ export default function HeroCarousel({
   }, [next, movies.length]);
 
   if (!movie) return null;
-console.log('Movie:', movie.title);
-console.log('Backdrop:', movie.backdropPath);
   return (
     <View style={styles.hero}>
       <Image
