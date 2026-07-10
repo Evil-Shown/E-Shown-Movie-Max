@@ -1,25 +1,16 @@
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 
-import { StreamPlayer } from '@/components/player/StreamPlayer';
+import { useVideoPlayer } from '@/components/providers/VideoPlayerProvider';
 import { colors, fonts, radii, spacing } from '@/constants/theme';
 import { useMovieDetail } from '@/lib/api/hooks';
-import type { StreamProvider } from '@chithra/core/providers';
-import { STREAM_PROVIDERS } from '@chithra/core/providers';
-import { getMovieEmbedUrl } from '@/lib/streaming';
-import type { Movie } from '@chithra/core/types';
+import { isTvShow } from '@/lib/streaming';
 
 export default function MovieDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: movie, isLoading, error } = useMovieDetail(id);
-  const [provider, setProvider] = useState<StreamProvider>(STREAM_PROVIDERS[0]);
-
-  const embedUrl = useMemo(() => {
-    if (!movie) return null;
-    return getMovieEmbedUrl(movie, provider);
-  }, [movie, provider]);
+  const { openMovie, openTrailer } = useVideoPlayer();
 
   if (isLoading) {
     return (
@@ -37,35 +28,48 @@ export default function MovieDetailScreen() {
     );
   }
 
+  const tv = isTvShow(movie);
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <StreamPlayer
-        embedUrl={embedUrl}
-        provider={provider}
-        onProviderChange={setProvider}
-        title={movie.title}
-      />
-
-      <View style={styles.info}>
-        <Text style={styles.title}>{movie.title}</Text>
-
-        <View style={styles.meta}>
-          <Text style={styles.year}>{movie.year}</Text>
-          {movie.runtime > 0 && (
-            <>
-              <Text style={styles.metaDot}>·</Text>
-              <Text style={styles.year}>{formatRuntime(movie.runtime)}</Text>
-            </>
-          )}
-          <Text style={styles.metaDot}>·</Text>
-          <View style={styles.ratingPill}>
+      <View style={styles.hero}>
+        <Image
+          source={{ uri: movie.backdropPath || movie.posterPath }}
+          style={styles.backdrop}
+          contentFit="cover"
+        />
+        <View style={styles.heroOverlay} />
+        <View style={styles.heroContent}>
+          <Text style={styles.heroTitle}>{movie.title}</Text>
+          <View style={styles.meta}>
+            <Text style={styles.metaText}>{movie.year}</Text>
+            {movie.runtime > 0 && (
+              <>
+                <Text style={styles.metaDot}>·</Text>
+                <Text style={styles.metaText}>{formatRuntime(movie.runtime)}</Text>
+              </>
+            )}
+            <Text style={styles.metaDot}>·</Text>
             <Text style={styles.ratingText}>★ {movie.rating.toFixed(1)}</Text>
           </View>
+          <View style={styles.actions}>
+            <Pressable
+              style={styles.primaryButton}
+              onPress={() => openMovie(movie, tv ? { season: 1, episode: 1 } : undefined)}
+            >
+              <Text style={styles.primaryButtonText}>{tv ? 'Watch S1 E1' : 'Watch Now'}</Text>
+            </Pressable>
+            {movie.trailerKey && (
+              <Pressable style={styles.secondaryButton} onPress={() => openTrailer(movie)}>
+                <Text style={styles.secondaryButtonText}>Trailer</Text>
+              </Pressable>
+            )}
+          </View>
         </View>
+      </View>
 
-        {movie.tagline ? (
-          <Text style={styles.tagline}>{movie.tagline}</Text>
-        ) : null}
+      <View style={styles.info}>
+        {movie.tagline ? <Text style={styles.tagline}>“{movie.tagline}”</Text> : null}
 
         {movie.genres.length > 0 && (
           <View style={styles.genreRow}>
@@ -77,9 +81,7 @@ export default function MovieDetailScreen() {
           </View>
         )}
 
-        {movie.overview ? (
-          <Text style={styles.overview}>{movie.overview}</Text>
-        ) : null}
+        {movie.overview ? <Text style={styles.overview}>{movie.overview}</Text> : null}
 
         {movie.director ? (
           <View style={styles.section}>
@@ -92,7 +94,7 @@ export default function MovieDetailScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Cast</Text>
             <Text style={styles.sectionValue}>
-              {movie.cast.slice(0, 5).map((c) => c.name).join(', ')}
+              {movie.cast.slice(0, 5).map((c) => `${c.name} (${c.role})`).join(', ')}
             </Text>
           </View>
         )}
@@ -126,58 +128,105 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
   },
-  info: {
-    padding: spacing.lg,
+  hero: {
+    position: 'relative',
+    width: '100%',
+    aspectRatio: 16 / 9,
+    justifyContent: 'flex-end',
   },
-  title: {
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  heroOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(28,25,23,0.55)',
+  },
+  heroContent: {
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  heroTitle: {
     fontFamily: fonts.heading,
-    fontSize: 28,
-    color: colors.textPrimary,
-    lineHeight: 34,
-    marginBottom: spacing.sm,
+    fontSize: 32,
+    color: colors.textInverse,
+    lineHeight: 38,
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    marginBottom: spacing.md,
   },
-  year: {
+  metaText: {
     fontFamily: fonts.ui,
     fontSize: 14,
-    color: colors.textSecondary,
+    color: colors.textInverse,
   },
   metaDot: {
     fontFamily: fonts.ui,
     fontSize: 14,
-    color: colors.textMuted,
+    color: colors.textInverse,
     marginHorizontal: spacing.sm,
-  },
-  ratingPill: {
-    backgroundColor: colors.ratingPillBg,
-    borderWidth: 1,
-    borderColor: colors.ratingPillBorder,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radii.full,
+    opacity: 0.7,
   },
   ratingText: {
     fontFamily: fonts.uiSemibold,
-    fontSize: 13,
-    color: colors.ratingPillText,
+    fontSize: 14,
+    color: colors.accentWarm,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  primaryButton: {
+    backgroundColor: colors.accentPrimary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
+  },
+  primaryButtonText: {
+    fontFamily: fonts.uiSemibold,
+    fontSize: 14,
+    color: colors.white,
+  },
+  secondaryButton: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  secondaryButtonText: {
+    fontFamily: fonts.uiSemibold,
+    fontSize: 14,
+    color: colors.textInverse,
+  },
+  info: {
+    padding: spacing.lg,
+    gap: spacing.lg,
   },
   tagline: {
     fontFamily: fonts.headingItalic,
-    fontSize: 16,
+    fontSize: 18,
     color: colors.textSecondary,
     fontStyle: 'italic',
-    marginBottom: spacing.md,
   },
   genreRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
-    marginBottom: spacing.lg,
   },
   genreChip: {
     backgroundColor: colors.bgSecondary,
@@ -197,10 +246,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textPrimary,
     lineHeight: 24,
-    marginBottom: spacing.lg,
   },
   section: {
-    marginBottom: spacing.md,
+    gap: spacing.xs,
   },
   sectionLabel: {
     fontFamily: fonts.uiSemibold,
@@ -208,7 +256,6 @@ const styles = StyleSheet.create({
     color: colors.accentCool,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: spacing.xs,
   },
   sectionValue: {
     fontFamily: fonts.ui,

@@ -1,5 +1,4 @@
 import type { Movie } from '@chithra/core/types';
-import { buildEmbedUrl, type StreamProvider } from '@chithra/core/providers';
 
 /** TMDB IDs for curated local slug-based movies (fallback dataset). */
 const LOCAL_TMDB_IDS: Record<string, string> = {
@@ -46,41 +45,4 @@ export function resolveMediaId(movie: Movie): string | null {
 
 export function isTvShow(movie: Movie): boolean {
   return movie.mediaType === 'tv' || movie.id.startsWith('tv-');
-}
-
-export function getTvEmbedUrl(
-  provider: StreamProvider,
-  tmdbId: string,
-  season: number,
-  episode: number,
-  options?: { seek?: number }
-): string {
-  return buildEmbedUrl(provider, tmdbId, 'tv', season, episode, {
-    autoPlay: true,
-    seek: options?.seek,
-  });
-}
-
-export function getMovieEmbedUrl(
-  movie: Movie,
-  provider: StreamProvider = 'vidsrc',
-  options?: { season?: number; episode?: number; seek?: number }
-): string | null {
-  const mediaId = resolveMediaId(movie);
-  if (!mediaId) return null;
-
-  const tv = isTvShow(movie);
-  if (tv) {
-    const season = options?.season ?? 1;
-    const episode = options?.episode ?? 1;
-    return buildEmbedUrl(provider, mediaId, 'tv', season, episode, {
-      autoPlay: true,
-      seek: options?.seek,
-    });
-  }
-
-  return buildEmbedUrl(provider, mediaId, 'movie', undefined, undefined, {
-    autoPlay: true,
-    seek: options?.seek,
-  });
 }

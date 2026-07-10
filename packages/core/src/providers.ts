@@ -162,3 +162,16 @@ export function getProviderOrigin(provider: StreamProvider): string {
       return "https://vidsrc.cc";
   }
 }
+
+export interface StreamSource {
+  provider: StreamProvider;
+  label: string;
+  url: string;
+}
+
+export interface SourcesResponse {
+  movieId: string;
+  mediaId: string | null;
+  type: "movie" | "tv";
+  sources: StreamSource[];
+}

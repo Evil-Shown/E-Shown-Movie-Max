@@ -8,6 +8,7 @@ import type {
   TvEpisodesResult,
   TvSeasonsResult,
 } from './types';
+import type { SourcesResponse } from '@chithra/core/providers';
 import type { Genre, Movie } from '@chithra/core/types';
 
 export async function fetchHomeCatalog(): Promise<HomeCatalog> {
@@ -44,6 +45,35 @@ export async function fetchSimilarMovies(id: string, limit = 8): Promise<Movie[]
     `/api/movie/${encodeURIComponent(id)}/similar?limit=${limit}`
   );
   return result.movies;
+}
+
+export interface SourceOptions {
+  type?: 'movie' | 'tv';
+  season?: number;
+  episode?: number;
+  seek?: number;
+  subtitleLang?: string;
+  subtitleFile?: string;
+  subtitleLabel?: string;
+}
+
+export async function fetchMovieSources(
+  id: string,
+  options: SourceOptions = {}
+): Promise<SourcesResponse> {
+  const search = new URLSearchParams();
+  if (options.type) search.set('type', options.type);
+  if (options.season !== undefined) search.set('season', String(options.season));
+  if (options.episode !== undefined) search.set('episode', String(options.episode));
+  if (options.seek !== undefined) search.set('seek', String(options.seek));
+  if (options.subtitleLang) search.set('subtitleLang', options.subtitleLang);
+  if (options.subtitleFile) search.set('subtitleFile', options.subtitleFile);
+  if (options.subtitleLabel) search.set('subtitleLabel', options.subtitleLabel);
+
+  const query = search.toString();
+  return apiGet<SourcesResponse>(
+    `/api/sources/${encodeURIComponent(id)}${query ? `?${query}` : ''}`
+  );
 }
 
 export async function fetchTvSeasons(tvId: string): Promise<TvSeasonsResult> {
