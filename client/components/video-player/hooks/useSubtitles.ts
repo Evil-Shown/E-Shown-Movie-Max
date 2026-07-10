@@ -19,13 +19,7 @@ interface UseSubtitlesOptions {
   onEpisodeSubtitleReload?: () => void;
 }
 
-export function useSubtitles({
-  movie,
-  season,
-  episode,
-  isTvPlayer,
-  onEpisodeSubtitleReload,
-}: UseSubtitlesOptions) {
+export function useSubtitles({ movie, season, episode, isTvPlayer, onEpisodeSubtitleReload }: UseSubtitlesOptions) {
   const [subtitleLang, setSubtitleLang] = useState("off");
   const [subtitleFile, setSubtitleFile] = useState<string | undefined>();
   const [subtitleLabel, setSubtitleLabel] = useState<string | undefined>();
@@ -41,8 +35,7 @@ export function useSubtitles({
     (subtitleTracks.some((track) => track.language === "en") ||
       subtitleTracks.some((track) => track.language === "si"));
 
-  const activeSubtitleCue =
-    subtitleCues.find((cue) => playbackTime >= cue.start && playbackTime <= cue.end) ?? null;
+  const activeSubtitleCue = subtitleCues.find((cue) => playbackTime >= cue.start && playbackTime <= cue.end) ?? null;
 
   const handleSubtitleChange = useCallback(
     async (languageCode: string) => {
@@ -97,9 +90,7 @@ export function useSubtitles({
     }
   }, [episode, movie, season]);
 
-  useEffect(() => {
-    void refreshSubtitleTracks();
-  }, [refreshSubtitleTracks]);
+  // Subtitle search is deferred until the user opens the subtitle picker (onSearch).
 
   useEffect(() => {
     let cancelled = false;

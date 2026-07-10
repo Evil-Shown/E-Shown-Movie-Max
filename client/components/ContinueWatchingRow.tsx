@@ -2,6 +2,7 @@
 
 import PosterImage from "@/components/PosterImage";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { prefetchMovieStream } from "@/lib/stream-prefetch";
 import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
 
@@ -44,6 +45,30 @@ export default function ContinueWatchingRow() {
               </button>
               <button
                 type="button"
+                onMouseEnter={() =>
+                  prefetchMovieStream(
+                    {
+                      id: item.id,
+                      mediaType: item.mediaType,
+                      title: item.title,
+                      tagline: "",
+                      overview: "",
+                      posterPath: item.posterPath,
+                      backdropPath: item.posterPath,
+                      rating: 0,
+                      year: 0,
+                      runtime: 0,
+                      genres: [],
+                      director: "",
+                      cast: [],
+                    },
+                    {
+                      season: item.season,
+                      episode: item.episode,
+                      seek: item.currentTime,
+                    }
+                  )
+                }
                 onClick={() =>
                   openMovie(
                     {

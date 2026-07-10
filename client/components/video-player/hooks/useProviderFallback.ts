@@ -89,6 +89,7 @@ export function useProviderFallback({
     setLoadFailed(false);
     if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
     if (!isTrailer) {
+      // Embed shell is up — the video inside may still be buffering on slow links.
       schedulePlaybackWatchdog();
     }
   }, [isTrailer, provider, schedulePlaybackWatchdog]);

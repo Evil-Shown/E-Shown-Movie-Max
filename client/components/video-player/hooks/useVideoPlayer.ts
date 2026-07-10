@@ -5,11 +5,7 @@ import { getMovieEmbedUrl, getRawMovieEmbedUrl, isTvShow } from "@/lib/streaming
 import { getTrailerId } from "@/lib/trailers";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { isEmbedNearEnd, isEmbedPlaybackEnded } from "@/lib/embed-events";
-import {
-  exitAnyFullscreen,
-  getActiveFullscreenElement,
-  requestElementFullscreen,
-} from "@/lib/fullscreen";
+import { exitAnyFullscreen, getActiveFullscreenElement, requestElementFullscreen } from "@/lib/fullscreen";
 import {
   getEpisodeSummary,
   getNextEpisodeTarget,
@@ -28,9 +24,6 @@ interface UseVideoPlayerOptions {
   episode?: number;
   provider: StreamProvider;
   resumeSeconds?: number;
-  subtitleLang: string;
-  subtitleFile?: string;
-  subtitleLabel?: string;
   loaded: boolean;
   playerEngaged: boolean;
   setPlayerEngaged: (engaged: boolean) => void;
@@ -46,9 +39,6 @@ export function useVideoPlayer({
   episode,
   provider,
   resumeSeconds,
-  subtitleLang,
-  subtitleFile,
-  subtitleLabel,
   loaded,
   playerEngaged,
   setPlayerEngaged,
@@ -81,9 +71,6 @@ export function useVideoPlayer({
         season,
         episode,
         seek: resumeSeconds,
-        subtitleLang: subtitleLang !== "off" ? subtitleLang : undefined,
-        subtitleFile,
-        subtitleLabel,
       });
 
   const rawEmbedUrl = isTrailer
@@ -92,9 +79,6 @@ export function useVideoPlayer({
         season,
         episode,
         seek: resumeSeconds,
-        subtitleLang: subtitleLang !== "off" ? subtitleLang : undefined,
-        subtitleFile,
-        subtitleLabel,
       });
 
   const iframeSrc = isTrailer
@@ -108,16 +92,13 @@ export function useVideoPlayer({
   const episodeLabel = season && episode ? `S${season} · E${episode}` : null;
 
   const nextEpisodeTarget =
-    isTvPlayer && season && episode
-      ? getNextEpisodeTarget(tvSeasons, episodesBySeason, season, episode)
-      : null;
+    isTvPlayer && season && episode ? getNextEpisodeTarget(tvSeasons, episodesBySeason, season, episode) : null;
 
   const nextEpisodeSummary = nextEpisodeTarget
     ? getEpisodeSummary(episodesBySeason, nextEpisodeTarget.season, nextEpisodeTarget.episode)
     : null;
 
-  const currentEpisodeSummary =
-    season && episode ? getEpisodeSummary(episodesBySeason, season, episode) : null;
+  const currentEpisodeSummary = season && episode ? getEpisodeSummary(episodesBySeason, season, episode) : null;
 
   const loadSeasonEpisodes = useCallback(
     async (seasonNumber: number) => {
@@ -251,7 +232,16 @@ export function useVideoPlayer({
     }, fallbackSeconds * 1000);
 
     return () => window.clearTimeout(timer);
-  }, [episode, episodesBySeason, isTvPlayer, movie.runtime, nextEpisodeTarget, openNextEpisodeOverlay, season, showNextEpisode]);
+  }, [
+    episode,
+    episodesBySeason,
+    isTvPlayer,
+    movie.runtime,
+    nextEpisodeTarget,
+    openNextEpisodeOverlay,
+    season,
+    showNextEpisode,
+  ]);
 
   useEffect(() => {
     if (!nextEpisodeTarget) return;
@@ -303,7 +293,15 @@ export function useVideoPlayer({
     }, 2000);
 
     return () => window.clearInterval(timer);
-  }, [currentEpisodeSummary?.runtime, isTvPlayer, loaded, movie.runtime, nextEpisodeTarget, openNextEpisodeOverlay, showNextEpisode]);
+  }, [
+    currentEpisodeSummary?.runtime,
+    isTvPlayer,
+    loaded,
+    movie.runtime,
+    nextEpisodeTarget,
+    openNextEpisodeOverlay,
+    showNextEpisode,
+  ]);
 
   useEffect(() => {
     if (isTrailer) return;

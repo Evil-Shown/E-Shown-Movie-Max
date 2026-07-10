@@ -2,6 +2,7 @@ import CatalogPagination from "@/components/CatalogPagination";
 import SearchBar from "@/components/SearchBar";
 import SearchFilters from "@/components/SearchFilters";
 import SearchMediaTabs from "@/components/SearchMediaTabs";
+import MovieGrid from "@/components/MovieGrid";
 import SearchResults from "@/components/SearchResults";
 import {
   hasActiveSearchFilters,
@@ -31,17 +32,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = parseSearchPageParams(raw);
   const filtersActive = hasActiveSearchFilters(params);
 
-  const { movies: results, source, totalResults, totalPages } = await searchCatalog(
-    params.q,
-    params.page,
-    params.type,
-    {
-      genre: params.genre,
-      year: params.year,
-      sort: params.sort,
-      minRating: params.minRating,
-    }
-  );
+  const {
+    movies: results,
+    source,
+    totalResults,
+    totalPages,
+  } = await searchCatalog(params.q, params.page, params.type, {
+    genre: params.genre,
+    year: params.year,
+    sort: params.sort,
+    minRating: params.minRating,
+  });
 
   const label = searchMediaLabel(params.type);
   const heading =
@@ -101,16 +102,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <div className="section-alt border-t border-[var(--border)] px-6 pb-16 pt-10">
         <div className="mx-auto max-w-[1280px]">
           <SearchResults
-            movies={results}
             query={params.q}
             page={params.page}
             totalPages={totalPages}
-            emptyMessage={emptyMessage}
             source={source}
             totalResults={totalResults}
             mediaFilter={params.type}
             filtersActive={filtersActive}
-          />
+          >
+            <MovieGrid movies={results} emptyMessage={emptyMessage} />
+          </SearchResults>
           <CatalogPagination
             page={params.page}
             totalPages={totalPages}

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Movie } from "@/lib/types";
-import { warmStreamProviders } from "@/lib/stream-optimizer";
+import { prefetchMovieStream } from "@/lib/stream-prefetch";
 import { useVideoPlayer } from "./VideoPlayerProvider";
 
 interface PlayButtonProps {
@@ -30,8 +30,8 @@ export default function PlayButton({
     <button
       type="button"
       onClick={() => openMovie(movie)}
-      onMouseEnter={() => warmStreamProviders()}
-      onFocus={() => warmStreamProviders()}
+      onMouseEnter={() => prefetchMovieStream(movie)}
+      onFocus={() => prefetchMovieStream(movie)}
       className={`${base} active:scale-95 ${className}`}
     >
       {variant !== "circle" && label}

@@ -1,6 +1,7 @@
 "use client";
 
-import MovieCard from "@/components/MovieCard";
+import ExternalRatingsProvider from "@/components/external-ratings/ExternalRatingsProvider";
+import MovieCardClient from "@/components/movie-card/MovieCardClient";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import Link from "next/link";
 import type { Movie } from "@/lib/types";
@@ -51,11 +52,14 @@ export default function WatchlistPageClient() {
         <p className="mt-1 text-sm text-[var(--text-secondary)]">{watchlist.length} titles saved</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <ExternalRatingsProvider
+        movies={movies}
+        className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+      >
         {movies.map((movie) => (
-          <MovieCard key={movie.id} movie={movie} />
+          <MovieCardClient key={movie.id} movie={movie} />
         ))}
-      </div>
+      </ExternalRatingsProvider>
     </div>
   );
 }
