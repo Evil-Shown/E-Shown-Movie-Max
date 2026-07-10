@@ -1,11 +1,11 @@
-const axios = require("axios");
+import axios, { type AxiosProxyConfig } from "axios";
 
 const EMBED_CACHE_TTL_MS = Number(process.env.EMBED_CACHE_TTL_MS) || 60 * 60 * 1000;
 const EMBED_REQUEST_TIMEOUT_MS = Number(process.env.EMBED_REQUEST_TIMEOUT_MS) || 15000;
 const EMBED_MAX_CACHE_BYTES = Number(process.env.EMBED_MAX_CACHE_BYTES) || 5 * 1024 * 1024;
 const EMBED_MAX_RETRIES = 3;
 
-const USER_AGENTS = [
+export const USER_AGENTS = [
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -14,7 +14,7 @@ const USER_AGENTS = [
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
 ];
 
-const REFERRERS = [
+export const REFERRERS = [
   "https://www.google.com/",
   "https://www.bing.com/",
   "https://search.yahoo.com/",
@@ -41,21 +41,42 @@ const ALLOWED_EMBED_HOSTS = new Set([
   "www.2embed.skin",
 ]);
 
-const embedCache = new Map();
+type EmbedCacheEntry = {
+  body: Buffer | string;
+  contentType: string;
+  headers: Record<string, unknown>;
+};
 
-function pickRandom(list) {
+type EmbedFetchResult = EmbedCacheEntry & {
+  fromCache: boolean;
+};
+
+type HeaderMap = Record<string, string>;
+
+const embedCache = new Map<string, { value: EmbedCacheEntry; expiresAt: number }>();
+
+class EmbedProxyError extends Error {
+  statusCode: number;
+
+  constructor(message: string, statusCode: number) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
+function pickRandom<T>(list: T[]): T {
   return list[Math.floor(Math.random() * list.length)];
 }
 
-function getRandomUserAgent() {
+export function getRandomUserAgent(): string {
   return pickRandom(USER_AGENTS);
 }
 
-function getRandomReferrer() {
+export function getRandomReferrer(): string {
   return pickRandom(REFERRERS);
 }
 
-function parseProxyList() {
+function parseProxyList(): string[] {
   const raw = process.env.EMBED_PROXY_LIST || "";
   return raw
     .split(/[,\s]+/)
@@ -63,13 +84,13 @@ function parseProxyList() {
     .filter(Boolean);
 }
 
-function getRandomProxy() {
+function getRandomProxy(): string | null {
   const proxies = parseProxyList();
   if (!proxies.length) return null;
   return pickRandom(proxies);
 }
 
-function buildAxiosProxyConfig(proxyUrl) {
+function buildAxiosProxyConfig(proxyUrl: string | null): AxiosProxyConfig | undefined {
   if (!proxyUrl) return undefined;
   try {
     const parsed = new URL(proxyUrl);
@@ -83,7 +104,7 @@ function buildAxiosProxyConfig(proxyUrl) {
   }
 }
 
-function isAllowedEmbedUrl(urlString) {
+export function isAllowedEmbedUrl(urlString: string): boolean {
   try {
     const parsed = new URL(urlString);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
@@ -93,7 +114,7 @@ function isAllowedEmbedUrl(urlString) {
   }
 }
 
-function isCloudflareChallenge(data, headers = {}) {
+function isCloudflareChallenge(data: unknown, headers: Record<string, unknown> = {}): boolean {
   const body = typeof data === "string" ? data : "";
   const server = String(headers.server || headers.Server || "").toLowerCase();
   return (
@@ -105,7 +126,7 @@ function isCloudflareChallenge(data, headers = {}) {
   );
 }
 
-function getCachedEmbed(key) {
+function getCachedEmbed(key: string): EmbedCacheEntry | null {
   const cached = embedCache.get(key);
   if (!cached) return null;
   if (Date.now() > cached.expiresAt) {
@@ -115,14 +136,14 @@ function getCachedEmbed(key) {
   return cached.value;
 }
 
-function setCachedEmbed(key, value) {
+function setCachedEmbed(key: string, value: EmbedCacheEntry): void {
   embedCache.set(key, {
     value,
     expiresAt: Date.now() + EMBED_CACHE_TTL_MS,
   });
 }
 
-function stripFrameBlockingHeaders(headers = {}) {
+export function stripFrameBlockingHeaders(headers: HeaderMap = {}): HeaderMap {
   const next = { ...headers };
   delete next["x-frame-options"];
   delete next["X-Frame-Options"];
@@ -133,7 +154,7 @@ function stripFrameBlockingHeaders(headers = {}) {
   return next;
 }
 
-function addCorsHeaders(headers = {}) {
+export function addCorsHeaders(headers: HeaderMap = {}): HeaderMap {
   return {
     ...headers,
     "Access-Control-Allow-Origin": "*",
@@ -142,8 +163,7 @@ function addCorsHeaders(headers = {}) {
   };
 }
 
-function prepareHtmlBody(html, targetUrl) {
-  if (typeof html !== "string") return html;
+function prepareHtmlBody(html: string, targetUrl: string): string {
   const parsed = new URL(targetUrl);
   let out = html;
   out = out.replace(/<meta[^>]+http-equiv=["']content-security-policy["'][^>]*>/gi, "");
@@ -153,9 +173,9 @@ function prepareHtmlBody(html, targetUrl) {
   return out;
 }
 
-function shouldCacheResponse(contentType, byteLength) {
+function shouldCacheResponse(contentType: string, byteLength: number): boolean {
   if (byteLength > EMBED_MAX_CACHE_BYTES) return false;
-  const type = String(contentType || "").toLowerCase();
+  const type = contentType.toLowerCase();
   return (
     type.includes("text/html") ||
     type.includes("application/javascript") ||
@@ -165,12 +185,12 @@ function shouldCacheResponse(contentType, byteLength) {
   );
 }
 
-async function fetchEmbedResource(url, attempt = 0) {
+async function fetchEmbedResource(url: string, attempt = 0): Promise<EmbedFetchResult> {
   const userAgent = getRandomUserAgent();
   const referrer = getRandomReferrer();
   const proxyUrl = getRandomProxy();
 
-  const response = await axios.get(url, {
+  const response = await axios.get<ArrayBuffer>(url, {
     timeout: EMBED_REQUEST_TIMEOUT_MS,
     maxRedirects: 5,
     responseType: "arraybuffer",
@@ -179,8 +199,7 @@ async function fetchEmbedResource(url, attempt = 0) {
     headers: {
       "User-Agent": userAgent,
       Referer: referrer,
-      Accept:
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
       "Accept-Language": "en-US,en;q=0.9",
       "Cache-Control": "no-cache",
       Pragma: "no-cache",
@@ -203,7 +222,7 @@ async function fetchEmbedResource(url, attempt = 0) {
     return {
       body: prepareHtmlBody(html, url),
       contentType,
-      headers: response.headers,
+      headers: response.headers as Record<string, unknown>,
       fromCache: false,
     };
   }
@@ -215,16 +234,14 @@ async function fetchEmbedResource(url, attempt = 0) {
   return {
     body: buffer,
     contentType,
-    headers: response.headers,
+    headers: response.headers as Record<string, unknown>,
     fromCache: false,
   };
 }
 
-async function proxyEmbedUrl(url) {
+export async function proxyEmbedUrl(url: string): Promise<EmbedFetchResult> {
   if (!isAllowedEmbedUrl(url)) {
-    const error = new Error("Embed URL host is not allowed.");
-    error.statusCode = 400;
-    throw error;
+    throw new EmbedProxyError("Embed URL host is not allowed.", 400);
   }
 
   const cached = getCachedEmbed(url);
@@ -248,13 +265,8 @@ async function proxyEmbedUrl(url) {
   return fetched;
 }
 
-module.exports = {
-  USER_AGENTS,
-  REFERRERS,
-  getRandomUserAgent,
-  getRandomReferrer,
-  isAllowedEmbedUrl,
-  proxyEmbedUrl,
-  stripFrameBlockingHeaders,
-  addCorsHeaders,
-};
+export function getEmbedProxyErrorStatus(error: unknown, fallback = 502): number {
+  if (error instanceof EmbedProxyError) return error.statusCode;
+  if (axios.isAxiosError(error) && error.response?.status) return error.response.status;
+  return fallback;
+}
