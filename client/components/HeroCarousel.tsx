@@ -2,6 +2,7 @@
 
 import type { Movie } from "@/lib/types";
 import { backdropUrl, formatRuntime, posterUrl } from "@/lib/movies";
+import { prefetchMovieStream } from "@/lib/stream-prefetch";
 import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import Image from "next/image";
 import Link from "next/link";
@@ -35,11 +36,7 @@ export default function HeroCarousel({ movies }: HeroCarouselProps) {
   if (!movie) return null;
 
   return (
-    <section
-      className={styles.hero}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
+    <section className={styles.hero} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <AnimatePresence mode="wait">
         <motion.div
           key={movie.id}
@@ -96,7 +93,13 @@ export default function HeroCarousel({ movies }: HeroCarouselProps) {
                 <p className={`${styles.description} ${styles.fadeItem}`}>{movie.overview}</p>
 
                 <div className={`${styles.buttonRow} ${styles.fadeItem}`}>
-                  <button type="button" className={styles.watchButton} onClick={() => openMovie(movie)}>
+                  <button
+                    type="button"
+                    className={styles.watchButton}
+                    onMouseEnter={() => prefetchMovieStream(movie)}
+                    onFocus={() => prefetchMovieStream(movie)}
+                    onClick={() => openMovie(movie)}
+                  >
                     ▶ Play Now
                   </button>
                   <button type="button" className={styles.trailerButton} onClick={() => openTrailer(movie)}>
@@ -113,11 +116,7 @@ export default function HeroCarousel({ movies }: HeroCarouselProps) {
               <div className={styles.posterWrap}>
                 <div className={styles.posterFrame}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={posterUrl(movie.posterPath, "w342")}
-                    alt={movie.title}
-                    className={styles.posterImage}
-                  />
+                  <img src={posterUrl(movie.posterPath, "w342")} alt={movie.title} className={styles.posterImage} />
                 </div>
               </div>
             </div>

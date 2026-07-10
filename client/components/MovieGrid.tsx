@@ -1,10 +1,6 @@
-"use client";
-
+import MovieCardGrid from "@/components/MovieCardGrid";
 import type { Movie } from "@/lib/types";
-import MovieCard from "./MovieCard";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
-import { scaleInVariant, staggerContainer } from "@/lib/motion";
 
 interface MovieGridProps {
   movies: Movie[];
@@ -21,21 +17,13 @@ function FilmReelIcon() {
   );
 }
 
-export default function MovieGrid({
-  movies,
-  emptyMessage = "No movies found.",
-  countLabel,
-}: MovieGridProps) {
-  const prefersReducedMotion = useReducedMotion();
-
+export default function MovieGrid({ movies, emptyMessage = "No movies found.", countLabel }: MovieGridProps) {
   if (movies.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-card)] py-24 text-center">
         <FilmReelIcon />
         <p className="mt-6 font-[var(--font-playfair)] text-2xl text-[var(--text-primary)]">No titles found</p>
-        <p className="mt-2 text-[15px] leading-[1.7] text-[var(--text-secondary)]">
-          {emptyMessage}
-        </p>
+        <p className="mt-2 text-[15px] leading-[1.7] text-[var(--text-secondary)]">{emptyMessage}</p>
         <Link
           href="/browse"
           data-cursor="link"
@@ -54,23 +42,7 @@ export default function MovieGrid({
           {countLabel}
         </p>
       )}
-      <motion.div
-        className="grid grid-cols-2 gap-5 md:grid-cols-4 xl:grid-cols-6"
-        variants={prefersReducedMotion ? undefined : staggerContainer}
-        initial="hidden"
-        animate="visible"
-      >
-        {movies.map((movie, index) => (
-          <motion.div
-            key={movie.id}
-            variants={prefersReducedMotion ? undefined : scaleInVariant}
-            custom={index}
-            transition={{ delay: index * 0.04 }}
-          >
-            <MovieCard movie={movie} />
-          </motion.div>
-        ))}
-      </motion.div>
+      <MovieCardGrid movies={movies} className="grid grid-cols-2 gap-5 md:grid-cols-4 xl:grid-cols-6" />
     </div>
   );
 }

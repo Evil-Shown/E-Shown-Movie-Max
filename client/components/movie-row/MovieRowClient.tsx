@@ -1,11 +1,13 @@
-import ExternalRatingsProvider from "@/components/external-ratings/ExternalRatingsProvider";
-import MovieCard from "@/components/movie-card/MovieCard";
-import type { Movie } from "@/lib/types";
-import MovieRowHeader from "./movie-row/MovieRowHeader";
-import MovieRowScroller from "./movie-row/MovieRowScroller";
-import styles from "./MovieRow.module.css";
+"use client";
 
-interface MovieRowProps {
+import ExternalRatingsProvider from "@/components/external-ratings/ExternalRatingsProvider";
+import MovieCardClient from "@/components/movie-card/MovieCardClient";
+import type { Movie } from "@/lib/types";
+import MovieRowHeader from "./MovieRowHeader";
+import MovieRowScroller from "./MovieRowScroller";
+import styles from "../MovieRow.module.css";
+
+interface MovieRowClientProps {
   title: string;
   subtitle?: string;
   eyebrow?: string;
@@ -16,7 +18,7 @@ interface MovieRowProps {
   seeAllHref?: string;
 }
 
-export default function MovieRow({
+export default function MovieRowClient({
   title,
   subtitle,
   eyebrow,
@@ -25,7 +27,7 @@ export default function MovieRow({
   showRank = false,
   embedded = false,
   seeAllHref = "/browse",
-}: MovieRowProps) {
+}: MovieRowClientProps) {
   if (movies.length === 0) return null;
 
   return (
@@ -36,7 +38,11 @@ export default function MovieRow({
         <MovieRowScroller>
           {movies.map((movie, index) => (
             <div key={`${title}-${movie.id}`} className={styles.cardSlot}>
-              <MovieCard movie={movie} priority={priorityFirst && index < 4} rank={showRank ? index + 1 : undefined} />
+              <MovieCardClient
+                movie={movie}
+                priority={priorityFirst && index < 4}
+                rank={showRank ? index + 1 : undefined}
+              />
             </div>
           ))}
         </MovieRowScroller>

@@ -31,6 +31,11 @@ export default function PlayerSubtitlePicker({
 
   useEffect(() => {
     if (!open) return;
+    onSearch?.();
+  }, [open, onSearch]);
+
+  useEffect(() => {
+    if (!open) return;
     const onPointerDown = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false);
@@ -77,7 +82,14 @@ export default function PlayerSubtitlePicker({
         aria-expanded={open}
         className="pointer-events-auto flex h-8 items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur transition hover:border-[#f4c27a] hover:bg-[#f4c27a] hover:text-stone-950 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-3.5 w-3.5" aria-hidden>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          className="h-3.5 w-3.5"
+          aria-hidden
+        >
           <rect x="3" y="5" width="18" height="14" rx="2" />
           <path d="M7 15h4M13 15h4M7 11h10" />
         </svg>
@@ -106,7 +118,8 @@ export default function PlayerSubtitlePicker({
               ) : null}
             </div>
             <p className="mt-1 text-[11px] leading-relaxed text-stone-300">
-              Sinhala comes first. If native Sinhala is missing, you can use auto-translation from English when available.
+              Sinhala comes first. If native Sinhala is missing, you can use auto-translation from English when
+              available.
             </p>
             <div className="mt-3">
               <input

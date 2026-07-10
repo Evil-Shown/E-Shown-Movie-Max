@@ -1,7 +1,7 @@
 "use client";
 
 import HomeSection from "@/components/HomeSection";
-import MovieRow from "@/components/MovieRow";
+import MovieRowClient from "@/components/movie-row/MovieRowClient";
 import { buildTasteProfile } from "@/lib/recommendations/taste-profile";
 import type { Movie } from "@/lib/types";
 import { useEffect, useState } from "react";
@@ -60,7 +60,7 @@ export default function PickedForYouRow() {
 
   return (
     <HomeSection className="section-surface py-12">
-      <MovieRow
+      <MovieRowClient
         embedded
         eyebrow="Personalized"
         title={hasSignals ? "Picked for You" : "Popular Picks"}

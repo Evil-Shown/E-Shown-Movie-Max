@@ -3,7 +3,7 @@
 import type { Movie } from "@/lib/types";
 import type { StreamProvider } from "@/lib/providers";
 import { getBestProvider } from "@/lib/storage/provider-performance";
-import { warmStreamProviders } from "@/lib/stream-optimizer";
+import { warmStreamProvidersForPlayback } from "@/lib/stream-optimizer";
 import { isTvShow } from "@/lib/streaming";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { AnimatePresence } from "framer-motion";
@@ -33,7 +33,7 @@ export default function VideoPlayerProvider({ children }: { children: React.Reac
 
   const openMovie = useCallback(
     (movie: Movie, options?: OpenMovieOptions) => {
-      warmStreamProviders();
+      warmStreamProvidersForPlayback();
       const resume = options?.resumeSeconds ?? getResumeTime(movie.id);
       const provider = options?.provider ?? getBestProvider(preferredProvider);
       setActive({
@@ -62,9 +62,7 @@ export default function VideoPlayerProvider({ children }: { children: React.Reac
   }, []);
 
   const changeSeasonEpisode = useCallback((season: number, episode: number) => {
-    setActive((current) =>
-      current ? { ...current, season, episode, resumeSeconds: undefined } : current
-    );
+    setActive((current) => (current ? { ...current, season, episode, resumeSeconds: undefined } : current));
   }, []);
 
   const closePlayer = useCallback(() => setActive(null), []);
