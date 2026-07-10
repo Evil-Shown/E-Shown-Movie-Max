@@ -15,7 +15,8 @@ import { useUserLibrary } from './UserLibraryProvider';
 import PlayerLoadingOverlay from '@/components/player/PlayerLoadingOverlay';
 import { colors, fonts, radii, spacing } from '@/constants/theme';
 import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from '@chithra/core/providers';
-import { getMovieEmbedUrl, isTvShow } from '@/lib/streaming';
+import { fetchMovieSources } from '@/lib/api/movies';
+import { isTvShow } from '@/lib/streaming';
 import { getTrailerId } from '@/lib/trailers';
 import {
   formatProviderSwitchMessage,
@@ -87,22 +88,19 @@ function VideoPlayerModal({
   const [loaded, setLoaded] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [autoSwitchMessage, setAutoSwitchMessage] = useState<string | null>(null);
+  const [sources, setSources] = useState<{ provider: StreamProvider; label: string; url: string }[]>([]);
+  const [sourcesLoading, setSourcesLoading] = useState(!isTrailer);
+  const [sourcesError, setSourcesError] = useState(false);
   const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadStartedAtRef = useRef(Date.now());
   const failoverAttemptsRef = useRef(0);
 
   const trailerId = movie.trailerKey ?? getTrailerId(movie.id);
-  const movieEmbedUrl = isTrailer
-    ? null
-    : getMovieEmbedUrl(movie, provider, { season, episode, seek: resumeSeconds });
-  // embedSrc only applies to the movie/episode WebView path now — the
-  // trailer path renders YoutubePlayer directly off trailerId instead,
-  // since loading a raw youtube.com/embed/... URL in a plain WebView
-  // reliably fails with YouTube's "Error 153: Video player configuration
-  // error" (a referrer-header check WebViews don't satisfy). YoutubePlayer
-  // works around this by loading YouTube's iframe API through its own
-  // hosted wrapper page rather than the bare embed URL.
-  const embedSrc = isTrailer ? null : movieEmbedUrl;
+
+  const currentSource =
+    sources.find((s) => s.provider === provider) ?? sources[0] ?? null;
+  const movieEmbedUrl = isTrailer ? null : currentSource?.url ?? null;
+  const embedSrc = movieEmbedUrl;
   const hasContent = isTrailer ? Boolean(trailerId) : Boolean(embedSrc);
 
   const playerLabel = isTrailer ? 'Trailer' : isTvShow(movie) ? 'Now Streaming · TV' : 'Now Streaming';
@@ -114,24 +112,71 @@ function VideoPlayerModal({
     setAutoSwitchMessage(null);
   }, [movie.id, mode]);
 
+  // Fetch stream sources from the server. The server resolves the movie ID
+  // and returns embed URLs for every configured provider — this lets us swap
+  // out dead providers without pushing app updates.
+  useEffect(() => {
+    if (isTrailer) {
+      setSources([]);
+      setSourcesLoading(false);
+      setSourcesError(false);
+      return;
+    }
+
+    let cancelled = false;
+    setSourcesLoading(true);
+    setSourcesError(false);
+    setSources([]);
+
+    fetchMovieSources(movie.id, {
+      type: isTvShow(movie) ? 'tv' : 'movie',
+      season,
+      episode,
+      seek: resumeSeconds,
+    })
+      .then((response) => {
+        if (cancelled) return;
+        setSources(response.sources);
+        setSourcesLoading(false);
+        if (response.sources.length && !response.sources.find((s) => s.provider === provider)) {
+          // Preferred provider isn't available from the server; fall back to
+          // the first source returned.
+          onProviderChange(response.sources[0].provider);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSourcesError(true);
+        setSourcesLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [movie.id, isTrailer, mode, season, episode, resumeSeconds, provider, onProviderChange]);
+
   // Auto-failover: if the embed hasn't loaded within the timeout, switch
-  // to the next-fastest provider and try again — same heuristic as web.
-  // Only applies to movie/episode streams; the trailer path uses
-  // YoutubePlayer's own onReady/onError rather than a timeout guess.
+  // to the next available source and try again.
   useEffect(() => {
     setLoaded(false);
     setLoadFailed(false);
     loadStartedAtRef.current = Date.now();
 
     if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
-    if (!isTrailer && embedSrc) {
+    if (!isTrailer && embedSrc && !sourcesLoading) {
       loadTimerRef.current = setTimeout(() => {
-        if (failoverAttemptsRef.current >= STREAM_PROVIDERS.length - 1) {
+        if (sources.length <= 1 || failoverAttemptsRef.current >= sources.length - 1) {
           setLoadFailed(true);
           setAutoSwitchMessage(null);
           return;
         }
         const next = getNextProvider(provider);
+        const nextSource = sources.find((s) => s.provider === next);
+        if (!nextSource) {
+          setLoadFailed(true);
+          setAutoSwitchMessage(null);
+          return;
+        }
         failoverAttemptsRef.current += 1;
         setAutoSwitchMessage(formatProviderSwitchMessage(next));
         onProviderChange(next);
@@ -142,7 +187,7 @@ function VideoPlayerModal({
     return () => {
       if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
     };
-  }, [embedSrc, isTrailer, provider, onProviderChange, setProvider]);
+  }, [embedSrc, isTrailer, provider, onProviderChange, setProvider, sources, sourcesLoading]);
 
   // Save playback progress once the embed has loaded successfully.
   useEffect(() => {
@@ -161,6 +206,7 @@ function VideoPlayerModal({
 
   function handleProviderSwitch() {
     const next = getNextProvider(provider);
+    if (!sources.find((s) => s.provider === next)) return;
     onProviderChange(next);
     setProvider(next);
     setLoaded(false);
@@ -231,7 +277,7 @@ function VideoPlayerModal({
                 }}
               />
             )}
-            {!loaded && (
+            {!loaded && !sourcesError && (
               <PlayerLoadingOverlay
                 movie={movie}
                 isTrailer={isTrailer}
@@ -239,8 +285,41 @@ function VideoPlayerModal({
                 episodeLabel={episodeLabel}
                 resumeSeconds={resumeSeconds}
                 posterImage={posterImage}
-                autoSwitchMessage={autoSwitchMessage}
+                autoSwitchMessage={sourcesLoading ? 'Finding stream sources…' : autoSwitchMessage}
               />
+            )}
+            {sourcesError && !isTrailer && (
+              <View style={styles.failOverlay}>
+                <Text style={styles.failText}>
+                  Couldn&apos;t load stream sources.
+                </Text>
+                <Pressable
+                  style={styles.failButton}
+                  onPress={() => {
+                    setSourcesError(false);
+                    setSourcesLoading(true);
+                    fetchMovieSources(movie.id, {
+                      type: isTvShow(movie) ? 'tv' : 'movie',
+                      season,
+                      episode,
+                      seek: resumeSeconds,
+                    })
+                      .then((response) => {
+                        setSources(response.sources);
+                        setSourcesLoading(false);
+                        if (response.sources.length && !response.sources.find((s) => s.provider === provider)) {
+                          onProviderChange(response.sources[0].provider);
+                        }
+                      })
+                      .catch(() => {
+                        setSourcesError(true);
+                        setSourcesLoading(false);
+                      });
+                  }}
+                >
+                  <Text style={styles.failButtonText}>Retry</Text>
+                </Pressable>
+              </View>
             )}
             {loadFailed && !loaded && !isTrailer && (
               <View style={styles.failOverlay}>
@@ -285,7 +364,7 @@ function VideoPlayerModal({
           “{movie.tagline || movie.title}”
         </Text>
         <View style={styles.footerButtons}>
-          {!isTrailer && embedSrc && (
+          {!isTrailer && embedSrc && sources.length > 1 && (
             <Pressable style={styles.footerOutlineBtn} onPress={handleProviderSwitch}>
               <Text style={styles.footerOutlineBtnText}>Not working? Switch</Text>
             </Pressable>

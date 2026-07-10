@@ -14,7 +14,7 @@
     "probe:tv": "node scripts/probe-providers.mjs"
   },
   "dependencies": {
-    "@chithra/core": "*",
+    "@chithra/core": "file:../packages/core",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@splinetool/react-spline": "^4.1.0",
