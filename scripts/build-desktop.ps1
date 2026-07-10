@@ -13,6 +13,7 @@ $resourcesServer = Join-Path $desktop "resources/server"
 $iconSource = Join-Path $client "app/favicon.ico"
 $iconDest = Join-Path $desktop "assets/icon.ico"
 $desktopShell = Join-Path $PSScriptRoot "desktop-shell"
+$corePackage = Join-Path $root "packages/core"
 
 function Write-Utf8NoBom {
   param(
@@ -76,20 +77,41 @@ function Invoke-ProductionBuild {
 
   Push-Location $WorkDir
   $env:NEXT_TELEMETRY_DISABLED = "1"
+  $prevEap = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
 
-  npm run build 2>&1 | ForEach-Object { Write-Host $_ }
-  if ($LASTEXITCODE -eq 0) {
+  try {
+    Write-Host "  Trying: npm run build (Turbopack)..." -ForegroundColor DarkGray
+    npm run build
+    $buildExit = $LASTEXITCODE
+
+    if ($buildExit -ne 0) {
+      Write-Host "  Retrying client build with webpack..." -ForegroundColor Yellow
+      npx next build --webpack
+      $buildExit = $LASTEXITCODE
+    }
+
+    if ($buildExit -ne 0) {
+      throw "Client production build failed."
+    }
+  }
+  finally {
+    $ErrorActionPreference = $prevEap
     Pop-Location
-    return
+  }
+}
+
+function Stage-MonorepoCorePackage {
+  param([string]$ClientStagingDir)
+
+  if (-not (Test-Path $corePackage)) {
+    throw "Missing $corePackage - required for @chithra/core during desktop packaging."
   }
 
-  Write-Host "  Retrying client build with webpack..." -ForegroundColor Yellow
-  npx next build --webpack 2>&1 | ForEach-Object { Write-Host $_ }
-  if ($LASTEXITCODE -ne 0) {
-    Pop-Location
-    throw "Client production build failed."
-  }
-  Pop-Location
+  $coreStaging = Join-Path (Split-Path $ClientStagingDir -Parent) "packages\core"
+  Write-Host "  Staging @chithra/core..."
+  Robocopy-Item -Source $corePackage -Dest $coreStaging
+  return $coreStaging
 }
 
 function Prepare-ClientEnvForPackage {
@@ -157,6 +179,7 @@ Get-ChildItem -Path $client -Force | Where-Object { $excludeDirs -notcontains $_
   Robocopy-Item -Source $_.FullName -Dest (Join-Path $clientStaging $_.Name)
 }
 Prepare-ClientEnvForPackage -SourceEnv $clientEnvFile -DestPath (Join-Path $clientStaging ".env.local")
+$coreStaging = Stage-MonorepoCorePackage -ClientStagingDir $clientStaging
 
 Write-Host "[2/6] Staging server..."
 Get-ChildItem -Path $server -Force | Where-Object { $_.Name -ne "node_modules" } | ForEach-Object {
@@ -173,8 +196,12 @@ npm install --omit=dev
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "client npm install --omit=dev failed" }
 Pop-Location
 
-Write-Host "[4/6] Installing server production dependencies..."
+Write-Host "[4/6] Installing and building server..."
 Push-Location $serverStaging
+npm install
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "server npm install failed" }
+npm run build
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "server build failed" }
 npm install --omit=dev
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "server npm install --omit=dev failed" }
 Pop-Location
@@ -192,7 +219,7 @@ foreach ($item in $clientShip) {
   }
 }
 
-$serverShip = @("src", "node_modules", "package.json", "package-lock.json", ".env")
+$serverShip = @("dist", "node_modules", "package.json", "package-lock.json", ".env")
 foreach ($item in $serverShip) {
   $src = Join-Path $serverStaging $item
   if (Test-Path $src) {
@@ -204,6 +231,9 @@ Copy-Item $iconSource $iconDest -Force
 
 Remove-Item $clientStaging -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item $serverStaging -Recurse -Force -ErrorAction SilentlyContinue
+if ($coreStaging) {
+  Remove-Item $coreStaging -Recurse -Force -ErrorAction SilentlyContinue
+}
 
 Write-Host "[6/6] Building Electron installer (this can take several minutes)..."
 Sync-DesktopShell

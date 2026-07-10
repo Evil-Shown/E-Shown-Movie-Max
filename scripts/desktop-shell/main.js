@@ -81,7 +81,7 @@ function loadEnvFile(filePath) {
 
 function startBackend(serverDir) {
   const serverEnv = loadEnvFile(path.join(serverDir, ".env"));
-  return spawnNode([path.join(serverDir, "src", "index.js")], serverDir, {
+  return spawnNode([path.join(serverDir, "dist", "index.js")], serverDir, {
     PORT: String(API_PORT),
     USER_DATA_PATH: app.getPath("userData"),
     ...serverEnv
