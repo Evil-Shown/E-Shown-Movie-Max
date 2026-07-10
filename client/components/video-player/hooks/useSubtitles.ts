@@ -144,6 +144,7 @@ export function useSubtitles({
     if (language === "off") return;
 
     let cancelled = false;
+    onEpisodeSubtitleReload?.();
     (async () => {
       setSubtitleLoading(true);
       try {
