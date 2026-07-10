@@ -18,10 +18,7 @@ export default function ChannelLogo({
   variant = "cinematic",
   priority = false,
 }: ChannelLogoProps) {
-  const candidates = useMemo(
-    () => getLogoCandidates(channel.id, channel.logo),
-    [channel.id, channel.logo]
-  );
+  const candidates = useMemo(() => getLogoCandidates(channel.id, channel.logo), [channel.id, channel.logo]);
 
   const [candidateIndex, setCandidateIndex] = useState(0);
 
@@ -50,9 +47,7 @@ export default function ChannelLogo({
       {showInitials ? (
         <div
           className={`flex items-center justify-center font-bold ${
-            isTile
-              ? "size-full text-[11px] sm:text-xs"
-              : "h-full w-full text-sm tracking-wide text-white"
+            isTile ? "size-full text-[11px] sm:text-xs" : "h-full w-full text-sm tracking-wide text-white"
           }`}
           style={{
             background: isTile
@@ -75,18 +70,19 @@ export default function ChannelLogo({
           </span>
         </div>
       ) : isTile || isClean ? (
-        <img
+        <Image
           src={candidates[candidateIndex]}
           alt={channel.name}
-          loading={priority ? "eager" : "lazy"}
-          decoding="async"
-          fetchPriority={priority ? "high" : "auto"}
+          fill
+          priority={priority}
           onError={handleError}
           className={
             isTile
               ? "max-h-full max-w-full object-contain drop-shadow-[0_1px_3px_rgba(28,25,23,0.12)]"
               : "mx-auto h-full w-full max-h-full object-contain p-2"
           }
+          sizes="120px"
+          unoptimized
         />
       ) : (
         <Image
@@ -98,9 +94,7 @@ export default function ChannelLogo({
           sizes="120px"
           onError={handleError}
           unoptimized
-          style={
-            style ? { filter: `contrast(${style.contrast}) brightness(0.9)` } : undefined
-          }
+          style={style ? { filter: `contrast(${style.contrast}) brightness(0.9)` } : undefined}
         />
       )}
 
@@ -110,10 +104,7 @@ export default function ChannelLogo({
             className="absolute inset-0 z-10 mix-blend-overlay opacity-80 transition-opacity duration-500 group-hover:opacity-100"
             style={{ background: style.overlayGradient }}
           />
-          <div
-            className="pointer-events-none absolute inset-0 z-20"
-            style={{ background: style.vignette }}
-          />
+          <div className="pointer-events-none absolute inset-0 z-20" style={{ background: style.vignette }} />
         </>
       )}
     </div>
