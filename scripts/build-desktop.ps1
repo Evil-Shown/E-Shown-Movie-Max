@@ -166,17 +166,17 @@ Copy-Item $serverEnvFile (Join-Path $serverStaging ".env") -Force
 
 Write-Host "[3/6] Installing and building client..."
 Push-Location $clientStaging
-npm ci
-if ($LASTEXITCODE -ne 0) { Pop-Location; throw "client npm ci failed" }
+  npm install
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "client npm install failed" }
 Invoke-ProductionBuild -WorkDir $clientStaging
-npm ci --omit=dev
-if ($LASTEXITCODE -ne 0) { Pop-Location; throw "client npm ci --omit=dev failed" }
+npm install --omit=dev
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "client npm install --omit=dev failed" }
 Pop-Location
 
 Write-Host "[4/6] Installing server production dependencies..."
 Push-Location $serverStaging
-npm ci --omit=dev
-if ($LASTEXITCODE -ne 0) { Pop-Location; throw "server npm ci --omit=dev failed" }
+npm install --omit=dev
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "server npm install --omit=dev failed" }
 Pop-Location
 
 Write-Host "[5/6] Copying bundled resources into desktop/..."

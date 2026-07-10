@@ -1,0 +1,109 @@
+name: Release Desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Desktop version (e.g. 2.2.5). Leave empty to use scripts/desktop-shell/package.json."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Validate secrets
+        shell: pwsh
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
+          WYZIE_API_KEY: ${{ secrets.WYZIE_API_KEY }}
+          VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+        run: |
+          $required = @(
+            @{ Name = "TMDB_API_KEY"; Value = $env:TMDB_API_KEY },
+            @{ Name = "OMDB_API_KEY"; Value = $env:OMDB_API_KEY },
+            @{ Name = "WYZIE_API_KEY"; Value = $env:WYZIE_API_KEY },
+            @{ Name = "VIRUSTOTAL_API_KEY"; Value = $env:VIRUSTOTAL_API_KEY }
+          )
+
+          $missing = $required | Where-Object { [string]::IsNullOrWhiteSpace($_.Value) } | ForEach-Object { $_.Name }
+          if ($missing.Count -gt 0) {
+            throw "Missing GitHub Actions secrets: $($missing -join ', '). Add them under Settings -> Secrets and variables -> Actions."
+          }
+
+      - name: Create build env files
+        shell: pwsh
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
+          WYZIE_API_KEY: ${{ secrets.WYZIE_API_KEY }}
+          VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+        run: |
+          function Write-Utf8NoBom {
+            param([string]$Path, [string]$Content)
+            $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+            [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
+          }
+
+          $siteName = "CHITHRA $([char]0x2014) CINEMA"
+          $clientEnv = @(
+            "OMDB_API_KEY=$env:OMDB_API_KEY"
+            "TMDB_API_KEY=$env:TMDB_API_KEY"
+            "WYZIE_API_KEY=$env:WYZIE_API_KEY"
+            "NEXT_PUBLIC_GODS_EYE_API_URL=http://127.0.0.1:5000"
+            "NEXT_PUBLIC_TBOOM_API_URL=http://127.0.0.1:5000"
+            "NEXT_PUBLIC_SITE_NAME=$siteName"
+            "NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:5000"
+            "NEXT_PUBLIC_USE_EMBED_PROXY=false"
+          ) -join "`n"
+
+          $serverLines = @(
+            "VIRUSTOTAL_API_KEY=$env:VIRUSTOTAL_API_KEY"
+            "PORT=5000"
+          )
+          if (-not [string]::IsNullOrWhiteSpace($env:UPSTASH_REDIS_REST_URL)) {
+            $serverLines += "UPSTASH_REDIS_REST_URL=$env:UPSTASH_REDIS_REST_URL"
+          }
+          if (-not [string]::IsNullOrWhiteSpace($env:UPSTASH_REDIS_REST_TOKEN)) {
+            $serverLines += "UPSTASH_REDIS_REST_TOKEN=$env:UPSTASH_REDIS_REST_TOKEN"
+          }
+          $serverEnv = $serverLines -join "`n"
+
+          Write-Utf8NoBom -Path "client/.env.local" -Content $clientEnv
+          Write-Utf8NoBom -Path "server/.env" -Content $serverEnv
+
+      - name: Build and publish installer
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $version = "${{ inputs.version }}".Trim()
+          if ($version) {
+            .\scripts\publish-desktop-release.ps1 -Version $version
+          } else {
+            .\scripts\publish-desktop-release.ps1
+          }
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chithra-Cinema-Setup
+          path: release/desktop/*
+          if-no-files-found: error
