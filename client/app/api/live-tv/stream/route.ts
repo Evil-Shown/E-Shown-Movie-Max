@@ -1,3 +1,4 @@
+import { enforceRateLimit } from "@/lib/cache/rate-limit";
 import { fetchStreamResource } from "@/lib/live-tv/stream-fetch";
 import { isEphemeralManifest, rewriteHlsManifest } from "@/lib/live-tv/manifest-proxy";
 import {
@@ -48,14 +49,14 @@ function isManifestContent(url: string, contentType: string | null, peek: string
   return peek.trimStart().startsWith("#EXTM3U");
 }
 
-function resolveProxyRequest(searchParams: URLSearchParams): {
+async function resolveProxyRequest(searchParams: URLSearchParams): Promise<{
   rawUrl: string | null;
   referer?: string;
   origin?: string;
-} {
+}> {
   const sid = searchParams.get("sid");
   if (sid) {
-    const entry = lookupProxyTarget(sid);
+    const entry = await lookupProxyTarget(sid);
     if (!entry) return { rawUrl: null };
     return {
       rawUrl: entry.url,
@@ -123,7 +124,7 @@ async function proxyUpstream(
   }
 
   const proxyBase = new URL("/api/live-tv/stream", request.url).toString();
-  const output = rewriteHlsManifest(body, target, proxyBase, referer, origin);
+  const output = await rewriteHlsManifest(body, target, proxyBase, referer, origin);
   const ephemeral = isEphemeralManifest(rawUrl, body);
 
   return new Response(output, {
@@ -139,6 +140,9 @@ async function proxyUpstream(
 
 /** Register a long upstream URL and return a short ?sid= playback path */
 export async function POST(request: Request) {
+  const limited = await enforceRateLimit(request, "live-tv:stream:register", 30, 60);
+  if (limited) return limited;
+
   try {
     const body = (await request.json()) as {
       url?: string;
@@ -155,7 +159,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Invalid or blocked URL" }, { status: 400 });
     }
 
-    const sid = registerProxyTarget(body.url, body.referer, body.origin);
+    const sid = await registerProxyTarget(body.url, body.referer, body.origin);
     const proxyBase = new URL("/api/live-tv/stream", request.url).toString();
 
     return Response.json({
@@ -168,8 +172,11 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const limited = await enforceRateLimit(request, "live-tv:stream:proxy", 180, 60);
+  if (limited) return limited;
+
   const { searchParams } = new URL(request.url);
-  const { rawUrl, referer, origin } = resolveProxyRequest(searchParams);
+  const { rawUrl, referer, origin } = await resolveProxyRequest(searchParams);
 
   if (!rawUrl) {
     const sid = searchParams.get("sid");

@@ -10,9 +10,7 @@ node_modules/
 dist/
 build/
 release/
-desktop/resources/
-desktop/node_modules/
-desktop/dist/
+desktop/
 
 #Next.js
 .next/

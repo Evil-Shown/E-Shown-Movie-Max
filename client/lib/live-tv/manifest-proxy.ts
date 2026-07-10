@@ -3,17 +3,63 @@ import {
   registerProxyTarget,
 } from "@/lib/live-tv/proxy-store";
 
+function resolveManifestUrl(raw: string, baseUrl: URL): string {
+  return raw.startsWith("http") ? raw : new URL(raw, baseUrl).toString();
+}
+
+function collectManifestUrls(
+  content: string,
+  baseUrl: URL
+): string[] {
+  const urls = new Set<string>();
+
+  for (const line of content.split("\n")) {
+    if (!line.trim()) continue;
+
+    const uriMatches = line.matchAll(/URI="([^"]+)"/gi);
+    for (const match of uriMatches) {
+      try {
+        urls.add(resolveManifestUrl(match[1], baseUrl));
+      } catch {
+        // skip invalid URIs
+      }
+    }
+
+    const trimmed = line.trim();
+    if (trimmed.startsWith("#")) continue;
+
+    try {
+      urls.add(resolveManifestUrl(trimmed, baseUrl));
+    } catch {
+      // skip invalid lines
+    }
+  }
+
+  return [...urls];
+}
+
 /** Rewrite every m3u8 URL in a manifest (including URIs inside #EXT tags) */
-export function rewriteHlsManifest(
+export async function rewriteHlsManifest(
   content: string,
   baseUrl: URL,
   proxyBase: string,
   referer?: string,
   origin?: string
-): string {
+): Promise<string> {
+  const uniqueUrls = collectManifestUrls(content, baseUrl);
+  const sidByUrl = new Map<string, string>();
+
+  await Promise.all(
+    uniqueUrls.map(async (resolved) => {
+      const sid = await registerProxyTarget(resolved, referer, origin);
+      sidByUrl.set(resolved, sid);
+    })
+  );
+
   const toProxy = (raw: string): string => {
-    const resolved = raw.startsWith("http") ? raw : new URL(raw, baseUrl).toString();
-    const sid = registerProxyTarget(resolved, referer, origin);
+    const resolved = resolveManifestUrl(raw, baseUrl);
+    const sid = sidByUrl.get(resolved);
+    if (!sid) return raw;
     return buildSidProxyUrl(proxyBase, sid);
   };
 
