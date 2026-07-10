@@ -1,17 +1,15 @@
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
-import { colors, fonts } from '@/constants/theme';
+import { colors, fonts } from "@/constants/theme";
 
 /**
- * Tab navigation — Home / Browse / Search / Watchlist. This replaces the
- * Stack that was here before (a Stack has no bottom bar by design, which is
- * why navigation disappeared) and the Expo template's original Home/Explore
- * placeholder tabs.
+ * Tab navigation — Home / Browse / Live TV / Search / Watchlist.
  */
 export default function TabLayout() {
   return (
     <Tabs
+      initialRouteName="home"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.accentPrimary,
@@ -30,36 +28,51 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: "Home",
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
+            <Ionicons name={focused ? "home" : "home-outline"} size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="browse"
         options={{
-          title: 'Browse',
+          title: "Browse",
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={size} color={color} />
+            <Ionicons name={focused ? "grid" : "grid-outline"} size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
-          title: 'Search',
+          title: "Search",
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'search' : 'search-outline'} size={size} color={color} />
+            <Ionicons name={focused ? "search" : "search-outline"} size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="live-tv"
+        options={{
+          title: "Live TV",
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "tv" : "tv-outline"} size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="watchlist"
         options={{
-          title: 'Watchlist',
+          title: "Watchlist",
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'bookmark' : 'bookmark-outline'} size={size} color={color} />
+            <Ionicons name={focused ? "bookmark" : "bookmark-outline"} size={size} color={color} />
           ),
         }}
       />
