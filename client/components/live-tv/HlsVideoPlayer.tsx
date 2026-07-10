@@ -65,7 +65,10 @@ export default function HlsVideoPlayer({
   const [buffering, setBuffering] = useState(false);
 
   const sourcesRef = useRef(sources);
-  sourcesRef.current = sources;
+
+  useEffect(() => {
+    sourcesRef.current = sources;
+  }, [sources]);
 
   const loadingPhase: LiveTvLoadingPhase = (() => {
     if (buffering && urlIndex === 0) return "buffer";
