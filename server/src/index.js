@@ -10,6 +10,12 @@ const {
     addCorsHeaders,
     isAllowedEmbedUrl
 } = require("./embed-proxy");
+const {
+    redisKey,
+    cacheGetJson,
+    cacheSetJson,
+    cacheIncr
+} = require("./redis");
 
 const app = express();
 
@@ -32,19 +38,17 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "50kb" }));
 
-const SEARCH_CACHE_TTL_MS = 60 * 1000;
+const SEARCH_CACHE_TTL_SECONDS = 60;
 const MAX_QUERY_LENGTH = 120;
 const REQUEST_TIMEOUT_MS = 8000;
 const RETRY_ATTEMPTS = 1;
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_WINDOW_SECONDS = 60;
 const RATE_LIMIT_MAX_REQUESTS = 60;
 const LOCAL_INDEX_MAX_ENTRIES = 2500;
 const BACKGROUND_REFRESH_MS = 10 * 60 * 1000;
 const VIRUSTOTAL_API_KEY = process.env.VIRUSTOTAL_API_KEY || "";
 
-const searchCache = new Map();
 const inFlightSearches = new Map();
-const rateLimitStore = new Map();
 const localIndex = new Map();
 const analytics = {
     searched: new Map(),
@@ -61,32 +65,17 @@ for (const provider of TORRENT_SEARCH_PROVIDERS) {
     }
 }
 
-function cleanupRateLimitStore(now) {
-    for (const [ip, entry] of rateLimitStore.entries()) {
-        if (now > entry.resetAt) {
-            rateLimitStore.delete(ip);
-        }
-    }
-}
-
-function rateLimit(req, res, next) {
-    const now = Date.now();
-    cleanupRateLimitStore(now);
+async function rateLimit(req, res, next) {
     const ip = req.ip || req.socket?.remoteAddress || "unknown";
-    const entry = rateLimitStore.get(ip);
+    const key = redisKey("ratelimit", "server:api", ip);
+    const count = await cacheIncr(key, RATE_LIMIT_WINDOW_SECONDS);
 
-    if (!entry || now > entry.resetAt) {
-        rateLimitStore.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-        return next();
-    }
-
-    if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    if (count > RATE_LIMIT_MAX_REQUESTS) {
         return res.status(429).json({
             error: "Too many requests. Please try again shortly."
         });
     }
 
-    entry.count += 1;
     return next();
 }
 
@@ -105,21 +94,16 @@ function getCacheKey(query, limit) {
     return `${query.toLowerCase()}::${limit}`;
 }
 
-function getCachedResults(key) {
-    const cached = searchCache.get(key);
-    if (!cached) return null;
-    if (Date.now() > cached.expiresAt) {
-        searchCache.delete(key);
-        return null;
-    }
-    return cached.value;
+function getSearchCacheKey(query, limit) {
+    return redisKey("search", getCacheKey(query, limit));
 }
 
-function setCachedResults(key, value) {
-    searchCache.set(key, {
-        value,
-        expiresAt: Date.now() + SEARCH_CACHE_TTL_MS
-    });
+async function getCachedResults(key) {
+    return cacheGetJson(key);
+}
+
+async function setCachedResults(key, value) {
+    await cacheSetJson(key, value, SEARCH_CACHE_TTL_SECONDS);
 }
 
 function incrementAnalytics(map, key) {
@@ -300,8 +284,8 @@ async function fetchProviderResults(query, limit) {
 }
 
 async function getSearchResults(query, limit = 60) {
-    const cacheKey = getCacheKey(query, limit);
-    const cached = getCachedResults(cacheKey);
+    const cacheKey = getSearchCacheKey(query, limit);
+    const cached = await getCachedResults(cacheKey);
     if (cached) {
         return cached;
     }
@@ -334,7 +318,7 @@ async function getSearchResults(query, limit = 60) {
                     degraded: failedProviders.length > 0
                 }
             };
-            setCachedResults(cacheKey, results);
+            await setCachedResults(cacheKey, results);
             return results;
         })
         .finally(() => {
