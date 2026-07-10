@@ -15,10 +15,22 @@ A full-stack cinema app with a cinematic Next.js frontend and a lightweight Expr
 
 ```text
 CHITHRA — CINEMA/
-  client/   # Next.js frontend
-  server/   # Express API (God's Eye search, VirusTotal)
-  desktop/  # Electron desktop shell
-  scripts/  # Packaging & installer build
+  client/                 # Next.js frontend + API routes
+  mobile/                 # Expo React Native app
+  server/                 # Express API (God's Eye search, VirusTotal)
+  packages/core/          # Shared types, movies, providers, TMDB client
+  scripts/desktop-shell/  # Electron desktop shell (source)
+  scripts/                # Packaging & installer build
+```
+
+`desktop/` is generated at build time by `scripts/build-desktop.ps1` and is not tracked in git.
+
+## Workspace commands
+
+```bash
+npm install          # install all workspaces
+npm run dev          # turbo: dev in all apps
+npm run build        # turbo: build all apps
 ```
 
 ## Quick Start

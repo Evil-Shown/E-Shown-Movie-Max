@@ -1,8 +1,4 @@
-import {
-  PROVIDER_LABELS,
-  STREAM_PROVIDERS,
-  type StreamProvider,
-} from "@/lib/providers";
+import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from "@/lib/providers";
 import { getRankedProviders } from "@/lib/storage/provider-performance";
 
 export const PROVIDER_ORIGINS: Record<StreamProvider, string[]> = {
@@ -18,13 +14,15 @@ const warmedOrigins = new Set<string>();
 
 export function isSlowConnection(): boolean {
   if (typeof navigator === "undefined") return false;
-  const connection = (navigator as Navigator & {
-    connection?: {
-      saveData?: boolean;
-      effectiveType?: string;
-      downlink?: number;
-    };
-  }).connection;
+  const connection = (
+    navigator as Navigator & {
+      connection?: {
+        saveData?: boolean;
+        effectiveType?: string;
+        downlink?: number;
+      };
+    }
+  ).connection;
 
   if (!connection) return false;
   if (connection.saveData) return true;
@@ -36,14 +34,22 @@ export function isSlowConnection(): boolean {
 }
 
 export function getStreamLoadTimeoutMs(provider?: StreamProvider): number {
-  const base = isSlowConnection() ? 6000 : 8000;
-  if (provider === "vidsrc" || provider === "vidsrcpm") return Math.min(base, 6000);
+  const base = isSlowConnection() ? 14_000 : 10_000;
+  if (provider === "vidsrc" || provider === "vidsrcpm") {
+    return isSlowConnection() ? 12_000 : 8_000;
+  }
   return base;
 }
 
 /** How long to wait after iframe shell loads before switching if playback never starts. */
 export function getPlaybackConfirmTimeoutMs(): number {
-  return isSlowConnection() ? 14_000 : 11_000;
+  return isSlowConnection() ? 28_000 : 16_000;
+}
+
+/** Warm only the fastest providers on slow links to avoid connection churn. */
+export function warmStreamProvidersForPlayback() {
+  const providers = isSlowConnection() ? getRankedProviders().slice(0, 2) : getRankedProviders().slice(0, 4);
+  warmStreamProviders(providers);
 }
 
 export function getProvidersInOrder(current: StreamProvider): StreamProvider[] {
@@ -82,7 +88,7 @@ export function warmStreamProviders(providers: StreamProvider[] = STREAM_PROVIDE
 
 export function getStabilityTip(): string | null {
   if (isSlowConnection()) {
-    return "Slow connection — we'll auto-rotate sources until one plays.";
+    return "Slow connection — give the stream a moment to buffer. We'll only switch sources if nothing loads.";
   }
   return null;
 }

@@ -1,9 +1,48 @@
 {
   "name": "chithra-cinema-monorepo",
   "private": true,
+  "packageManager": "npm@10.9.3",
+  "workspaces": [
+    "client",
+    "mobile",
+    "server",
+    "packages/*"
+  ],
   "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint && eslint server packages",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky",
     "package": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1",
     "package:portable": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-for-friend.ps1",
     "package:publish": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-desktop-release.ps1"
+  },
+  "lint-staged": {
+    "*.{json,md,css,yml,yaml}": "prettier --write",
+    "client/**/*.{js,jsx,ts,tsx,mjs}": [
+      "prettier --write",
+      "eslint --fix --config client/eslint.config.mjs"
+    ],
+    "server/**/*.ts": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "packages/**/*.ts": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "mobile/**/*.{js,jsx,ts,tsx}": "prettier --write"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
+    "turbo": "^2.5.4",
+    "typescript-eslint": "^8.52.0"
   }
 }

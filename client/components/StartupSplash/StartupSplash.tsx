@@ -131,6 +131,8 @@ function CinemaIntroStage({
 
 export default function StartupSplash() {
   const splashModeRef = useRef<StartupSplashMode>("none");
+  const [splashMode, setSplashMode] = useState<StartupSplashMode>("none");
+  const [includeSpline, setIncludeSpline] = useState(false);
   const [active, setActive] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [stage, setStage] = useState<StartupStage>("cinema");
@@ -140,12 +142,8 @@ export default function StartupSplash() {
   const dismissedRef = useRef(false);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const sequenceRef = useRef(0);
-  const reducedMotionRef = useRef(false);
 
   const sceneUrl = SPLINE_STARTUP_SCENE_URL;
-  const splashMode = splashModeRef.current;
-  const includeSpline =
-    hasValidSplineStartupUrl(sceneUrl) && !reducedMotionRef.current;
 
   const clearTimers = useCallback(() => {
     for (const timer of timersRef.current) clearTimeout(timer);
@@ -184,9 +182,13 @@ export default function StartupSplash() {
   }, [clearTimers]);
 
   useLayoutEffect(() => {
-    reducedMotionRef.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const mode = getStartupSplashMode();
+    const playSpline = hasValidSplineStartupUrl(sceneUrl) && !reducedMotion;
+
     splashModeRef.current = mode;
+    setSplashMode(mode);
+    setIncludeSpline(playSpline);
 
     if (mode === "none") {
       setActive(false);
@@ -203,8 +205,6 @@ export default function StartupSplash() {
     setCinemaExiting(false);
     setSplineVisible(false);
     clearTimers();
-
-    const playSpline = includeSpline;
     const isFullIntro = mode === "full";
 
     if (isFullIntro) {

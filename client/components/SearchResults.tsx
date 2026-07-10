@@ -1,20 +1,18 @@
 "use client";
 
-import type { Movie } from "@/lib/types";
 import type { CatalogSource, SearchMediaFilter } from "@/lib/movie-service";
-import MovieGrid from "./MovieGrid";
 import { AnimatePresence, motion } from "framer-motion";
+import type { ReactNode } from "react";
 
 interface SearchResultsProps {
-  movies: Movie[];
   query: string;
   page: number;
   totalPages: number;
-  emptyMessage: string;
   source?: CatalogSource;
   totalResults?: number;
   mediaFilter?: SearchMediaFilter;
   filtersActive?: boolean;
+  children: ReactNode;
 }
 
 function sourceLabel(source?: CatalogSource) {
@@ -32,28 +30,26 @@ function mediaLabel(filter: SearchMediaFilter = "movie") {
 }
 
 export default function SearchResults({
-  movies,
   query,
   page,
   totalPages,
-  emptyMessage,
   source,
   totalResults,
   mediaFilter = "movie",
   filtersActive = false,
+  children,
 }: SearchResultsProps) {
-  const total = totalResults ?? movies.length;
   const label = mediaLabel(mediaFilter);
   const countLabel = query
-    ? `Found ${total.toLocaleString()} ${label} via ${sourceLabel(source)}`
+    ? `Found ${(totalResults ?? 0).toLocaleString()} ${label} via ${sourceLabel(source)}`
     : filtersActive
-      ? `${total.toLocaleString()} ${label} matching your filters via ${sourceLabel(source)}`
+      ? `${(totalResults ?? 0).toLocaleString()} ${label} matching your filters via ${sourceLabel(source)}`
       : `Popular ${label} from ${sourceLabel(source)} — search or filter to explore more`;
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={`${query}-${page}-${movies.length}-${source ?? ""}`}
+        key={`${query}-${page}-${source ?? ""}`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -63,7 +59,7 @@ export default function SearchResults({
           {countLabel}
           {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
         </p>
-        <MovieGrid movies={movies} emptyMessage={emptyMessage} />
+        {children}
       </motion.div>
     </AnimatePresence>
   );

@@ -1,5 +1,3 @@
-"use client";
-
 interface RatingRingProps {
   rating: number;
   size?: number;
@@ -21,16 +19,12 @@ export default function RatingRing({ rating, size = 36, className = "" }: Rating
   const color = ratingColor(rating);
 
   return (
-    <div className={`relative inline-flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
+    <div
+      className={`relative inline-flex items-center justify-center ${className}`}
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="rgba(28,25,23,0.12)"
-          strokeWidth={stroke}
-        />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(28,25,23,0.12)" strokeWidth={stroke} />
         <circle
           cx={size / 2}
           cy={size / 2}

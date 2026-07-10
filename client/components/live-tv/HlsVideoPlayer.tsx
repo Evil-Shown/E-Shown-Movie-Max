@@ -5,11 +5,7 @@ import Hls from "hls.js";
 import LiveTvPlayerChrome from "@/components/live-tv/LiveTvPlayerChrome";
 import LiveTvPlayerLoading, { type LiveTvLoadingPhase } from "@/components/live-tv/LiveTvPlayerLoading";
 import { createHlsConfig, STREAM_ATTEMPT_TIMEOUT_MS } from "@/lib/live-tv/hls-config";
-import {
-  getStreamSources,
-  resolveProxiedStreamUrl,
-  shouldProxyDirectly,
-} from "@/lib/live-tv/streams";
+import { getStreamSources, resolveProxiedStreamUrl, shouldProxyDirectly } from "@/lib/live-tv/streams";
 import type { LiveTvChannel, LiveTvStream, StreamSource } from "@/lib/live-tv/types";
 
 interface HlsVideoPlayerProps {
@@ -42,16 +38,17 @@ export default function HlsVideoPlayer({
     onStatusChangeRef.current = onStatusChange;
   }, [onStatusChange]);
 
-  const fallbackKey = (stream.fallbacks ?? []).join("|");
+  const { url: streamUrl, fallbacks, referer, origin } = stream;
+  const fallbackKey = (fallbacks ?? []).join("|");
   const sources = useMemo(
-    () => getStreamSources(stream),
-    [stream.url, stream.referer, stream.origin, fallbackKey]
+    () => getStreamSources({ url: streamUrl, fallbacks, referer, origin } as LiveTvStream),
+    [streamUrl, fallbacks, referer, origin]
   );
 
-  const streamKey = `${stream.url}|${fallbackKey}`;
+  const streamKey = `${streamUrl}|${fallbackKey}`;
 
   const [urlIndex, setUrlIndex] = useState(0);
-  const [useProxy, setUseProxy] = useState(() => shouldProxyDirectly(stream.url));
+  const [useProxy, setUseProxy] = useState(() => shouldProxyDirectly(streamUrl));
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [volume, setVolume] = useState(0.85);
@@ -65,7 +62,10 @@ export default function HlsVideoPlayer({
   const [buffering, setBuffering] = useState(false);
 
   const sourcesRef = useRef(sources);
-  sourcesRef.current = sources;
+
+  useEffect(() => {
+    sourcesRef.current = sources;
+  }, [sources]);
 
   const loadingPhase: LiveTvLoadingPhase = (() => {
     if (buffering && urlIndex === 0) return "buffer";
@@ -82,8 +82,7 @@ export default function HlsVideoPlayer({
   }, [sources.length]);
 
   const getPlaybackUrl = useCallback(
-    async (source: StreamSource, proxied: boolean) =>
-      proxied ? resolveProxiedStreamUrl(source) : source.url,
+    async (source: StreamSource, proxied: boolean) => (proxied ? resolveProxiedStreamUrl(source) : source.url),
     []
   );
 
@@ -134,24 +133,21 @@ export default function HlsVideoPlayer({
     }
   }, []);
 
-  const tryNextSource = useCallback(
-    (index: number, proxied: boolean) => {
-      const list = sourcesRef.current;
-      if (!proxied) {
-        setUseProxy(true);
-        return;
-      }
-      if (index + 1 < list.length) {
-        startedRef.current = false;
-        setUrlIndex(index + 1);
-        setUseProxy(shouldProxyDirectly(list[index + 1]?.url ?? ""));
-      } else {
-        setIsLoading(false);
-        onStatusChangeRef.current?.("error");
-      }
-    },
-    []
-  );
+  const tryNextSource = useCallback((index: number, proxied: boolean) => {
+    const list = sourcesRef.current;
+    if (!proxied) {
+      setUseProxy(true);
+      return;
+    }
+    if (index + 1 < list.length) {
+      startedRef.current = false;
+      setUrlIndex(index + 1);
+      setUseProxy(shouldProxyDirectly(list[index + 1]?.url ?? ""));
+    } else {
+      setIsLoading(false);
+      onStatusChangeRef.current?.("error");
+    }
+  }, []);
 
   const destroyHls = useCallback(() => {
     hlsRef.current?.destroy();
@@ -178,10 +174,7 @@ export default function HlsVideoPlayer({
 
     destroyHls();
 
-    loadTimeoutRef.current = window.setTimeout(
-      () => tryNextSource(urlIndex, useProxy),
-      STREAM_ATTEMPT_TIMEOUT_MS
-    );
+    loadTimeoutRef.current = window.setTimeout(() => tryNextSource(urlIndex, useProxy), STREAM_ATTEMPT_TIMEOUT_MS);
 
     async function boot() {
       const src = await getPlaybackUrl(source, useProxy);
@@ -249,23 +242,14 @@ export default function HlsVideoPlayer({
       cancelled = true;
       destroyHls();
     };
-  }, [
-    urlIndex,
-    useProxy,
-    streamKey,
-    getPlaybackUrl,
-    markPlaying,
-    tryNextSource,
-    destroyHls,
-    clearLoadTimeout,
-  ]);
+  }, [urlIndex, useProxy, streamKey, getPlaybackUrl, markPlaying, tryNextSource, destroyHls, clearLoadTimeout]);
 
   useEffect(() => {
     setUrlIndex(0);
-    setUseProxy(shouldProxyDirectly(stream.url));
+    setUseProxy(shouldProxyDirectly(streamUrl));
     setIsLoading(true);
     startedRef.current = false;
-  }, [streamKey]);
+  }, [streamUrl, fallbackKey]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -377,12 +361,7 @@ export default function HlsVideoPlayer({
 
       {isLoading && (
         <div className="absolute inset-0 z-20">
-          <LiveTvPlayerLoading
-            channel={channel}
-            phase={loadingPhase}
-            overlay
-            className="h-full"
-          />
+          <LiveTvPlayerLoading channel={channel} phase={loadingPhase} overlay className="h-full" />
         </div>
       )}
 

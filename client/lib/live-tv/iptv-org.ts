@@ -1,7 +1,9 @@
 import type { LiveTvStream } from "./types";
+import { cacheGetJson, cacheSetJson, redisKey } from "@/lib/cache/redis";
 
 const IPTV_STREAMS_URL = "https://iptv-org.github.io/api/streams.json";
-const CACHE_TTL_MS = 1000 * 60 * 60; // 1 hour
+const CACHE_TTL_SECONDS = 60 * 60; // 1 hour
+const IPTV_CACHE_KEY = redisKey("iptv", "streams", "all");
 
 interface IptvOrgStream {
   channel: string | null;
@@ -16,13 +18,20 @@ let cachedStreams: IptvOrgStream[] | null = null;
 let cacheTimestamp = 0;
 
 async function fetchIptvStreams(): Promise<IptvOrgStream[]> {
+  const cached = await cacheGetJson<IptvOrgStream[]>(IPTV_CACHE_KEY);
+  if (cached) {
+    cachedStreams = cached;
+    cacheTimestamp = Date.now();
+    return cached;
+  }
+
   const now = Date.now();
-  if (cachedStreams && now - cacheTimestamp < CACHE_TTL_MS) {
+  if (cachedStreams && now - cacheTimestamp < CACHE_TTL_SECONDS * 1000) {
     return cachedStreams;
   }
 
   const response = await fetch(IPTV_STREAMS_URL, {
-    next: { revalidate: 3600 },
+    next: { revalidate: CACHE_TTL_SECONDS },
   });
 
   if (!response.ok) {
@@ -31,6 +40,7 @@ async function fetchIptvStreams(): Promise<IptvOrgStream[]> {
 
   cachedStreams = (await response.json()) as IptvOrgStream[];
   cacheTimestamp = now;
+  await cacheSetJson(IPTV_CACHE_KEY, cachedStreams, CACHE_TTL_SECONDS);
   return cachedStreams;
 }
 

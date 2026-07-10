@@ -1,11 +1,20 @@
 import { extractStreamUrlsFromContent } from "@/lib/live-tv/stream-scraper";
 import type { ScrapeTarget } from "@/lib/live-tv/stream-scraper";
-import {
-  buildRotatedBrowserHeaders,
-  pickUserAgentForAttempt,
-} from "@/lib/live-tv/stream-headers";
+import { buildRotatedBrowserHeaders, pickUserAgentForAttempt } from "@/lib/live-tv/stream-headers";
 
 const M3U8_RE = /\.m3u8/i;
+
+type InterceptedRequest = {
+  url(): string;
+  headers(): Record<string, string>;
+  continue(options?: { headers?: Record<string, string> }): Promise<void>;
+};
+
+type InterceptedResponse = {
+  url(): string;
+  headers(): Record<string, string | string[] | undefined>;
+  text(): Promise<string>;
+};
 
 function collectM3u8(url: string, bucket: Set<string>) {
   if (M3U8_RE.test(url) && url.startsWith("http")) bucket.add(url);
@@ -26,7 +35,7 @@ function collectFromManifestBody(text: string, bucket: Set<string>) {
 export async function scrapePageWithBrowser(target: ScrapeTarget): Promise<string[]> {
   let puppeteer;
   try {
-    puppeteer = await (new Function('return import("puppeteer")'))();
+    puppeteer = await import("puppeteer");
   } catch {
     puppeteer = null;
   }
@@ -56,7 +65,10 @@ export async function scrapePageWithBrowser(target: ScrapeTarget): Promise<strin
       try {
         const origin = target.origin ?? new URL(target.pageUrl).origin;
         const parsed = new URL(origin);
-        const pairs = cookies.split(";").map((c) => c.trim()).filter(Boolean);
+        const pairs = cookies
+          .split(";")
+          .map((c) => c.trim())
+          .filter(Boolean);
         await page.setCookie(
           ...pairs.map((pair) => {
             const eq = pair.indexOf("=");
@@ -72,7 +84,7 @@ export async function scrapePageWithBrowser(target: ScrapeTarget): Promise<strin
 
     await page.setRequestInterception(true);
 
-    page.on("request", (req: any) => {
+    page.on("request", (req: InterceptedRequest) => {
       collectM3u8(req.url(), found);
 
       const headers = {
@@ -87,16 +99,13 @@ export async function scrapePageWithBrowser(target: ScrapeTarget): Promise<strin
       req.continue({ headers }).catch(() => req.continue().catch(() => undefined));
     });
 
-    page.on("response", async (res: any) => {
+    page.on("response", async (res: InterceptedResponse) => {
       const url = res.url();
       collectM3u8(url, found);
 
       const type = res.headers()["content-type"] ?? "";
       const isManifest =
-        M3U8_RE.test(url) ||
-        type.includes("mpegurl") ||
-        type.includes("json") ||
-        type.includes("text");
+        M3U8_RE.test(url) || type.includes("mpegurl") || type.includes("json") || type.includes("text");
 
       if (!isManifest) return;
 

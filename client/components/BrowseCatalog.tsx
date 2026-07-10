@@ -2,7 +2,8 @@
 
 import type { Movie } from "@/lib/types";
 import type { BrowseSort, CatalogSource } from "@/lib/movie-service";
-import MovieCard from "@/components/MovieCard";
+import ExternalRatingsProvider from "@/components/external-ratings/ExternalRatingsProvider";
+import MovieCardClient from "@/components/movie-card/MovieCardClient";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface BrowseCatalogProps {
@@ -19,7 +20,7 @@ interface BrowseCatalogProps {
 }
 
 function mergeMovies(existing: Movie[], incoming: Movie[]) {
-  const seen = new Set(existing.map((m) => m.id));
+  const seen = new Set(existing.map((movie) => movie.id));
   const merged = [...existing];
   for (const movie of incoming) {
     if (seen.has(movie.id)) continue;
@@ -113,18 +114,16 @@ export default function BrowseCatalog({
           : ""}
       </p>
 
-      <div className="grid grid-cols-2 gap-5 md:grid-cols-4 xl:grid-cols-6">
+      <ExternalRatingsProvider movies={movies} className="grid grid-cols-2 gap-5 md:grid-cols-4 xl:grid-cols-6">
         {movies.map((movie) => (
-          <MovieCard key={movie.id} movie={movie} />
+          <MovieCardClient key={movie.id} movie={movie} />
         ))}
-      </div>
+      </ExternalRatingsProvider>
 
       <div ref={sentinelRef} className="h-4" aria-hidden />
 
       <div className="mt-10 flex flex-col items-center gap-3">
-        {loading && (
-          <p className="text-sm text-[var(--text-secondary)]">Loading more movies...</p>
-        )}
+        {loading && <p className="text-sm text-[var(--text-secondary)]">Loading more movies...</p>}
         {error && <p className="text-sm text-[var(--accent-primary)]">{error}</p>}
         {hasMore && source === "tmdb" && (
           <button

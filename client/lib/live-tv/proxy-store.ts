@@ -1,37 +1,22 @@
 /** Server-side URL registry — avoids 414 from nested proxy query strings */
 
+import { cacheGetJson, cacheGetString, cacheSetJson, cacheSetString, redisKey } from "@/lib/cache/redis";
+import { createHash } from "node:crypto";
+
 export interface ProxyTarget {
   url: string;
   referer?: string;
   origin?: string;
-  expiresAt: number;
 }
 
-const TTL_MS = 45 * 60 * 1000;
-const MAX_ENTRIES = 8000;
+type StoredProxyTarget = ProxyTarget;
 
-const targets = new Map<string, ProxyTarget>();
+const TTL_SECONDS = 45 * 60;
 
-function pruneExpired(): void {
-  const now = Date.now();
-  for (const [sid, entry] of targets) {
-    if (entry.expiresAt <= now) targets.delete(sid);
-  }
-}
-
-function findExisting(url: string, referer?: string, origin?: string): string | null {
-  const now = Date.now();
-  for (const [sid, entry] of targets) {
-    if (
-      entry.expiresAt > now &&
-      entry.url === url &&
-      entry.referer === referer &&
-      entry.origin === origin
-    ) {
-      return sid;
-    }
-  }
-  return null;
+function lookupHash(url: string, referer?: string, origin?: string): string {
+  return createHash("sha256")
+    .update(`${url}\0${referer ?? ""}\0${origin ?? ""}`)
+    .digest("hex");
 }
 
 function createSid(): string {
@@ -39,34 +24,30 @@ function createSid(): string {
 }
 
 /** Register upstream target; returns short sid for ?sid= proxy URLs */
-export function registerProxyTarget(
+export async function registerProxyTarget(
   url: string,
   referer?: string,
   origin?: string
-): string {
-  const existing = findExisting(url, referer, origin);
+): Promise<string> {
+  const hash = lookupHash(url, referer, origin);
+  const lookupKey = redisKey("proxy", "lookup", hash);
+  const existing = await cacheGetString(lookupKey);
   if (existing) return existing;
 
-  if (targets.size >= MAX_ENTRIES) pruneExpired();
-
   const sid = createSid();
-  targets.set(sid, {
-    url,
-    referer,
-    origin,
-    expiresAt: Date.now() + TTL_MS,
-  });
+  const targetKey = redisKey("proxy", "sid", sid);
+  const entry: StoredProxyTarget = { url, referer, origin };
+
+  await Promise.all([
+    cacheSetJson(targetKey, entry, TTL_SECONDS),
+    cacheSetString(lookupKey, sid, TTL_SECONDS),
+  ]);
+
   return sid;
 }
 
-export function lookupProxyTarget(sid: string): ProxyTarget | null {
-  const entry = targets.get(sid);
-  if (!entry) return null;
-  if (entry.expiresAt <= Date.now()) {
-    targets.delete(sid);
-    return null;
-  }
-  return entry;
+export async function lookupProxyTarget(sid: string): Promise<ProxyTarget | null> {
+  return cacheGetJson<StoredProxyTarget>(redisKey("proxy", "sid", sid));
 }
 
 export function buildSidProxyUrl(proxyBase: string, sid: string): string {

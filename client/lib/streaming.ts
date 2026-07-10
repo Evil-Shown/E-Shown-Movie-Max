@@ -45,6 +45,20 @@ export function resolveMediaId(movie: Movie): string | null {
   return resolveTmdbId(movie) ?? resolveImdbId(movie);
 }
 
+export function resolveMediaIdFromString(id: string): string | null {
+  if (/^\d+$/.test(id)) return id;
+  if (id.startsWith("tv-")) {
+    const tvId = id.slice(3);
+    if (/^\d+$/.test(tvId)) return tvId;
+  }
+  if (/^tt\d+$/.test(id)) return id;
+  return LOCAL_TMDB_IDS[id] ?? null;
+}
+
+export function isTvId(id: string): boolean {
+  return id.startsWith("tv-");
+}
+
 export function isTvShow(movie: Movie): boolean {
   return movie.mediaType === "tv" || movie.id.startsWith("tv-");
 }

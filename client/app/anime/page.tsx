@@ -50,7 +50,6 @@ export default async function AnimePage({ searchParams }: AnimePageProps) {
 
   const overview = !isBrowse ? await getAnimeCatalog() : null;
 
-  const browseLabel = view === "tv" ? "Anime Series" : "Anime Movies";
   const browseCount = catalog?.totalResults ?? 0;
 
   return (
