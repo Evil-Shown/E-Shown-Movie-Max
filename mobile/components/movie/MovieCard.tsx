@@ -6,6 +6,7 @@ import PosterImage from './PosterImage';
 import RatingRing from './RatingRing';
 import WatchlistButton from './WatchlistButton';
 import { useUserLibrary } from '@/components/providers/UserLibraryProvider';
+import { useVideoPlayer } from '@/components/providers/VideoPlayerProvider';
 import { colors, fonts } from '@/constants/theme';
 import type { Movie } from '@/lib/tmdb-types';
 
@@ -28,12 +29,21 @@ interface MovieCardProps {
 export default function MovieCard({ movie, rank, onPlay, width = 132 }: MovieCardProps) {
   const router = useRouter();
   const { continueWatching } = useUserLibrary();
+  const { openMovie } = useVideoPlayer();
+
+  const handlePlay = onPlay ?? openMovie;
 
   const progress = continueWatching.find((item) => item.id === movie.id)?.progress ?? 0;
   const height = width * 1.5; // 2:3 poster aspect ratio
+  // When ranked, the outer card gets extra width so the rank numeral has
+  // room to its left WITHOUT shrinking the poster itself — previously this
+  // was done with paddingLeft on the body, which fed `width: '100%'` on the
+  // poster a narrower box, making ranked cards visibly smaller than
+  // unranked ones in the same row of MovieRow/MovieCard usages.
+  const rankGutter = rank !== undefined ? 20 : 0;
 
   return (
-    <View style={[styles.card, { width }]}>
+    <View style={[styles.card, { width: width + rankGutter }]}>
       {rank !== undefined && (
         <Text style={styles.rank} pointerEvents="none">
           {String(rank).padStart(2, '0')}
@@ -41,12 +51,12 @@ export default function MovieCard({ movie, rank, onPlay, width = 132 }: MovieCar
       )}
 
       <Pressable
-        style={[styles.body, rank !== undefined && styles.bodyRanked]}
+        style={[styles.body, { width, marginLeft: rankGutter }]}
         onPress={() => router.push(`/movie/${movie.id}`)}
         accessibilityRole="button"
         accessibilityLabel={`View ${movie.title}`}
       >
-        <View style={[styles.poster, { height }]}>
+        <View style={[styles.poster, { width, height }]}>
           <PosterImage posterPath={movie.posterPath} title={movie.title} />
 
           <View style={styles.watchlistSlot}>
@@ -63,7 +73,7 @@ export default function MovieCard({ movie, rank, onPlay, width = 132 }: MovieCar
             style={styles.watchBtn}
             onPress={(e) => {
               e.stopPropagation();
-              onPlay?.(movie);
+              handlePlay(movie);
             }}
             accessibilityRole="button"
             accessibilityLabel={`Play ${movie.title}`}
@@ -75,7 +85,7 @@ export default function MovieCard({ movie, rank, onPlay, width = 132 }: MovieCar
           </Pressable>
         </View>
 
-        <View style={styles.meta}>
+        <View style={[styles.meta, { width }]}>
           <View style={styles.titleRow}>
             <Text style={styles.title} numberOfLines={1}>
               {movie.title}
@@ -114,11 +124,7 @@ const styles = StyleSheet.create({
   body: {
     zIndex: 2,
   },
-  bodyRanked: {
-    paddingLeft: 20,
-  },
   poster: {
-    width: '100%',
     backgroundColor: colors.bgSecondary,
     borderRadius: 10,
     overflow: 'hidden',

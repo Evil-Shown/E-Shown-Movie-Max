@@ -4,6 +4,7 @@ import HeroCarousel from '@/components/movie/HeroCarousel';
 import ContinueWatchingRow from '@/components/movie/ContinueWatchingRow';
 import MovieRow from '@/components/movie/MovieRow';
 import { useHomeCatalog } from '@/lib/api/hooks';
+import { useVideoPlayer } from '@/components/providers/VideoPlayerProvider';
 import { colors, fonts, spacing } from '@/constants/theme';
 
 /**
@@ -15,6 +16,7 @@ import { colors, fonts, spacing } from '@/constants/theme';
  */
 export default function HomeScreen() {
   const { data, isLoading, isError, refetch, isRefetching } = useHomeCatalog();
+  const { openMovie, openTrailer } = useVideoPlayer();
 
   if (isLoading) {
     return (
@@ -51,9 +53,35 @@ export default function HomeScreen() {
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.accentPrimary} />}
       showsVerticalScrollIndicator={false}
     >
-      <HeroCarousel movies={heroMovies} />
+      <HeroCarousel movies={heroMovies} onPlay={openMovie} onTrailer={openTrailer} />
 
-      <ContinueWatchingRow />
+      <ContinueWatchingRow
+        onResume={(item) =>
+          openMovie(
+            {
+              id: item.id,
+              mediaType: item.mediaType,
+              title: item.title,
+              tagline: '',
+              overview: '',
+              posterPath: item.posterPath,
+              backdropPath: '',
+              rating: 0,
+              year: 0,
+              runtime: Math.round(item.duration / 60),
+              genres: [],
+              director: 'Unknown',
+              cast: [],
+            },
+            {
+              season: item.season,
+              episode: item.episode,
+              provider: item.provider,
+              resumeSeconds: item.currentTime,
+            }
+          )
+        }
+      />
 
       <MovieRow
         eyebrow="🔥 Trending"
