@@ -1,5 +1,5 @@
-import type { Movie } from './tmdb-types';
-import { buildEmbedUrl, type StreamProvider } from './providers';
+import type { Movie } from '@chithra/core/types';
+import { buildEmbedUrl, type StreamProvider } from '@chithra/core/providers';
 
 /** TMDB IDs for curated local slug-based movies (fallback dataset). */
 const LOCAL_TMDB_IDS: Record<string, string> = {

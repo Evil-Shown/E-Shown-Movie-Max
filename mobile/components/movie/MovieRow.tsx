@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 
 import MovieCard from './MovieCard';
 import { colors, fonts, spacing } from '@/constants/theme';
-import type { Movie } from '@/lib/tmdb-types';
+import type { Movie } from '@chithra/core/types';
 
 interface MovieRowProps {
   title: string;

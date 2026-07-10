@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 
-import { PROVIDER_LABELS, type StreamProvider } from '@/lib/providers';
+import { PROVIDER_LABELS, type StreamProvider } from '@chithra/core/providers';
 import { colors, fonts, radii, spacing } from '@/constants/theme';
-import type { Movie } from '@/lib/tmdb-types';
+import type { Movie } from '@chithra/core/types';
 
 const MOVIE_LOADING_MESSAGES = [
   'Connecting to Chithra Cinema…',

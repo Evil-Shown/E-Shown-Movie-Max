@@ -8,7 +8,7 @@ import WatchlistButton from './WatchlistButton';
 import { useUserLibrary } from '@/components/providers/UserLibraryProvider';
 import { useVideoPlayer } from '@/components/providers/VideoPlayerProvider';
 import { colors, fonts } from '@/constants/theme';
-import type { Movie } from '@/lib/tmdb-types';
+import type { Movie } from '@chithra/core/types';
 
 const PLAY_PATH = 'M8 5v14l11-7z';
 

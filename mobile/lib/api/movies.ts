@@ -8,7 +8,7 @@ import type {
   TvEpisodesResult,
   TvSeasonsResult,
 } from './types';
-import type { Genre, Movie } from '../tmdb-types';
+import type { Genre, Movie } from '@chithra/core/types';
 
 export async function fetchHomeCatalog(): Promise<HomeCatalog> {
   return apiGet<HomeCatalog>('/api/home');

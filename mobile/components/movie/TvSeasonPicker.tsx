@@ -5,7 +5,7 @@ import { useUserLibrary } from '@/components/providers/UserLibraryProvider';
 import { useVideoPlayer } from '@/components/providers/VideoPlayerProvider';
 import { useTvEpisodes, useTvSeasons } from '@/lib/api/hooks';
 import { colors, fonts, radii, spacing } from '@/constants/theme';
-import type { Movie } from '@/lib/tmdb-types';
+import type { Movie } from '@chithra/core/types';
 
 interface TvSeasonPickerProps {
   movie: Movie;

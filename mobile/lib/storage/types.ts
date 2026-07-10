@@ -1,5 +1,5 @@
-import type { MediaType } from '../tmdb-types';
-import type { StreamProvider } from '../providers';
+import type { MediaType } from '@chithra/core/types';
+import type { StreamProvider } from '@chithra/core/providers';
 
 export interface WatchlistItem {
   id: string;

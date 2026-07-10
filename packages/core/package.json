@@ -1,0 +1,24 @@
+{
+  "name": "@chithra/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./movies": "./src/movies.ts",
+    "./providers": "./src/providers.ts",
+    "./cache": "./src/cache.ts",
+    "./tmdb": "./src/tmdb/index.ts",
+    "./tmdb/client": "./src/tmdb/client.ts",
+    "./tmdb/map": "./src/tmdb/map.ts",
+    "./tmdb/genres": "./src/tmdb/genres.ts",
+    "./tmdb/types": "./src/tmdb/types.ts"
+  },
+  "scripts": {
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

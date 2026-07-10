@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, fonts, radii, spacing } from '@/constants/theme';
 import { formatRuntime } from '@/lib/format';
-import type { Movie } from '@/lib/tmdb-types';
+import type { Movie } from '@chithra/core/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';

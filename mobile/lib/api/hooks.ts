@@ -10,7 +10,7 @@ import {
   searchMovies,
 } from './movies';
 import type { BrowseSort, SearchMediaFilter } from './types';
-import type { Genre } from '../tmdb-types';
+import type { Genre } from '@chithra/core/types';
 
 export function useHomeCatalog() {
   return useQuery({

@@ -295,7 +295,7 @@ async function getSearchResults(query, limit = 60) {
     }
 
     const searchPromise = fetchProviderResults(query, limit)
-        .then(({ successes, failedProviders }) => {
+        .then(async ({ successes, failedProviders }) => {
             const nonEmptySuccesses = successes.filter((entry) => Array.isArray(entry.items) && entry.items.length > 0);
             const selectedSources = nonEmptySuccesses.length ? nonEmptySuccesses : successes;
             if (!selectedSources.length) {

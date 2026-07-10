@@ -8,7 +8,7 @@ import {
   PROVIDER_LABELS,
   STREAM_PROVIDERS,
   type StreamProvider,
-} from '@/lib/providers';
+} from '@chithra/core/providers';
 
 interface StreamPlayerProps {
   embedUrl: string | null;
@@ -121,7 +121,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgDark,
   },
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.bgDark,

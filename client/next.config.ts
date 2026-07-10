@@ -4,9 +4,12 @@ import { fileURLToPath } from "node:url";
 
 const appRoot = path.dirname(fileURLToPath(import.meta.url));
 
+const monorepoRoot = path.join(appRoot, "..");
+
 const nextConfig: NextConfig = {
+  transpilePackages: ["@chithra/core"],
   turbopack: {
-    root: appRoot,
+    root: monorepoRoot,
   },
   experimental: {
     optimizePackageImports: ["framer-motion", "@react-three/fiber", "@react-three/drei"],
