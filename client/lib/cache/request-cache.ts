@@ -1,6 +1,9 @@
+import { buildCacheKey } from "@chithra/core/cache";
 import { cacheGetJson, cacheSetJson, redisKey } from "@/lib/cache/redis";
 
 const inFlight = new Map<string, Promise<unknown>>();
+
+export { buildCacheKey } from "@chithra/core/cache";
 
 export async function cacheJson<T>(
   key: string,
@@ -31,12 +34,4 @@ export async function cacheJson<T>(
 
   inFlight.set(key, promise as Promise<unknown>);
   return promise;
-}
-
-export function buildCacheKey(namespace: string, path: string, params: Record<string, string>): string {
-  const search = new URLSearchParams();
-  for (const [key, value] of Object.entries(params).sort(([a], [b]) => a.localeCompare(b))) {
-    search.set(key, value);
-  }
-  return `${namespace}::${path}?${search.toString()}`;
 }

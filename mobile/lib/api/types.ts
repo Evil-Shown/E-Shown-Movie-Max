@@ -1,4 +1,4 @@
-import type { Movie } from '../tmdb-types';
+import type { Movie } from '@chithra/core/types';
 
 export type CatalogSource = 'local' | 'tmdb' | 'omdb' | 'mixed';
 export type BrowseSort = 'popular' | 'top_rated' | 'now_playing';

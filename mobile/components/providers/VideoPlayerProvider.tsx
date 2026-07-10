@@ -14,7 +14,7 @@ import YoutubePlayer from 'react-native-youtube-iframe';
 import { useUserLibrary } from './UserLibraryProvider';
 import PlayerLoadingOverlay from '@/components/player/PlayerLoadingOverlay';
 import { colors, fonts, radii, spacing } from '@/constants/theme';
-import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from '@/lib/providers';
+import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from '@chithra/core/providers';
 import { getMovieEmbedUrl, isTvShow } from '@/lib/streaming';
 import { getTrailerId } from '@/lib/trailers';
 import {
@@ -24,7 +24,7 @@ import {
   getStreamLoadTimeoutMs,
 } from '@/lib/stream-optimizer';
 import { posterUrl } from '@/components/movie/PosterImage';
-import type { Movie } from '@/lib/tmdb-types';
+import type { Movie } from '@chithra/core/types';
 
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w780';
 function backdropUrl(path: string): string {

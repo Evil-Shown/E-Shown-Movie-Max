@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { StreamProvider } from '../providers';
-import { STREAM_PROVIDERS } from '../providers';
+import type { StreamProvider } from '@chithra/core/providers';
+import { STREAM_PROVIDERS } from '@chithra/core/providers';
 
 const KEY = 'chithra-provider-performance';
 

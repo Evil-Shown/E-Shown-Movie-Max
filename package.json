@@ -1,9 +1,21 @@
-{
-  "name": "chithra-cinema-monorepo",
-  "private": true,
-  "scripts": {
-    "package": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1",
-    "package:portable": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-for-friend.ps1",
-    "package:publish": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-desktop-release.ps1"
-  }
-}
+{
+  "name": "chithra-cinema-monorepo",
+  "private": true,
+  "workspaces": [
+    "client",
+    "mobile",
+    "server",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "package": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1",
+    "package:portable": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-for-friend.ps1",
+    "package:publish": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-desktop-release.ps1"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4"
+  }
+}

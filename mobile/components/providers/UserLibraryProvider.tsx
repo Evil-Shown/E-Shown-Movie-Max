@@ -9,8 +9,8 @@ import {
 } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { Movie } from '@/lib/tmdb-types';
-import type { StreamProvider } from '@/lib/providers';
+import type { Movie } from '@chithra/core/types';
+import type { StreamProvider } from '@chithra/core/providers';
 import { isTvShow, resolveTmdbId } from '@/lib/streaming';
 import {
   getContinueItem,

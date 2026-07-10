@@ -16,7 +16,7 @@ import { useBrowseCatalog } from '@/lib/api/hooks';
 import { fetchBrowseCatalog } from '@/lib/api/movies';
 import { colors, fonts, radii, spacing } from '@/constants/theme';
 import type { BrowseSort } from '@/lib/api/types';
-import type { Genre, Movie } from '@/lib/tmdb-types';
+import type { Genre, Movie } from '@chithra/core/types';
 
 const GENRES: Genre[] = [
   'Action', 'Adventure', 'Animation', 'Comedy', 'Crime',

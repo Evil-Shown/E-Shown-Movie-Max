@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useUserLibrary } from '@/components/providers/UserLibraryProvider';
-import { PROVIDER_LABELS, STREAM_PROVIDERS } from '@/lib/providers';
+import { PROVIDER_LABELS, STREAM_PROVIDERS } from '@chithra/core/providers';
 import { colors, fonts, spacing } from '@/constants/theme';
 
 /**

@@ -1,4 +1,4 @@
-import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from './providers';
+import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from '@chithra/core/providers';
 import { getRankedProvidersSync, getBestProviderSync } from './storage/provider-performance';
 
 export { getBestProviderSync as getBestProvider };
