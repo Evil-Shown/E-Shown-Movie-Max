@@ -1,7 +1,7 @@
 "use client";
 
 import { allGenres } from "@/lib/movies";
-import type { SearchMediaFilter, SearchSort } from "@/lib/movie-service";
+import type { SearchSort } from "@/lib/movie-service";
 import {
   buildSearchPath,
   hasActiveSearchFilters,

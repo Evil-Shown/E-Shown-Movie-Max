@@ -1,0 +1,39 @@
+import { searchCatalog, type SearchMediaFilter } from "@/lib/movie-service";
+import { NextResponse } from "next/server";
+
+const VALID_FILTERS: SearchMediaFilter[] = ["movie", "tv", "all", "anime"];
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const query = searchParams.get("q")?.trim() ?? "";
+  const page = Math.max(1, Number.parseInt(searchParams.get("page") ?? "1", 10) || 1);
+  const mediaParam = searchParams.get("media") ?? "all";
+  const media = (VALID_FILTERS.includes(mediaParam as SearchMediaFilter)
+    ? mediaParam
+    : "all") as SearchMediaFilter;
+
+  if (query.length < 2) {
+    return NextResponse.json(
+      { movies: [], source: "local", page: 1, totalPages: 1, totalResults: 0 },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=300, stale-while-revalidate=86400",
+        },
+      }
+    );
+  }
+
+  try {
+    const result = await searchCatalog(query, page, media);
+    return NextResponse.json(result, {
+      headers: {
+        "Cache-Control": "public, max-age=900, stale-while-revalidate=86400",
+      },
+    });
+  } catch {
+    return NextResponse.json(
+      { movies: [], source: "local", page: 1, totalPages: 1, totalResults: 0 },
+      { status: 500 }
+    );
+  }
+}

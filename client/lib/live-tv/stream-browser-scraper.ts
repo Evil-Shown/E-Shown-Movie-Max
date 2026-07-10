@@ -7,6 +7,18 @@ import {
 
 const M3U8_RE = /\.m3u8/i;
 
+type InterceptedRequest = {
+  url(): string;
+  headers(): Record<string, string>;
+  continue(options?: { headers?: Record<string, string> }): Promise<void>;
+};
+
+type InterceptedResponse = {
+  url(): string;
+  headers(): Record<string, string | string[] | undefined>;
+  text(): Promise<string>;
+};
+
 function collectM3u8(url: string, bucket: Set<string>) {
   if (M3U8_RE.test(url) && url.startsWith("http")) bucket.add(url);
 }
@@ -72,7 +84,7 @@ export async function scrapePageWithBrowser(target: ScrapeTarget): Promise<strin
 
     await page.setRequestInterception(true);
 
-    page.on("request", (req: any) => {
+    page.on("request", (req: InterceptedRequest) => {
       collectM3u8(req.url(), found);
 
       const headers = {
@@ -87,7 +99,7 @@ export async function scrapePageWithBrowser(target: ScrapeTarget): Promise<strin
       req.continue({ headers }).catch(() => req.continue().catch(() => undefined));
     });
 
-    page.on("response", async (res: any) => {
+    page.on("response", async (res: InterceptedResponse) => {
       const url = res.url();
       collectM3u8(url, found);
 

@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 
 /**
- * Resolves the mobile-api backend's base URL.
+ * Resolves the API base URL (shared with the web/desktop client).
  *
  * Priority:
  *  1. EXPO_PUBLIC_API_URL — explicit override, set this for production
@@ -20,10 +20,10 @@ function resolveApiBaseUrl(): string {
   const hostUri = Constants.expoConfig?.hostUri;
   if (hostUri) {
     const host = hostUri.split(':')[0];
-    if (host) return `http://${host}:3001`;
+    if (host) return `http://${host}:3000`;
   }
 
-  return 'http://localhost:3001';
+  return 'http://localhost:3000';
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
