@@ -20,14 +20,14 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
     embedFallback: "https://www.sirasatv.lk/live",
     iptvChannelId: "SirasaTV.lk@SD",
   }),
-  "itn": peotvStreamConfig(["003", "303"], {
+  itn: peotvStreamConfig(["003", "303"], {
     embedFallback: "https://itn.lk/live/",
     iptvChannelId: "ITN.lk@SD",
   }),
-  "swarnavahini": peotvStreamConfig(["006"], {
+  swarnavahini: peotvStreamConfig(["006"], {
     embedFallback: "https://swarnavahini.lk/live",
   }),
-  "rupavahini": peotvStreamConfig(["001", "301"], {
+  rupavahini: peotvStreamConfig(["001", "301"], {
     embedFallback: "https://www.rupavahini.lk/live-tv",
     iptvChannelId: "Rupavahini.lk@SD",
   }),
@@ -36,9 +36,7 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
     iptvChannelId: "VasanthamTV.lk@SD",
   }),
   "supreme-tv": peotvStreamConfig(["013"], {
-    fallbacks: [
-      "https://live-par-2-abr-ln.livepush.io/live_abr/emeH2sLDBLZbHw3Lx/tracks-v3a1/mono.m3u8",
-    ],
+    fallbacks: ["https://live-par-2-abr-ln.livepush.io/live_abr/emeH2sLDBLZbHw3Lx/tracks-v3a1/mono.m3u8"],
     embedFallback: "https://tvsupreme.lk/live/",
   }),
   "shakthi-tv": peotvStreamConfig(["011"], {
@@ -57,9 +55,7 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
     iptvChannelId: "JayaTV.lk@SD",
   }),
   "shraddha-tv": peotvStreamConfig(["099"], {
-    fallbacks: [
-      "https://edge3-moblive.yuppcdn.net/drm1/smil:shraddhatvdrm.smil/index.m3u8",
-    ],
+    fallbacks: ["https://edge3-moblive.yuppcdn.net/drm1/smil:shraddhatvdrm.smil/index.m3u8"],
     embedFallback: "https://shraddha.lk/",
     iptvChannelId: "ShraddhaTV.lk@SD",
   }),
@@ -68,12 +64,10 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
     iptvChannelId: "CharanaTV.lk@SD",
   }),
   "the-buddhist": peotvStreamConfig(["096"], {
-    fallbacks: [
-      "https://edge3-moblive.yuppcdn.net/drm1/smil:thebuddhistdrm.smil/index.m3u8",
-    ],
+    fallbacks: ["https://edge3-moblive.yuppcdn.net/drm1/smil:thebuddhistdrm.smil/index.m3u8"],
     iptvChannelId: "TheBuddhist.lk@SD",
   }),
-  "tv1": peotvStreamConfig(["012"], {
+  tv1: peotvStreamConfig(["012"], {
     iptvChannelId: "TV1.lk@SD",
   }),
   "art-tv": peotvStreamConfig(["017"], {
@@ -97,8 +91,7 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
     iptvChannelId: "SiyathaTV.lk@SD",
   }),
   "monara-tv": peotvStreamConfig(["104"], {
-    primaryUrl:
-      "https://jk3lz8xklw79-hls-live.5centscdn.com/lpl/d0dbe915091d400bd8ee7f27f0791303.sdp/playlist.m3u8",
+    primaryUrl: "https://jk3lz8xklw79-hls-live.5centscdn.com/lpl/d0dbe915091d400bd8ee7f27f0791303.sdp/playlist.m3u8",
     iptvChannelId: "MonaraTV.lk@SD",
   }),
   "ndtv-lanka": {
@@ -110,9 +103,7 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
     type: "hls",
     url: "http://live.talenttv.lk:8080/hls/x8kd5n3tm8e8lsv/index.m3u8",
     referer: "https://talenttv.lk/",
-    fallbacks: [
-      "https://cast.talenttv.lk/hls/mcrlo1ygwpu8x4bj/index.m3u8",
-    ],
+    fallbacks: ["https://cast.talenttv.lk/hls/mcrlo1ygwpu8x4bj/index.m3u8"],
     embedFallback: "https://talenttv.lk/",
     iptvChannelId: "TalentTV.lk@HD",
   },
@@ -123,24 +114,19 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   },
   "verbum-tv": peotvStreamConfig(["093"], {
     primaryUrl: "https://samson.streamerr.co:8081/verbumtv/index.m3u8",
-    fallbacks: [
-      "https://edge3-moblive.yuppcdn.net/drm1/smil:verbumtvdrm.smil/index.m3u8",
-    ],
+    fallbacks: ["https://edge3-moblive.yuppcdn.net/drm1/smil:verbumtvdrm.smil/index.m3u8"],
     iptvChannelId: "VerbumTV.lk@SD",
   }),
   "star-tamil-tv": peotvStreamConfig(["021"], {
-    primaryUrl:
-      "https://edge4-moblive.yuppcdn.net/trans1sd/smil:strtml19.smil/playlist.m3u8",
+    primaryUrl: "https://edge4-moblive.yuppcdn.net/trans1sd/smil:strtml19.smil/playlist.m3u8",
     iptvChannelId: "StarTamilTelevision.lk@SD",
   }),
 
   // ── News (International) ───────────────────────────────────────────
-  "cnn": {
+  cnn: {
     type: "hls",
     url: "https://jmp2.uk/plu-66c45c274f25dd00092739ee.m3u8",
-    fallbacks: [
-      "https://turnerlive.warnermediacdn.com/hls/live/586495/cnngo/cnn_slate/VIDEO_0_3564000.m3u8",
-    ],
+    fallbacks: ["https://turnerlive.warnermediacdn.com/hls/live/586495/cnngo/cnn_slate/VIDEO_0_3564000.m3u8"],
   },
   "cnn-international": {
     type: "hls",
@@ -149,9 +135,7 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   "bbc-world-news": {
     type: "hls",
     url: "http://23.237.104.106:8080/USA_BBC_NEWS/index.m3u8",
-    fallbacks: [
-      "http://247preview.foxnews.com/hls/live/2020027/fncv3preview/primary.m3u8",
-    ],
+    fallbacks: ["http://247preview.foxnews.com/hls/live/2020027/fncv3preview/primary.m3u8"],
     iptvChannelId: "BBCNews.uk@Europe",
   },
   "al-jazeera": {
@@ -174,53 +158,43 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
     type: "hls",
     url: "https://static.france24.com/live/F24_AR_LO_HLS/live_web.m3u8",
   },
-  "dw": {
+  dw: {
     type: "hls",
     url: "https://dwamdstream102.akamaized.net/hls/live/2015490/dwstream102/index.m3u8",
-    fallbacks: [
-      "https://jmp2.uk/plu-65dded6966eec80008947157.m3u8",
-    ],
+    fallbacks: ["https://jmp2.uk/plu-65dded6966eec80008947157.m3u8"],
     iptvChannelId: "DW.de@English",
   },
   "dw-deutsch": {
     type: "hls",
     url: "https://dwamdstream104.akamaized.net/hls/live/2015530/dwstream104/index.m3u8",
   },
-  "euronews": {
+  euronews: {
     type: "hls",
     url: "https://euronews-euronews-english-1-eu.samsung.wurl.tv/playlist.m3u8",
-    fallbacks: [
-      "https://jmp2.uk/plu-61de8e502c8e9400077e5de7.m3u8",
-    ],
+    fallbacks: ["https://jmp2.uk/plu-61de8e502c8e9400077e5de7.m3u8"],
     iptvChannelId: "EuronewsEnglish.fr@SD",
   },
   "sky-news": {
     type: "hls",
     url: "https://siliconb.com:8443/skynews/playlist.m3u8",
-    fallbacks: [
-      "https://jmp2.uk/plu-55b285cd2665de274553d66f.m3u8",
-    ],
+    fallbacks: ["https://jmp2.uk/plu-55b285cd2665de274553d66f.m3u8"],
     iptvChannelId: "SkyNews.uk@SD",
   },
   "fox-news": {
     type: "hls",
     url: "http://247preview.foxnews.com/hls/live/2020027/fncv3preview/primary.m3u8",
-    fallbacks: [
-      "http://138.121.15.230:9002/FOX-NEWS/index.m3u8",
-    ],
+    fallbacks: ["http://138.121.15.230:9002/FOX-NEWS/index.m3u8"],
     iptvChannelId: "FoxNewsChannel.us@SD",
   },
-  "bloomberg": {
+  bloomberg: {
     type: "hls",
     url: "https://bloomberg.com/media-manifest/streams/us.m3u8",
     referer: "https://www.bloomberg.com/",
   },
-  "cgtn": {
+  cgtn: {
     type: "hls",
     url: "https://english-livebkali.cgtn.com/live/encgtn.m3u8",
-    fallbacks: [
-      "https://news.cgtn.com/resource/live/english/cgtn-news.m3u8",
-    ],
+    fallbacks: ["https://news.cgtn.com/resource/live/english/cgtn-news.m3u8"],
     iptvChannelId: "CGTN.cn@English",
   },
   "cgtn-documentary": {
@@ -230,9 +204,7 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   "nhk-world": {
     type: "hls",
     url: "https://nhk.lls.pbs.org/index.m3u8",
-    fallbacks: [
-      "https://nhkwlive-ojp.akamaized.net/hls/live/2003458/nhkwlive-ojp-en/index.m3u8",
-    ],
+    fallbacks: ["https://nhkwlive-ojp.akamaized.net/hls/live/2003458/nhkwlive-ojp-en/index.m3u8"],
     iptvChannelId: "NHKWorldJapan.jp@English",
   },
   "rt-news": {
@@ -240,7 +212,7 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
     url: "https://rt-glb.rttv.com/live/rtnews/playlist.m3u8",
     iptvChannelId: "RTNews.ru@English",
   },
-  "wion": {
+  wion: {
     type: "youtube",
     url: "UCYQZs8AHRIMWcqSsNSLH3oQ",
   },
@@ -258,19 +230,17 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   },
 
   // ── Sports ─────────────────────────────────────────────────────────
-  "espn": {
+  espn: {
     type: "hls",
     url: "https://d3b6q2ou5kp8ke.cloudfront.net/ESPNTheOcho.m3u8",
-    fallbacks: [
-      "http://23.237.104.106:8080/USA_ESPN/index.m3u8",
-    ],
+    fallbacks: ["http://23.237.104.106:8080/USA_ESPN/index.m3u8"],
     iptvChannelId: "ESPN.us@SD",
   },
-  "espn2": {
+  espn2: {
     type: "hls",
     url: "http://23.237.104.106:8080/USA_ESPN2/index.m3u8",
   },
-  "espnu": {
+  espnu: {
     type: "hls",
     url: "http://23.237.104.106:8080/USA_ESPNU/index.m3u8",
     iptvChannelId: "ESPNU.us@SD",
@@ -283,26 +253,22 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   "bein-sports": {
     type: "hls",
     url: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8",
-    fallbacks: [
-      "https://bein-sports-usa-samsung.amagi.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://bein-sports-usa-samsung.amagi.tv/playlist.m3u8"],
   },
-  "eurosport": {
+  eurosport: {
     type: "hls",
     url: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8",
-    fallbacks: [
-      "https://eurosport-eurosport-1-eu.samsung.wurl.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://eurosport-eurosport-1-eu.samsung.wurl.tv/playlist.m3u8"],
   },
   "red-bull-tv": {
     type: "hls",
     url: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8",
   },
-  "motogp": {
+  motogp: {
     type: "hls",
     url: "https://motogpstream.akamaized.net/hls/live/2014525/motogpstream/master.m3u8",
   },
-  "wwe": {
+  wwe: {
     type: "hls",
     url: "https://wwe.wwe.com/hls/live/2014515/wwe/master.m3u8",
   },
@@ -313,16 +279,12 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   "star-sports": {
     type: "hls",
     url: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8",
-    fallbacks: [
-      "https://livestar.samsung.wurl.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://livestar.samsung.wurl.tv/playlist.m3u8"],
   },
   "sony-sports": {
     type: "hls",
     url: "https://d3b6q2ou5kp8ke.cloudfront.net/ESPNTheOcho.m3u8",
-    fallbacks: [
-      "https://sony-sports-samsung.amagi.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://sony-sports-samsung.amagi.tv/playlist.m3u8"],
   },
   "sky-sports": {
     type: "youtube",
@@ -330,38 +292,29 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   },
 
   // ── Entertainment ──────────────────────────────────────────────────
-  "hbo": {
+  hbo: {
     type: "youtube",
     url: "UCBxZF4iCOEPZKhQbaQ_-J7w",
   },
-  "axn": {
+  axn: {
     type: "hls",
     url: "http://cdn.haititivi.com/AXN/index.m3u8",
-    fallbacks: [
-      "https://axn-samsung.amagi.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://axn-samsung.amagi.tv/playlist.m3u8"],
   },
   "warner-tv": {
     type: "hls",
     url: "https://jmp2.uk/plu-6532e8342cf13100083b404c.m3u8",
-    fallbacks: [
-      "https://warner-samsung.amagi.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://warner-samsung.amagi.tv/playlist.m3u8"],
   },
-  "mtv": {
+  mtv: {
     type: "hls",
     url: "https://jmp2.uk/plu-626c2a3502d84a0007cec817.m3u8",
-    fallbacks: [
-      "https://mtv-amagi-samsung.amagi.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://mtv-amagi-samsung.amagi.tv/playlist.m3u8"],
   },
   "comedy-central": {
     type: "hls",
     url: "https://linear-903.frequency.stream/dist/xumo/903/hls/master/playlist.m3u8",
-    fallbacks: [
-      "https://jmp2.uk/plu-64f8a408bd341e000818fcda.m3u8",
-      "https://cc-amagi-samsung.amagi.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://jmp2.uk/plu-64f8a408bd341e000818fcda.m3u8", "https://cc-amagi-samsung.amagi.tv/playlist.m3u8"],
   },
   "pluto-tv-comedy": {
     type: "hls",
@@ -373,37 +326,29 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
     url: "https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/5a4b844802697a7f230e2f46/master.m3u8",
     referer: "https://pluto.tv/",
   },
-  "filmrise": {
+  filmrise: {
     type: "hls",
     url: "https://jmp2.uk/plu-5f15e32b297f96000768f928.m3u8",
-    fallbacks: [
-      "https://filmrise-filmriseclassics-1-eu.samsung.wurl.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://filmrise-filmriseclassics-1-eu.samsung.wurl.tv/playlist.m3u8"],
   },
   "stingray-classica": {
     type: "hls",
     url: "https://jmp2.uk/plu-62fb9844db5a4a0007ebc2a3.m3u8",
-    fallbacks: [
-      "https://stingray-classica-english-1-nl.samsung.wurl.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://stingray-classica-english-1-nl.samsung.wurl.tv/playlist.m3u8"],
   },
 
   // ── Documentary ────────────────────────────────────────────────────
   "nasa-tv": {
     type: "hls",
     url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8",
-    fallbacks: [
-      "https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV1-Public/master.m3u8",
-    ],
+    fallbacks: ["https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV1-Public/master.m3u8"],
   },
   "nasa-tv-media": {
     type: "hls",
     url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8",
-    fallbacks: [
-      "https://nasa-i.akamaihd.net/hls/live/253566/NASA-NTV2-Public/master.m3u8",
-    ],
+    fallbacks: ["https://nasa-i.akamaihd.net/hls/live/253566/NASA-NTV2-Public/master.m3u8"],
   },
-  "smithsonian": {
+  smithsonian: {
     type: "hls",
     url: "http://185.246.209.113/SmithsonianHD/index.m3u8",
     fallbacks: [
@@ -414,16 +359,12 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   "love-nature": {
     type: "hls",
     url: "https://pb-ehs1glsha1juy.akamaized.net/Love_Nature_4K.m3u8",
-    fallbacks: [
-      "https://lovenature-lovenature-1-nl.samsung.wurl.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://lovenature-lovenature-1-nl.samsung.wurl.tv/playlist.m3u8"],
   },
   "outdoor-channel": {
     type: "hls",
     url: "https://d3ehdya3kqqd52.cloudfront.net/v1/master/9d062541f2ff39b5c0f48b743c6411d25f62fc25/DistroTV-MuxIP-OutdoorChannelV2/455.m3u8",
-    fallbacks: [
-      "https://outdoorchannel-samsung.amagi.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://outdoorchannel-samsung.amagi.tv/playlist.m3u8"],
   },
   "discovery-channel": {
     type: "hls",
@@ -455,19 +396,14 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   "history-channel": {
     type: "hls",
     url: "https://linear-188.frequency.stream/dist/xumo/188/hls/master/playlist.m3u8",
-    fallbacks: [
-      "https://jmp2.uk/plu-62fb9844db5a4a0007ebc2a3.m3u8",
-      "https://history-samsung.amagi.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://jmp2.uk/plu-62fb9844db5a4a0007ebc2a3.m3u8", "https://history-samsung.amagi.tv/playlist.m3u8"],
   },
 
   // ── Kids ───────────────────────────────────────────────────────────
   "pbs-kids": {
     type: "hls",
     url: "https://livestream.pbskids.org/out/v1/14507d931bbe48a69287e4850e53443c/est.m3u8",
-    fallbacks: [
-      "https://pbs-kids-samsung.amagi.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://pbs-kids-samsung.amagi.tv/playlist.m3u8"],
   },
   "cartoon-network": {
     type: "hls",
@@ -477,7 +413,7 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
       "https://cartoonnetwork-samsung.amagi.tv/playlist.m3u8",
     ],
   },
-  "nickelodeon": {
+  nickelodeon: {
     type: "hls",
     url: "https://livestream.pbskids.org/out/v1/14507d931bbe48a69287e4850e53443c/est.m3u8",
     fallbacks: [
@@ -488,12 +424,9 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   "disney-channel": {
     type: "hls",
     url: "https://d6lk10bkdgfae.cloudfront.net/playlist.m3u8",
-    fallbacks: [
-      "https://jmp2.uk/plu-67f3eb800a1beb98767ca748.m3u8",
-      "https://disney-samsung.amagi.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://jmp2.uk/plu-67f3eb800a1beb98767ca748.m3u8", "https://disney-samsung.amagi.tv/playlist.m3u8"],
   },
-  "boomerang": {
+  boomerang: {
     type: "hls",
     url: "https://d6lk10bkdgfae.cloudfront.net/playlist.m3u8",
     fallbacks: [
@@ -504,16 +437,12 @@ export const STREAM_REGISTRY: Record<string, LiveTvStream> = {
   "duck-tv": {
     type: "hls",
     url: "https://d6lk10bkdgfae.cloudfront.net/playlist.m3u8",
-    fallbacks: [
-      "https://ducktv-samsung.amagi.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://ducktv-samsung.amagi.tv/playlist.m3u8"],
   },
   "baby-tv": {
     type: "hls",
     url: "https://livestream.pbskids.org/out/v1/14507d931bbe48a69287e4850e53443c/est.m3u8",
-    fallbacks: [
-      "https://babytv-samsung.amagi.tv/playlist.m3u8",
-    ],
+    fallbacks: ["https://babytv-samsung.amagi.tv/playlist.m3u8"],
   },
 };
 
@@ -528,13 +457,14 @@ export function getAllStreamUrls(stream: LiveTvStream): string[] {
 /** Ordered HLS sources with referer headers — non-manifest URLs are excluded */
 export function getStreamSources(stream: LiveTvStream): StreamSource[] {
   const referer = stream.referer;
-  return getAllStreamUrls(stream)
-    .filter((url) => url.includes(".m3u8"))
-    .map((url) => ({
-      url,
-      referer: referer ?? inferRefererFromUrl(url),
-      origin: stream.origin,
-    }));
+  const hlsUrls = getAllStreamUrls(stream).filter((url) => url.includes(".m3u8"));
+  const urls = hlsUrls.length > 0 ? hlsUrls : [stream.url];
+
+  return urls.map((url) => ({
+    url,
+    referer: referer ?? inferRefererFromUrl(url),
+    origin: stream.origin,
+  }));
 }
 
 /** Use server proxy for all cross-origin streams (avoids CORS failures in browser) */
