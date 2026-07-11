@@ -17,7 +17,11 @@
     "prepare": "husky",
     "package": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1",
     "package:portable": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-for-friend.ps1",
-    "package:publish": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-desktop-release.ps1"
+    "package:publish": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-desktop-release.ps1",
+    "package:publish:current": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-desktop-release.ps1 -NoIncrement",
+    "package:publish:version": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-desktop-release.ps1 -Version",
+    "release:desktop": "gh workflow run release-desktop.yml",
+    "release:mobile": "node scripts/release-mobile.mjs"
   },
   "lint-staged": {
     "*.{json,md,css,yml,yaml}": "prettier --write",
@@ -42,6 +46,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
+    "prompts": "^2.4.2",
     "turbo": "^2.5.4",
     "typescript-eslint": "^8.52.0"
   }

@@ -13,6 +13,7 @@ import {
   proxyEmbedUrl,
   stripFrameBlockingHeaders,
 } from "./embed-proxy";
+import { mobileApiRouter } from "./mobile-api";
 import { cacheGetJson, cacheIncr, cacheSetJson, redisKey } from "./redis";
 
 dotenv.config();
@@ -442,6 +443,8 @@ app.get("/api/embed/proxy", rateLimit, async (req, res) => {
     });
   }
 });
+
+app.use("/api/mobile", mobileApiRouter);
 
 app.use("/api", rateLimit);
 
