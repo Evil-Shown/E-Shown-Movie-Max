@@ -331,9 +331,18 @@ function createMainWindow() {
   attachWindowGuards(mainWindow);
   registerDevToolsShortcuts(mainWindow);
 
+  mainWindow.on("minimize", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("app-window-event", { type: "minimize" });
+    }
+  });
+
   mainWindow.on("close", (event) => {
     if (!app.isQuitting) {
       event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("app-window-event", { type: "hide" });
+      }
       mainWindow?.hide();
     }
   });
@@ -479,6 +488,9 @@ if (!gotLock) {
 
 app.on("before-quit", () => {
   app.isQuitting = true;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("app-window-event", { type: "quit" });
+  }
   stopChildren();
 });
 

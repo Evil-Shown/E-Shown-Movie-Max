@@ -11,4 +11,9 @@ contextBridge.exposeInMainWorld("chithraDesktop", {
   launchId,
   launchDay,
   signalSplashReady: () => ipcRenderer.send("splash-ready"),
+  onAppWindowEvent: (callback) => {
+    const handler = (_event, payload) => callback(payload?.type ?? "");
+    ipcRenderer.on("app-window-event", handler);
+    return () => ipcRenderer.removeListener("app-window-event", handler);
+  },
 });

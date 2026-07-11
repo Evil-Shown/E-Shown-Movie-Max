@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import BackToTop from "@/components/BackToTop";
 import CinemaIntroLoader from "@/components/CinemaIntroLoader";
 import StartupSplashLoader from "@/components/StartupSplashLoader";
+import DesktopMediaPauseHandler from "@/components/DesktopMediaPauseHandler";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import NavigationProgress from "@/components/NavigationProgress";
@@ -97,6 +98,7 @@ export default function RootLayout({
                 <Footer />
                 <BackToTop />
               </QuickViewProvider>
+              <DesktopMediaPauseHandler />
             </VideoPlayerProvider>
           </UserLibraryProvider>
         </QueryProvider>
