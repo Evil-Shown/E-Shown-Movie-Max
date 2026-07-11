@@ -7,10 +7,14 @@ Electron wrapper with **auto-update** via [GitHub Releases](https://github.com/E
 From project root:
 
 ```powershell
-npm run package
+npm run package                  # auto-increment patch, build, output → release/desktop/{version}/
+npm run package:current          # build current version without increment
+npm run package:version 2.3.0    # build a specific version
 ```
 
-Output: `release/desktop/Chithra-Cinema-Setup-1.0.0.exe`
+Output: `release/desktop/2.2.5/Chithra-Cinema-Setup-2.2.5.exe`
+
+Each build creates a versioned folder under `release/desktop/`. The patch number auto-increments unless you use `package:current` or `package:version`.
 
 ## Auto-update (for installed users)
 
@@ -36,11 +40,11 @@ Tray menu also has **Check for updates...**
 2. Push this repo to GitHub, then run the workflow:
 
 ```powershell
-# Uses version from scripts/desktop-shell/package.json
+# Auto-increment patch version
 npm run release:desktop
 
-# Or bump version for this release only
-gh workflow run release-desktop.yml -f version=2.2.5
+# Or publish a specific version
+gh workflow run release-desktop.yml -f version=2.3.0
 ```
 
 Or open **Actions → Release Desktop → Run workflow** in GitHub.
@@ -49,23 +53,26 @@ The workflow builds the NSIS installer, publishes it to [GitHub Releases](https:
 
 ### Local publish (manual)
 
-1. Bump version in `scripts/desktop-shell/package.json` (e.g. `1.0.0` → `1.1.0`).
-2. Create a [GitHub personal access token](https://github.com/settings/tokens) with permission to create releases on `Evil-Shown/E-Shown-Movie-Max`.
-3. Run:
+1. Create a [GitHub personal access token](https://github.com/settings/tokens) with permission to create releases on `Evil-Shown/E-Shown-Movie-Max`.
+2. Run:
 
 ```powershell
 $env:GH_TOKEN = "ghp_your_token"
-npm run package:publish
+npm run package:publish                  # auto-increment patch, build, publish
+npm run package:publish:current          # publish current version
+npm run package:publish:version 2.3.0    # publish a specific version
 ```
 
-Or with version bump in one step:
+Or with PowerShell directly:
 
 ```powershell
 $env:GH_TOKEN = "ghp_your_token"
-.\scripts\publish-desktop-release.ps1 -Version 1.1.0
+.\scripts\publish-desktop-release.ps1 -Version 2.3.0
 ```
 
-This builds the installer and uploads it to GitHub Releases. Users on older builds will be prompted on next launch.
+This builds the installer, places it in `release/desktop/{version}/`, and uploads it to GitHub Releases. Users on older builds will be prompted on next launch.
+
+When a user chooses **Download update**, an animated progress window keeps them informed during the download—even on slow networks—without navigating away from the app.
 
 ## Dev
 

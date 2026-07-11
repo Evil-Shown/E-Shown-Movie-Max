@@ -16,8 +16,12 @@
     "format:check": "prettier --check .",
     "prepare": "husky",
     "package": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1",
+    "package:current": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1 -NoIncrement",
+    "package:version": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1 -Version",
     "package:portable": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-for-friend.ps1",
     "package:publish": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-desktop-release.ps1",
+    "package:publish:current": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-desktop-release.ps1 -NoIncrement",
+    "package:publish:version": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-desktop-release.ps1 -Version",
     "release:desktop": "gh workflow run release-desktop.yml"
   },
   "lint-staged": {

@@ -8,6 +8,18 @@ const { isBlockedAdUrl, isEmbedProviderUrl, shouldCancelNetworkRequest } = requi
 const { EMBED_HOST_PATTERNS, getStableUserAgent, getRefererForUrl } = require("./embed-headers");
 const { setupTelemetry } = require("./telemetry");
 
+// Simple rotating file logger for packaged builds
+const LOG_DIR = path.join(app.getPath("userData"), "logs");
+const LOG_FILE = path.join(LOG_DIR, "chithra.log");
+try { fs.mkdirSync(LOG_DIR, { recursive: true }); } catch {}
+function log(level, ...args) {
+  const line = `[${new Date().toISOString()}] [${level}] ${args.map(a => typeof a === "object" ? JSON.stringify(a) : String(a)).join(" ")}`;
+  console.log(line);
+  try { fs.appendFileSync(LOG_FILE, line + "\n"); } catch {}
+}
+function logInfo(...args) { log("INFO", ...args); }
+function logError(...args) { log("ERROR", ...args); }
+
 app.commandLine.appendSwitch("remote-debugging-port", "0");
 
 const API_PORT = 5000;
@@ -44,6 +56,7 @@ function nodeEnv(extra = {}) {
 }
 
 function spawnNode(args, cwd, extraEnv = {}) {
+  const label = path.basename(args.find(a => !a.startsWith("-")) || "node");
   const child = spawn(process.execPath, args, {
     cwd,
     env: nodeEnv(extraEnv),
@@ -51,8 +64,21 @@ function spawnNode(args, cwd, extraEnv = {}) {
     windowsHide: true
   });
 
+  if (app.isPackaged && child.stdout && child.stderr) {
+    child.stdout.on("data", (data) => {
+      logInfo(`[${label}] ${data.toString().trimEnd()}`);
+    });
+    child.stderr.on("data", (data) => {
+      logError(`[${label}] ${data.toString().trimEnd()}`);
+    });
+  }
+
   child.on("error", (error) => {
-    console.error(`Failed to start ${args.join(" ")}:`, error);
+    logError(`Failed to start ${args.join(" ")}:`, error);
+  });
+
+  child.on("exit", (code, signal) => {
+    logInfo(`[${label}] process exited code=${code} signal=${signal}`);
   });
 
   childProcesses.push(child);
@@ -140,6 +166,9 @@ function waitForUrl(url, timeoutMs = 120000, intervalMs = 500) {
 }
 
 function createSplashWindow() {
+  const iconPath = path.join(__dirname, "assets", "icon.ico");
+  logInfo("Creating splash window", { iconPath, exists: fs.existsSync(iconPath) });
+
   splashWindow = new BrowserWindow({
     width: 1280,
     height: 720,
@@ -150,7 +179,7 @@ function createSplashWindow() {
     center: true,
     show: false,
     backgroundColor: "#0a0a0f",
-    icon: path.join(__dirname, "assets", "icon.ico"),
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -164,7 +193,17 @@ function createSplashWindow() {
 }
 
 ipcMain.on("splash-ready", () => {
+  // Splash signals it finished its boot animation; give it a moment then close.
+  // If the main window has not been created yet or is still loading, keep splash alive.
   setTimeout(() => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      logInfo("Splash animation complete, but main window is not ready yet; keeping splash open");
+      return;
+    }
+    if (mainWindow.webContents.isLoading()) {
+      logInfo("Splash animation complete, waiting for main window load before closing splash");
+      return;
+    }
     if (splashWindow && !splashWindow.isDestroyed()) {
       splashWindow.close();
       splashWindow = null;
@@ -261,6 +300,9 @@ function attachWindowGuards(window) {
 }
 
 function createMainWindow() {
+  const iconPath = path.join(__dirname, "assets", "icon.ico");
+  logInfo("Creating main window", { iconPath, exists: fs.existsSync(iconPath) });
+
   mainWindow = new BrowserWindow({
     width: 1360,
     height: 860,
@@ -270,7 +312,7 @@ function createMainWindow() {
     title: "CHITHRA - CINEMA",
     backgroundColor: "#f7f4ef",
     autoHideMenuBar: true,
-    icon: path.join(__dirname, "assets", "icon.ico"),
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -296,7 +338,20 @@ function createMainWindow() {
     }
   });
 
+  mainWindow.webContents.on("did-fail-load", (event, errorCode, errorDescription) => {
+    logError("Main window failed to load", { errorCode, errorDescription, url: `${WEB_URL}?app=desktop` });
+  });
+
+  mainWindow.webContents.on("render-process-gone", (event, details) => {
+    logError("Render process gone", details);
+  });
+
+  mainWindow.webContents.on("crashed", (event, killed) => {
+    logError("Main window renderer crashed", { killed });
+  });
+
   mainWindow.webContents.once("did-finish-load", () => {
+    logInfo("Main window finished loading");
     setTimeout(() => {
       splashWindow?.close();
       splashWindow = null;
@@ -305,7 +360,10 @@ function createMainWindow() {
     }, 500);
   });
 
-  mainWindow.loadURL(`${WEB_URL}?app=desktop`);
+  logInfo("Loading main window URL", `${WEB_URL}?app=desktop`);
+  mainWindow.loadURL(`${WEB_URL}?app=desktop`).catch((error) => {
+    logError("Error loading main window URL", error);
+  });
 }
 
 function createTray() {
@@ -359,25 +417,31 @@ function stopChildren() {
 
 async function bootApplication() {
   const { clientDir, serverDir } = getPaths();
+  logInfo("Booting application", { clientDir, serverDir, userData: app.getPath("userData") });
 
   createSplashWindow();
   startBackend(serverDir);
 
   splashWindow?.webContents.executeJavaScript(
-    `document.getElementById("status").textContent = "Starting search engine...";`
+    `document.getElementById("statusMessage").textContent = "Starting search engine...";`
   ).catch(() => undefined);
 
+  logInfo("Waiting for backend at", API_URL);
   await waitForUrl(API_URL);
+  logInfo("Backend ready");
 
   splashWindow?.webContents.executeJavaScript(
-    `document.getElementById("status").textContent = "Preparing your library...";`
+    `document.getElementById("statusMessage").textContent = "Preparing your library...";`
   ).catch(() => undefined);
 
   startFrontend(clientDir);
+  logInfo("Waiting for frontend at", WEB_URL);
   await waitForUrl(WEB_URL);
+  logInfo("Frontend ready");
 
   createMainWindow();
   createTray();
+  logInfo("Main window and tray created");
 }
 
 const gotLock = app.requestSingleInstanceLock();
@@ -394,6 +458,7 @@ if (!gotLock) {
 
   app.whenReady().then(async () => {
     try {
+      logInfo("App ready");
       configureAdBlocking();
       configureEmbedHeaders();
       setupAutoUpdater({ getMainWindow: () => mainWindow });
@@ -401,7 +466,12 @@ if (!gotLock) {
       await bootApplication();
       checkForUpdates();
     } catch (error) {
-      console.error(error);
+      logError("Fatal error during boot", error);
+      const { dialog } = require("electron");
+      dialog.showErrorBox(
+        "CHITHRA - CINEMA failed to start",
+        `A critical error occurred while starting the app.\n\n${error?.message || error}\n\nLogs: ${LOG_FILE}`
+      );
       app.exit(1);
     }
   });
@@ -413,6 +483,10 @@ app.on("before-quit", () => {
 });
 
 app.on("window-all-closed", () => {
+  // Don't quit if the main window is still being created/loaded
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return;
+  }
   if (process.platform !== "darwin" && !tray) {
     app.quit();
   }

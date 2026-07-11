@@ -37,6 +37,8 @@
       "update-dialog.js",
       "update-dialog.html",
       "update-dialog-preload.js",
+      "update-progress.html",
+      "update-progress-preload.js",
       "release-notes.js",
       "block-ad-nav.js",
       "embed-headers.js",
@@ -48,12 +50,16 @@
       {
         "from": "resources/app",
         "to": "app",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "resources/server",
         "to": "server",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "asar": true,
@@ -69,7 +75,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.ico",

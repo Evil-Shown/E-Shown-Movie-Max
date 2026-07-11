@@ -105,5 +105,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Chithra-Cinema-Setup
-          path: release/desktop/*
+          path: release/desktop/**/*
           if-no-files-found: error

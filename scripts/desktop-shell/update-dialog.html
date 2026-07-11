@@ -568,6 +568,17 @@
           return;
         }
 
+        if (kind === "uptodate") {
+          badgeTextEl.textContent = "Up to date";
+          titleEl.textContent = "You're on the latest version";
+          subtitleEl.textContent = "CHITHRA — CINEMA will automatically check for updates on startup.";
+          notesSectionEl.style.display = "none";
+          btnPrimary.textContent = "OK";
+          btnSecondary.style.display = "none";
+          renderVersions(payload.currentVersion, "");
+          return;
+        }
+
         badgeTextEl.textContent = "Update available";
         titleEl.textContent = `${formatVersion(payload.nextVersion)} is available`;
         subtitleEl.textContent = "Stay on the latest build for fixes, performance, and new features.";
