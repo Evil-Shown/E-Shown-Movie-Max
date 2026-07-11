@@ -1,90 +1,100 @@
 "use client";
 
 export default function GodsEyeHero() {
+  const scrollToResults = () => {
+    const results = document.getElementById("results");
+    if (results) {
+      results.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <section
-      className="relative overflow-hidden rounded-t-2xl border-b border-[rgba(200,100,30,0.18)] bg-[linear-gradient(135deg,rgba(32,21,13,0.98),rgba(23,15,10,0.98))]"
+      className="relative flex min-h-[480px] flex-col items-center justify-center overflow-hidden bg-[#FFFFFF] px-6 py-14 text-center sm:min-h-[540px] sm:px-10 sm:py-20"
       aria-labelledby="gods-eye-title"
     >
+      {/* Ambient light orange glow */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-90"
+        className="pointer-events-none absolute left-1/2 top-[-160px] z-[1] h-[640px] w-[640px] -translate-x-1/2 sm:top-[-200px] sm:h-[800px] sm:w-[800px]"
         style={{
-          background:
-            "radial-gradient(circle at 18% 20%, rgba(200, 90, 30, 0.22), transparent 28%), radial-gradient(circle at 80% 35%, rgba(232, 200, 154, 0.12), transparent 24%)",
+          background: "radial-gradient(circle, #FFB74D 0%, transparent 70%)",
+          opacity: 0.15,
         }}
       />
 
-      <div className="relative grid min-h-[280px] grid-cols-1 items-center gap-6 p-6 sm:min-h-[300px] sm:p-8 lg:grid-cols-[1fr_220px]">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#c85a1e]">
-            CHITHRA · Streaming Platform
-          </p>
+      {/* Dramatic God&apos;s eye SVG background */}
+      <svg
+        className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 opacity-[0.04] sm:h-[480px] sm:w-[480px] lg:h-[600px] lg:w-[600px]"
+        viewBox="0 0 200 200"
+        fill="none"
+        stroke="#3E2723"
+        strokeWidth="1"
+        aria-hidden="true"
+      >
+        <circle cx="100" cy="100" r="90" />
+        <path d="M10 100 Q100 20 190 100 Q100 180 10 100 Z" />
+        <circle cx="100" cy="100" r="35" fill="#3E2723" />
+        <circle cx="100" cy="100" r="15" fill="#FFB74D" />
+        <line x1="100" y1="0" x2="100" y2="200" />
+        <line x1="0" y1="100" x2="200" y2="100" />
+      </svg>
 
-          <h1
-            id="gods-eye-title"
-            className="mt-3 font-[var(--font-cinzel)] text-4xl font-bold leading-[1.05] tracking-wide text-[#e8c89a] sm:text-5xl"
-          >
-            The God&apos;s <span className="text-[#c85a1e]">Eye</span>
-          </h1>
-
-          <p className="mt-3 max-w-xl text-sm font-light tracking-[0.12em] text-[rgba(232,200,154,0.62)] uppercase">
-            Search, stream, and download from one place
-          </p>
-
-          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
-            <div>
-              <p className="font-[var(--font-cinzel)] text-xl font-bold text-[#e8c89a]">∞</p>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[rgba(200,100,30,0.75)]">Titles</p>
-            </div>
-            <div className="hidden h-8 w-px bg-[rgba(200,100,30,0.25)] sm:block" aria-hidden />
-            <div>
-              <p className="font-[var(--font-cinzel)] text-xl font-bold text-[#e8c89a]">4K</p>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[rgba(200,100,30,0.75)]">Quality</p>
-            </div>
-            <div className="hidden h-8 w-px bg-[rgba(200,100,30,0.25)] sm:block" aria-hidden />
-            <div>
-              <p className="font-[var(--font-cinzel)] text-xl font-bold text-[#e8c89a]">24/7</p>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[rgba(200,100,30,0.75)]">Uptime</p>
-            </div>
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            {["Discover", "Stream", "Download"].map((label) => (
-              <span
-                key={label}
-                className="rounded-full border border-[rgba(200,100,30,0.35)] bg-[rgba(200,100,30,0.06)] px-3 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[rgba(232,200,154,0.88)]"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
+      <div className="relative z-[2] mx-auto w-full max-w-[850px]">
+        <div className="mb-6 inline-block rounded-full border border-[#D7CCC8] px-5 py-2 text-[0.75rem] font-semibold uppercase tracking-[0.2em] text-[#8D6E63] sm:mb-8">
+          Guarded Around The Clock
         </div>
 
-        <div
-          className="relative mx-auto flex h-[180px] w-full max-w-[220px] items-center justify-center lg:mx-0 lg:h-[200px]"
-          aria-hidden
+        <h1
+          id="gods-eye-title"
+          className="font-cinzel text-4xl font-bold leading-[1.1] tracking-wide text-[#3E2723] sm:text-5xl md:text-6xl lg:text-7xl"
         >
-          <div className="absolute h-36 w-36 rounded-full border border-[rgba(200,100,30,0.2)]" />
-          <div className="absolute h-28 w-28 rounded-full border border-[rgba(200,100,30,0.28)]" />
-          <div className="absolute h-20 w-20 rounded-full border border-[rgba(200,100,30,0.36)]" />
-          <svg className="relative z-[1] h-12 w-[4.5rem]" viewBox="0 0 70 50" role="presentation">
-            <defs>
-              <radialGradient id="godsEyeIris" cx="50%" cy="45%" r="65%">
-                <stop offset="0%" stopColor="#c85a1e" />
-                <stop offset="72%" stopColor="#8f3c12" />
-                <stop offset="100%" stopColor="#3d1a05" />
-              </radialGradient>
-              <clipPath id="godsEyeClip">
-                <path d="M5 25 Q35 4 65 25 Q35 46 5 25Z" />
-              </clipPath>
-            </defs>
-            <path d="M5 25 Q35 4 65 25 Q35 46 5 25Z" fill="#0f0a06" stroke="#c85a1e" strokeWidth="1.5" />
-            <g clipPath="url(#godsEyeClip)">
-              <circle cx="35" cy="25" r="16" fill="url(#godsEyeIris)" />
-              <circle cx="35" cy="25" r="8" fill="#0a0504" />
-              <circle cx="30" cy="21" r="2.5" fill="rgba(255,200,150,0.4)" />
-            </g>
-          </svg>
+          THE GOD&apos;S <span className="text-[#E65100]">EYE</span>
+        </h1>
+
+        <p className="mb-3 mt-3 font-[var(--font-oswald)] text-sm font-light uppercase tracking-[0.25em] text-[#5D4037] sm:mb-4 sm:mt-4 sm:text-base">
+          Every Story, Carved In Light
+        </p>
+
+        <p className="mx-auto mb-8 max-w-[600px] text-sm leading-relaxed text-[#8D6E63] sm:mb-10 sm:text-base">
+          Search, stream, and download from one place — guarded around the clock. The court of a thousand tales awaits
+          your arrival.
+        </p>
+
+        {/* Stats */}
+        <div className="mb-8 flex justify-center gap-10 sm:mb-10 sm:gap-16">
+          {[
+            { value: "∞", label: "Titles" },
+            { value: "4K", label: "Quality" },
+            { value: "24/7", label: "Uptime" },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="relative text-center after:absolute after:right-[-1.25rem] after:top-1/2 after:hidden after:h-[30px] after:w-px after:-translate-y-1/2 after:bg-[#D7CCC8] last:after:hidden sm:after:right-[-2rem] sm:after:block"
+            >
+              <span className="block font-cinzel text-xl font-bold text-[#E65100] sm:text-2xl">{stat.value}</span>
+              <span className="text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-[#8D6E63] sm:text-[0.7rem]">
+                {stat.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA buttons */}
+        <div className="flex flex-wrap justify-center gap-3">
+          {["Discover", "Stream", "Download"].map((label, index) => (
+            <button
+              key={label}
+              type="button"
+              onClick={scrollToResults}
+              className={`rounded-sm px-6 py-3 text-[0.7rem] font-bold uppercase tracking-[0.15em] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:px-7 sm:py-3.5 sm:text-[0.75rem] ${
+                index === 0
+                  ? "border border-[#E65100] bg-[#E65100] text-white hover:border-[#3E2723] hover:bg-[#3E2723]"
+                  : "border border-[#3E2723] bg-transparent text-[#3E2723] hover:bg-[#3E2723] hover:text-white"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
     </section>
