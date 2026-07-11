@@ -1,6 +1,8 @@
 "use client";
 
+import ConnectionIndicator from "@/components/ConnectionIndicator";
 import InstantSearch from "@/components/InstantSearch";
+import UserDashboard from "@/components/UserDashboard";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { BRAND_NAME, BRAND_NAME_SINHALA } from "@/lib/brand";
 import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
@@ -16,18 +18,9 @@ const navLinks = [
   { href: "/watchlist", label: "Watchlist" },
   { href: "/live-tv", label: "Live TV" },
   { href: "/anime", label: "Anime" },
-
 ];
 
-function NavLink({
-  href,
-  label,
-  series,
-}: {
-  href: string;
-  label: string;
-  series?: boolean;
-}) {
+function NavLink({ href, label, series }: { href: string; label: string; series?: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const afterHydration = useAfterHydration();
@@ -49,10 +42,7 @@ function NavLink({
   }, [afterHydration, href, pathname, searchParams, series]);
 
   return (
-    <Link
-      href={href}
-      className={`${styles.navLink} ${afterHydration && active ? styles.navLinkActive : ""}`}
-    >
+    <Link href={href} className={`${styles.navLink} ${afterHydration && active ? styles.navLinkActive : ""}`}>
       {label}
     </Link>
   );
@@ -114,6 +104,7 @@ export default function Header() {
 
         <div className={styles.inner}>
           <nav className={styles.leftNav}>
+            <ConnectionIndicator />
             {navLinks.map((link) => (
               <NavLink key={link.href} href={link.href} label={link.label} series={link.series} />
             ))}
@@ -159,6 +150,8 @@ export default function Header() {
           </Link>
 
           <div className={styles.rightActions}>
+            <UserDashboard />
+
             <div className="hidden md:block">
               <InstantSearch />
             </div>
@@ -195,12 +188,7 @@ export default function Header() {
       {menuOpen && (
         <div className={styles.mobileMenu}>
           {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setMenuOpen(false)}
-              className={styles.mobileLink}
-            >
+            <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className={styles.mobileLink}>
               {link.label}
             </Link>
           ))}
