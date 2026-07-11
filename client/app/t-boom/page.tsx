@@ -19,19 +19,26 @@ export default function TBoomPage() {
   const displayError = search.error || magnet.error;
 
   return (
-    <div className="section-base min-h-full px-6 py-16">
-      <div className="mx-auto max-w-[980px]">
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-0 shadow-[var(--shadow-sm)]">
-          <GodsEyeHero />
-          <div className="px-5 pb-6 sm:px-6">
-            <ContinueWatchingBanner
-              continueWatching={magnet.continueWatching}
-              startTorrent={magnet.startTorrent}
-              clearContinue={magnet.clearContinue}
-            />
-            <SearchBar {...search} error={displayError} />
-          </div>
-        </div>
+    <div className="min-h-full bg-[#FFFFFF]">
+      <GodsEyeHero
+        query={search.query}
+        loading={search.loading}
+        displayTrending={search.displayTrending}
+        searchInputRef={search.searchInputRef}
+        handleSearch={search.handleSearch}
+        handleQueryChange={search.handleQueryChange}
+        searchSuggestion={search.searchSuggestion}
+        fetchTrendingSearches={search.fetchTrendingSearches}
+        setSearchFocused={search.setSearchFocused}
+      />
+
+      <div className="mx-auto max-w-[980px] px-6 pb-16">
+        <ContinueWatchingBanner
+          continueWatching={magnet.continueWatching}
+          startTorrent={magnet.startTorrent}
+          clearContinue={magnet.clearContinue}
+        />
+        <SearchBar {...search} error={displayError} />
 
         <div className="mt-8 space-y-4">
           <MagnetResolver {...magnet} />

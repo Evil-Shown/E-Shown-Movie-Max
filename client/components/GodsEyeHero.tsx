@@ -1,6 +1,31 @@
 "use client";
 
-export default function GodsEyeHero() {
+import type { GodsEyeSearch } from "./gods-eye/hooks/useGodsEyeSearch";
+
+type GodsEyeHeroProps = Pick<
+  GodsEyeSearch,
+  | "query"
+  | "loading"
+  | "displayTrending"
+  | "searchInputRef"
+  | "handleSearch"
+  | "handleQueryChange"
+  | "searchSuggestion"
+  | "fetchTrendingSearches"
+  | "setSearchFocused"
+>;
+
+export default function GodsEyeHero({
+  query,
+  loading,
+  displayTrending,
+  searchInputRef,
+  handleSearch,
+  handleQueryChange,
+  searchSuggestion,
+  fetchTrendingSearches,
+  setSearchFocused,
+}: GodsEyeHeroProps) {
   const scrollToResults = () => {
     const results = document.getElementById("results");
     if (results) {
@@ -10,12 +35,12 @@ export default function GodsEyeHero() {
 
   return (
     <section
-      className="relative flex min-h-[480px] flex-col items-center justify-center overflow-hidden bg-[#FFFFFF] px-6 py-14 text-center sm:min-h-[540px] sm:px-10 sm:py-20"
+      className="relative flex min-h-[100vh] flex-col items-center justify-center overflow-hidden bg-[#FFFFFF] px-6 pb-20 pt-32 text-center sm:px-10 sm:pb-24 sm:pt-36"
       aria-labelledby="gods-eye-title"
     >
       {/* Ambient light orange glow */}
       <div
-        className="pointer-events-none absolute left-1/2 top-[-160px] z-[1] h-[640px] w-[640px] -translate-x-1/2 sm:top-[-200px] sm:h-[800px] sm:w-[800px]"
+        className="pointer-events-none absolute left-1/2 top-[-200px] z-[1] h-[800px] w-[800px] -translate-x-1/2"
         style={{
           background: "radial-gradient(circle, #FFB74D 0%, transparent 70%)",
           opacity: 0.15,
@@ -24,7 +49,7 @@ export default function GodsEyeHero() {
 
       {/* Dramatic God&apos;s eye SVG background */}
       <svg
-        className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 opacity-[0.04] sm:h-[480px] sm:w-[480px] lg:h-[600px] lg:w-[600px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[360px] w-[360px] -translate-x-1/2 -translate-y-1/2 opacity-[0.04] sm:h-[480px] sm:w-[480px] lg:h-[600px] lg:w-[600px]"
         viewBox="0 0 200 200"
         fill="none"
         stroke="#3E2723"
@@ -46,7 +71,7 @@ export default function GodsEyeHero() {
 
         <h1
           id="gods-eye-title"
-          className="font-cinzel text-4xl font-bold leading-[1.1] tracking-wide text-[#3E2723] sm:text-5xl md:text-6xl lg:text-7xl"
+          className="font-cinzel text-5xl font-bold leading-[1.1] tracking-wide text-[#3E2723] sm:text-6xl lg:text-7xl"
         >
           THE GOD&apos;S <span className="text-[#E65100]">EYE</span>
         </h1>
@@ -55,13 +80,13 @@ export default function GodsEyeHero() {
           Every Story, Carved In Light
         </p>
 
-        <p className="mx-auto mb-8 max-w-[600px] text-sm leading-relaxed text-[#8D6E63] sm:mb-10 sm:text-base">
+        <p className="mx-auto mb-10 max-w-[600px] text-base leading-relaxed text-[#8D6E63] sm:mb-12 sm:text-lg">
           Search, stream, and download from one place — guarded around the clock. The court of a thousand tales awaits
           your arrival.
         </p>
 
         {/* Stats */}
-        <div className="mb-8 flex justify-center gap-10 sm:mb-10 sm:gap-16">
+        <div className="mb-10 flex justify-center gap-12 sm:mb-12 sm:gap-16">
           {[
             { value: "∞", label: "Titles" },
             { value: "4K", label: "Quality" },
@@ -69,10 +94,10 @@ export default function GodsEyeHero() {
           ].map((stat) => (
             <div
               key={stat.label}
-              className="relative text-center after:absolute after:right-[-1.25rem] after:top-1/2 after:hidden after:h-[30px] after:w-px after:-translate-y-1/2 after:bg-[#D7CCC8] last:after:hidden sm:after:right-[-2rem] sm:after:block"
+              className="relative text-center after:absolute after:right-[-1.5rem] after:top-1/2 after:hidden after:h-[30px] after:w-px after:-translate-y-1/2 after:bg-[#D7CCC8] last:after:hidden sm:after:right-[-2rem] sm:after:block"
             >
               <span className="block font-cinzel text-xl font-bold text-[#E65100] sm:text-2xl">{stat.value}</span>
-              <span className="text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-[#8D6E63] sm:text-[0.7rem]">
+              <span className="text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-[#8D6E63] sm:text-[0.75rem]">
                 {stat.label}
               </span>
             </div>
@@ -80,19 +105,74 @@ export default function GodsEyeHero() {
         </div>
 
         {/* CTA buttons */}
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="mb-14 flex flex-wrap justify-center gap-3 sm:mb-16">
           {["Discover", "Stream", "Download"].map((label, index) => (
             <button
               key={label}
               type="button"
               onClick={scrollToResults}
-              className={`rounded-sm px-6 py-3 text-[0.7rem] font-bold uppercase tracking-[0.15em] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:px-7 sm:py-3.5 sm:text-[0.75rem] ${
+              className={`rounded-sm px-7 py-3.5 text-[0.75rem] font-bold uppercase tracking-[0.15em] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:px-9 sm:py-4 sm:text-[0.8rem] ${
                 index === 0
                   ? "border border-[#E65100] bg-[#E65100] text-white hover:border-[#3E2723] hover:bg-[#3E2723]"
                   : "border border-[#3E2723] bg-transparent text-[#3E2723] hover:bg-[#3E2723] hover:text-white"
               }`}
             >
               {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Search Bar */}
+        <form
+          onSubmit={handleSearch}
+          className="mx-auto mb-10 flex max-w-[700px] flex-col gap-0 rounded border border-[#3E2723] bg-[#FFFFFF] p-1.5 shadow-[15px_15px_0px_rgba(230,81,0,0.1)] transition-shadow duration-300 focus-within:shadow-[20px_20px_0px_rgba(230,81,0,0.15)] sm:flex-row"
+        >
+          <input
+            ref={searchInputRef}
+            id="search-input"
+            type="text"
+            value={query}
+            onChange={(event) => handleQueryChange(event.target.value)}
+            onFocus={() => {
+              setSearchFocused(true);
+              fetchTrendingSearches();
+            }}
+            onBlur={() => window.setTimeout(() => setSearchFocused(false), 150)}
+            placeholder="Search for your next obsession..."
+            className="h-12 flex-1 bg-transparent px-4 text-sm uppercase tracking-wider text-[#3E2723] outline-none placeholder:text-[#8D6E63] sm:h-14 sm:px-6 sm:text-base"
+            style={{ fontFamily: "var(--font-oswald), var(--font-inter), Inter, sans-serif" }}
+          />
+          <button
+            id="search-button"
+            type="submit"
+            disabled={loading}
+            className="flex h-12 items-center justify-center gap-2.5 rounded-sm bg-[#3E2723] px-8 text-xs font-extrabold uppercase tracking-[0.15em] text-white transition-colors duration-300 hover:bg-[#E65100] disabled:cursor-not-allowed disabled:opacity-70 sm:h-auto sm:px-10"
+          >
+            {loading ? (
+              "Searching..."
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M10 2a8 8 0 015.29 13.71l4.58 4.58a1 1 0 01-1.42 1.42l-4.58-4.58A8 8 0 1110 2zm0 2a6 6 0 100 12 6 6 0 000-12z" />
+                </svg>
+                Search
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Trending */}
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <span className="text-xs font-extrabold uppercase tracking-[0.15em] text-[#3E2723]">Trending:</span>
+          {displayTrending.map((item) => (
+            <button
+              key={item.query}
+              type="button"
+              onClick={() => searchSuggestion(item.query)}
+              className="rounded-full border border-[#D7CCC8] bg-[#FFFBF5] px-3.5 py-1.5 text-xs font-medium text-[#8D6E63] transition-colors duration-300 hover:border-[#E65100] hover:bg-white hover:text-[#E65100]"
+            >
+              {item.query}
+              {item.count > 0 ? ` (${item.count})` : ""}
             </button>
           ))}
         </div>
