@@ -8,6 +8,7 @@ declare global {
       appVersion?: string;
       launchId?: string;
       launchDay?: string;
+      onAppWindowEvent?: (callback: (type: string) => void) => (() => void) | undefined;
     };
   }
 }
