@@ -43,7 +43,12 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "mobile:dev": "eas build --platform android --profile development",
+    "mobile:preview": "eas build --platform android --profile preview",
+    "mobile:production": "eas build --platform android --profile production",
+    "mobile:submit": "eas submit --platform android --profile production",
+    "mobile:build:local": "eas build --platform android --profile preview --local"
   },
   "private": true
 }
