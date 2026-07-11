@@ -1,8 +1,17 @@
 # Builds CHITHRA - CINEMA Windows installer (Electron + NSIS)
 # Output: release/desktop/{version}/Chithra-Cinema-Setup-{version}.exe
+#
+# Usage:
+#   .\scripts\build-desktop.ps1
+#   .\scripts\build-desktop.ps1 -Version 1.1.0
+#   .\scripts\build-desktop.ps1 -NoIncrement
+#   .\scripts\build-desktop.ps1 -ReleaseNotes "Fixed bugs and improved performance"
+#   .\scripts\build-desktop.ps1 -ReleaseNotesFile .\RELEASE_NOTES.md
 param(
   [string]$Version = "",
-  [switch]$NoIncrement
+  [switch]$NoIncrement,
+  [string]$ReleaseNotes = "",
+  [string]$ReleaseNotesFile = ""
 )
 $ErrorActionPreference = "Stop"
 
@@ -44,6 +53,58 @@ function Set-DesktopVersion([string]$newVersion) {
   Write-Utf8NoBom -Path $desktopPackage -Content $text
 }
 
+function Get-ReleaseNotes([string]$version) {
+  if ($ReleaseNotesFile -and (Test-Path $ReleaseNotesFile -PathType Leaf)) {
+    return (Get-Content $ReleaseNotesFile -Raw).Trim()
+  }
+  if ($ReleaseNotes) {
+    return $ReleaseNotes.Trim()
+  }
+
+  Write-Host ""
+  Write-Host "Release notes for v$version" -ForegroundColor Cyan
+  Write-Host "  Type your notes below. Press Enter twice on a blank line to finish." -ForegroundColor DarkGray
+  Write-Host "  Or pass -ReleaseNotes '...' / -ReleaseNotesFile path to skip this prompt." -ForegroundColor DarkGray
+  Write-Host "  Leave the first line empty to skip release notes." -ForegroundColor DarkGray
+
+  $first = Read-Host "Release notes"
+  if ([string]::IsNullOrWhiteSpace($first)) {
+    return ""
+  }
+
+  $lines = @($first)
+  while ($true) {
+    $line = Read-Host
+    if ([string]::IsNullOrWhiteSpace($line)) {
+      if ($lines.Count -gt 0 -and [string]::IsNullOrWhiteSpace($lines[-1])) {
+        break
+      }
+    }
+    $lines += $line
+  }
+
+  # Remove the trailing blank line used to finish input.
+  while ($lines.Count -gt 0 -and [string]::IsNullOrWhiteSpace($lines[-1])) {
+    $lines = $lines[0..($lines.Count - 2)]
+  }
+
+  return ($lines -join "`n").Trim()
+}
+
+function Write-ReleaseNotesFile {
+  param(
+    [string]$Path,
+    [string]$Version,
+    [string]$Notes
+  )
+  $dir = Split-Path $Path -Parent
+  if (-not (Test-Path $dir)) {
+    New-Item -ItemType Directory -Path $dir -Force | Out-Null
+  }
+  $content = if ($Notes) { $Notes } else { "Release v$Version" }
+  Write-Utf8NoBom -Path $Path -Content $content
+}
+
 function Robocopy-Item {
   param([string]$Source, [string]$Dest)
   if (Test-Path $Source -PathType Leaf) {
@@ -68,6 +129,7 @@ function Sync-DesktopShell {
     "update-dialog.js",
     "update-dialog.html",
     "update-dialog-preload.js",
+    "update-dialog-renderer.js",
     "update-progress.html",
     "update-progress-preload.js",
     "release-notes.js",
@@ -207,6 +269,11 @@ $outputDirAbsolute = Join-Path $root "release\desktop\$desktopVersion"
 
 Sync-DesktopShell
 
+$releaseNotes = Get-ReleaseNotes -version $desktopVersion
+$releaseNotesPath = Join-Path $desktop "assets/release-notes.md"
+Write-ReleaseNotesFile -Path $releaseNotesPath -Version $desktopVersion -Notes $releaseNotes
+Write-Host "  Release notes saved to $releaseNotesPath" -ForegroundColor DarkGray
+
 $clientStaging = Join-Path $env:TEMP "chithra-desktop-client-$([Guid]::NewGuid().ToString('N'))"
 $serverStaging = Join-Path $env:TEMP "chithra-desktop-server-$([Guid]::NewGuid().ToString('N'))"
 
@@ -291,6 +358,12 @@ $env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
 npm run dist -- --config.directories.output="$outputDir"
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "electron-builder failed" }
 Pop-Location
+
+$releaseNotesDest = Join-Path $outputDirAbsolute "release-notes.md"
+if (Test-Path $releaseNotesPath) {
+  Copy-Item $releaseNotesPath $releaseNotesDest -Force
+  Write-Host "  Copied release notes to $releaseNotesDest" -ForegroundColor DarkGray
+}
 
 Write-Host ""
 Write-Host "Done!" -ForegroundColor Green

@@ -28,7 +28,8 @@
     "appId": "com.chithra.cinema",
     "productName": "CHITHRA - CINEMA",
     "directories": {
-      "output": "../release/desktop"
+      "output": "../release/desktop",
+      "buildResources": "assets"
     },
     "files": [
       "main.js",
@@ -37,6 +38,7 @@
       "update-dialog.js",
       "update-dialog.html",
       "update-dialog-preload.js",
+      "update-dialog-renderer.js",
       "update-progress.html",
       "update-progress-preload.js",
       "release-notes.js",
@@ -46,6 +48,9 @@
       "telemetry.js",
       "assets/**"
     ],
+    "releaseInfo": {
+      "releaseNotesFile": "release-notes.md"
+    },
     "extraResources": [
       {
         "from": "resources/app",
@@ -80,7 +85,7 @@
           ]
         }
       ],
-      "icon": "assets/icon.ico",
+      "icon": "icon.ico",
       "artifactName": "Chithra-Cinema-Setup-${version}.${ext}",
       "signAndEditExecutable": false
     },
@@ -92,9 +97,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "CHITHRA - CINEMA",
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "installerHeaderIcon": "assets/icon.ico"
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeaderIcon": "icon.ico"
     }
   }
 }

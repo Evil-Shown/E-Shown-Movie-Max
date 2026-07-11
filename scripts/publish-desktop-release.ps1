@@ -6,9 +6,13 @@
 #   .\scripts\publish-desktop-release.ps1
 #   .\scripts\publish-desktop-release.ps1 -Version 1.1.0
 #   .\scripts\publish-desktop-release.ps1 -NoIncrement
+#   .\scripts\publish-desktop-release.ps1 -ReleaseNotes "Fixed bugs and improved performance"
+#   .\scripts\publish-desktop-release.ps1 -ReleaseNotesFile .\RELEASE_NOTES.md
 param(
   [string]$Version = "",
-  [switch]$NoIncrement
+  [switch]$NoIncrement,
+  [string]$ReleaseNotes = "",
+  [string]$ReleaseNotesFile = ""
 )
 $ErrorActionPreference = "Stop"
 
@@ -41,6 +45,8 @@ Then run: .\scripts\publish-desktop-release.ps1
 $buildArgs = @{}
 if ($Version) { $buildArgs["Version"] = $Version }
 if ($NoIncrement) { $buildArgs["NoIncrement"] = $true }
+if ($ReleaseNotes) { $buildArgs["ReleaseNotes"] = $ReleaseNotes }
+if ($ReleaseNotesFile) { $buildArgs["ReleaseNotesFile"] = $ReleaseNotesFile }
 
 & (Join-Path $PSScriptRoot "build-desktop.ps1") @buildArgs
 
