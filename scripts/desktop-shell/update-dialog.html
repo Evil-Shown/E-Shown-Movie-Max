@@ -102,6 +102,32 @@
         z-index: 1;
       }
 
+      .close-btn {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: #d1d5db;
+        font-size: 1.25rem;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        -webkit-app-region: no-drag;
+      }
+
+      .close-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+        transform: scale(1.05);
+      }
+
       .badge {
         display: inline-flex;
         align-items: center;
@@ -501,6 +527,7 @@
     <div class="backdrop">
       <div class="card" role="dialog" aria-modal="true" aria-labelledby="update-title">
         <div class="hero">
+          <button type="button" class="close-btn" id="btn-close" aria-label="Close">&times;</button>
           <div class="badge" id="badge">
             <span class="badge-dot" aria-hidden="true"></span>
             <span id="badge-text">Update</span>
@@ -522,96 +549,6 @@
       </div>
     </div>
 
-    <script>
-      const titleEl = document.getElementById("update-title");
-      const subtitleEl = document.getElementById("subtitle");
-      const badgeTextEl = document.getElementById("badge-text");
-      const versionsEl = document.getElementById("versions");
-      const notesSectionEl = document.getElementById("notes-section");
-      const notesEl = document.getElementById("notes");
-      const btnSecondary = document.getElementById("btn-secondary");
-      const btnPrimary = document.getElementById("btn-primary");
-
-      function formatVersion(version) {
-        return version ? `v${version}` : "Latest";
-      }
-
-      function renderVersions(currentVersion, nextVersion) {
-        versionsEl.innerHTML = "";
-
-        if (currentVersion) {
-          const current = document.createElement("div");
-          current.className = "version-pill";
-          current.innerHTML = `Installed <strong>${formatVersion(currentVersion)}</strong>`;
-          versionsEl.appendChild(current);
-        }
-
-        if (nextVersion) {
-          const next = document.createElement("div");
-          next.className = "version-pill next";
-          next.innerHTML = `Available <strong>${formatVersion(nextVersion)}</strong>`;
-          versionsEl.appendChild(next);
-        }
-      }
-
-      function render(payload) {
-        const kind = payload.kind || "available";
-
-        if (kind === "ready") {
-          badgeTextEl.textContent = "Ready to install";
-          titleEl.textContent = `${formatVersion(payload.nextVersion)} is downloaded`;
-          subtitleEl.textContent = "Restart CHITHRA — CINEMA to finish installing this update.";
-          notesSectionEl.style.display = "none";
-          btnPrimary.textContent = "Restart now";
-          btnSecondary.textContent = "Later";
-          renderVersions(payload.currentVersion, payload.nextVersion);
-          return;
-        }
-
-        badgeTextEl.textContent = "Update available";
-        titleEl.textContent = `${formatVersion(payload.nextVersion)} is available`;
-        subtitleEl.textContent = "Stay on the latest build for fixes, performance, and new features.";
-        btnPrimary.textContent = "Download update";
-        btnSecondary.textContent = "Not now";
-        renderVersions(payload.currentVersion, payload.nextVersion);
-
-        if (payload.notesHtml) {
-          notesEl.innerHTML = payload.notesHtml;
-          notesEl.classList.remove("empty");
-        } else {
-          notesEl.textContent = "This release includes improvements and bug fixes.";
-          notesEl.classList.add("empty");
-        }
-      }
-
-      btnSecondary.addEventListener("click", () => {
-        window.updateDialog.respond("secondary");
-      });
-
-      btnPrimary.addEventListener("click", () => {
-        window.updateDialog.respond("primary");
-      });
-
-      // Update Notes Preview Data
-      const previewData = {
-        kind: "available",
-        currentVersion: "2.1.2",
-        nextVersion: "2.2.0",
-        notesHtml:
-          '<h3 class="note-heading">What&apos;s new in v2.2.0</h3>' +
-          "<ul>" +
-          "<li><strong>Live TV</strong> — Sri Lankan channels with rewind support</li>" +
-          "<li>Improved stream reliability and faster channel switching</li>" +
-          "<li>Bug fixes for the desktop player and startup splash</li>" +
-          "</ul>" +
-          "<p>Thank you for using <code>CHITHRA — CINEMA</code>.</p>",
-      };
-
-      if (window.updateDialog) {
-        window.updateDialog.onInit(render);
-      } else {
-        render(previewData);
-      }
-    </script>
+    <script src="update-dialog-renderer.js"></script>
   </body>
 </html>

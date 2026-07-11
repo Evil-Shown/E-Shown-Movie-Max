@@ -1,11 +1,15 @@
-const { app } = require("electron");
+const { app, BrowserWindow } = require("electron");
 const { autoUpdater } = require("electron-updater");
+const path = require("path");
 const { getStableUserAgent } = require("./embed-headers");
 const { showUpdateDialog } = require("./update-dialog");
 
 let updateCheckStarted = false;
+let manualCheckActive = false;
 /** @type {(() => import("electron").BrowserWindow | null) | null} */
 let getMainWindow = null;
+/** @type {BrowserWindow | null} */
+let progressWindow = null;
 
 function formatVersion(version) {
   return version ? `v${version}` : "a new version";
@@ -25,6 +29,60 @@ async function showUpdateFailureDialog(message, detail) {
   });
 }
 
+function closeProgressWindow() {
+  if (progressWindow && !progressWindow.isDestroyed()) {
+    progressWindow.close();
+  }
+  progressWindow = null;
+}
+
+function sendProgress(payload) {
+  if (progressWindow && !progressWindow.isDestroyed()) {
+    progressWindow.webContents.send("update-progress:progress", payload);
+  }
+}
+
+function showDownloadProgress(version) {
+  closeProgressWindow();
+
+  progressWindow = new BrowserWindow({
+    width: 520,
+    height: 380,
+    frame: false,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    center: true,
+    show: false,
+    backgroundColor: "#040408",
+    webPreferences: {
+      preload: path.join(__dirname, "update-progress-preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  });
+
+  progressWindow.loadFile(path.join(__dirname, "update-progress.html"));
+
+  progressWindow.webContents.once("did-finish-load", () => {
+    progressWindow?.show();
+    progressWindow?.webContents.send("update-progress:init", {
+      version,
+      percent: 0,
+      transferred: 0,
+      total: 0,
+    });
+  });
+
+  progressWindow.on("closed", () => {
+    progressWindow = null;
+  });
+}
+
 function setupAutoUpdater(options = {}) {
   if (!app.isPackaged) return;
 
@@ -39,6 +97,7 @@ function setupAutoUpdater(options = {}) {
   autoUpdater.allowDowngrade = false;
 
   autoUpdater.on("update-available", async (info) => {
+    manualCheckActive = false;
     const response = await showUpdateDialog({
       parent: getMainWindow?.() || undefined,
       kind: "available",
@@ -48,20 +107,36 @@ function setupAutoUpdater(options = {}) {
     });
 
     if (response === "primary") {
+      showDownloadProgress(info.version);
       await autoUpdater.downloadUpdate();
     }
   });
 
   autoUpdater.on("update-not-available", () => {
     // No popup on startup when already up to date.
+    if (manualCheckActive) {
+      manualCheckActive = false;
+      void showUpdateDialog({
+        parent: getMainWindow?.() || undefined,
+        kind: "uptodate",
+        currentVersion: app.getVersion(),
+      });
+    }
   });
 
   autoUpdater.on("download-progress", (progress) => {
-    const percent = Math.round(progress.percent || 0);
-    console.log(`[updater] Downloading update: ${percent}%`);
+    const percent = progress.percent || 0;
+    console.log(`[updater] Downloading update: ${Math.round(percent)}%`);
+    sendProgress({
+      version: progress.version,
+      percent,
+      transferred: progress.transferred || 0,
+      total: progress.total || 0,
+    });
   });
 
   autoUpdater.on("update-downloaded", async (info) => {
+    closeProgressWindow();
     const response = await showUpdateDialog({
       parent: getMainWindow?.() || undefined,
       kind: "ready",
@@ -76,6 +151,8 @@ function setupAutoUpdater(options = {}) {
   });
 
   autoUpdater.on("error", (error) => {
+    manualCheckActive = false;
+    closeProgressWindow();
     console.error("[updater]", error?.message || error);
   });
 }
@@ -100,10 +177,10 @@ function checkForUpdates({ manual = false } = {}) {
 
   if (updateCheckStarted && !manual) return;
   updateCheckStarted = true;
+  manualCheckActive = manual;
 
-  const check = manual ? autoUpdater.checkForUpdatesAndNotify() : autoUpdater.checkForUpdates();
-
-  check.catch((error) => {
+  autoUpdater.checkForUpdates().catch((error) => {
+    manualCheckActive = false;
     console.error("[updater] check failed:", error?.message || error);
     if (manual) {
       void showUpdateFailureDialog("Could not check for updates right now.", error?.message);

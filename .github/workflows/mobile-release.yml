@@ -1,0 +1,83 @@
+name: Mobile Release Build
+
+on:
+  push:
+    tags:
+      - "mobile-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Release Mobile App
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Expo & EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Expo Doctor
+        run: npx expo doctor
+
+      - name: Run tests (if defined)
+        run: |
+          if node -e "const p=require('./package.json'); if(!p.scripts||!p.scripts.test){process.exit(1)}"; then
+            npm test
+          else
+            echo "No test script found in mobile/package.json — skipping."
+          fi
+
+      - name: Build Preview APK (JSON output)
+        run: eas build --platform android --profile preview --non-interactive --json > ../build-output.json
+
+      - name: Parse EAS build info
+        id: eas-build
+        run: |
+          node -e "
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('../build-output.json', 'utf8'));
+            const build = Array.isArray(data) ? data[0] : data;
+            if (!build) { console.error('No build found in output'); process.exit(1); }
+            const buildId   = build.id || 'unknown';
+            const status    = build.status || 'unknown';
+            const buildUrl  = build.artifacts?.build?.url || build.buildUrl || 'N/A';
+            const pageUrl   = build.artifacts?.build?.url || ('https://expo.dev/accounts/chithra/projects/chithra-cinema/builds/' + buildId);
+            console.log('Build ID   : ' + buildId);
+            console.log('Status     : ' + status);
+            console.log('Download   : ' + buildUrl);
+            console.log('Dashboard  : ' + pageUrl);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'build_id=' + buildId + '\n');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'build_status=' + status + '\n');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'download_url=' + buildUrl + '\n');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'page_url=' + pageUrl + '\n');
+          "
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes/mobile/${{ github.ref_name }}.md
+          draft: false
+          prerelease: false
+          files: |
+            build-output.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

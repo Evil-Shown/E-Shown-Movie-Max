@@ -19,7 +19,7 @@ function closeActiveDialog() {
 /**
  * @param {{
  *   parent?: import("electron").BrowserWindow | null,
- *   kind: "available" | "ready",
+ *   kind: "available" | "ready" | "uptodate",
  *   currentVersion?: string,
  *   nextVersion?: string,
  *   releaseNotes?: string | Array<{ note?: string } | string>,

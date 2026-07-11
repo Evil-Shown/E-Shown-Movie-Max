@@ -47,21 +47,27 @@ npm run build        # turbo: build all apps
 ## Build Windows Installer
 
 ```powershell
-npm run package
+npm run package                  # auto-increment patch, build, output → release/desktop/{version}/
+npm run package:current          # build current version without increment
+npm run package:version 2.3.0    # build a specific version
 ```
 
-Output: `release/desktop/Chithra-Cinema-Setup-1.0.0.exe`
+Output: `release/desktop/2.2.5/Chithra-Cinema-Setup-2.2.5.exe`
+
+Each build creates a versioned folder under `release/desktop/`. The patch number auto-increments unless you use `package:current` or `package:version`.
 
 ## Publish update (auto-update for installed users)
 
-Bump `scripts/desktop-shell/package.json` version, then:
-
 ```powershell
 $env:GH_TOKEN = "your_github_token"
-npm run package:publish
+npm run package:publish                  # auto-increment patch, build, and publish
+npm run package:publish:current          # publish current version
+npm run package:publish:version 2.3.0    # publish a specific version
 ```
 
 Installed apps check [GitHub Releases](https://github.com/Evil-Shown/E-Shown-Movie-Max/releases) on startup and prompt users to accept or skip updates.
+
+When the user chooses **Download update**, an animated progress window keeps them informed during the download—even on slow networks—without navigating away from the app.
 
 See `scripts/desktop-shell/README.md` for details.
 
@@ -75,9 +81,10 @@ npm run package:portable
 
 **Copyright © 2026 CHITHRA — CINEMA. All rights reserved.**
 
-This software and its entire codebase (including frontend, backend, desktop wrapper, scraping scripts, and configuration files) are strictly **proprietary** and **confidential**. 
+This software and its entire codebase (including frontend, backend, desktop wrapper, scraping scripts, and configuration files) are strictly **proprietary** and **confidential**.
 
 ### Restrictions:
+
 - **No Copying/Cloning**: You are strictly prohibited from copying, cloning, duplicating, or mimicking any part of this project, its code structure, or its features.
 - **No Redistribution**: You may not distribute, host, publish, or sublicense the source code or binaries to any third party.
 - **No Modification**: You may not modify, alter, or create derivative works of this codebase.

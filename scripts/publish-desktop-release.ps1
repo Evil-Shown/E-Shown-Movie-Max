@@ -5,20 +5,16 @@
 #   $env:GH_TOKEN = "ghp_..."
 #   .\scripts\publish-desktop-release.ps1
 #   .\scripts\publish-desktop-release.ps1 -Version 1.1.0
+#   .\scripts\publish-desktop-release.ps1 -NoIncrement
+#   .\scripts\publish-desktop-release.ps1 -ReleaseNotes "Fixed bugs and improved performance"
+#   .\scripts\publish-desktop-release.ps1 -ReleaseNotesFile .\RELEASE_NOTES.md
 param(
-  [string]$Version = ""
+  [string]$Version = "",
+  [switch]$NoIncrement,
+  [string]$ReleaseNotes = "",
+  [string]$ReleaseNotesFile = ""
 )
-
 $ErrorActionPreference = "Stop"
-
-function Write-Utf8NoBom {
-  param(
-    [string]$Path,
-    [string]$Content
-  )
-  $utf8NoBom = New-Object System.Text.UTF8Encoding $false
-  [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
-}
 
 $root = Split-Path $PSScriptRoot -Parent
 $desktopPackage = Join-Path $PSScriptRoot "desktop-shell\package.json"
@@ -46,18 +42,21 @@ Then run: .\scripts\publish-desktop-release.ps1
 "@
 }
 
-if ($Version) {
-  $text = Get-Content $desktopPackage -Raw
-  $text = $text -replace '"version"\s*:\s*"[^"]+"', "`"version`": `"$Version`""
-  Write-Utf8NoBom -Path $desktopPackage -Content $text
-  Write-Host "Bumped desktop version to $Version" -ForegroundColor Cyan
-}
+$buildArgs = @{}
+if ($Version) { $buildArgs["Version"] = $Version }
+if ($NoIncrement) { $buildArgs["NoIncrement"] = $true }
+if ($ReleaseNotes) { $buildArgs["ReleaseNotes"] = $ReleaseNotes }
+if ($ReleaseNotesFile) { $buildArgs["ReleaseNotesFile"] = $ReleaseNotesFile }
 
-& (Join-Path $PSScriptRoot "build-desktop.ps1")
+& (Join-Path $PSScriptRoot "build-desktop.ps1") @buildArgs
+
+$desktopPackageJson = Get-Content $desktopPackage -Raw | ConvertFrom-Json
+$desktopVersion = $desktopPackageJson.version
+$outputDir = "../release/desktop/$desktopVersion"
 
 Push-Location (Join-Path $root "desktop")
 $env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
-npm run publish
+npm run publish -- --config.directories.output="$outputDir"
 if ($LASTEXITCODE -ne 0) {
   Pop-Location
   throw "GitHub publish failed"
@@ -65,6 +64,6 @@ if ($LASTEXITCODE -ne 0) {
 Pop-Location
 
 Write-Host ""
-Write-Host "Published to GitHub Releases." -ForegroundColor Green
+Write-Host "Published v$desktopVersion to GitHub Releases." -ForegroundColor Green
 Write-Host "Installed apps will see the update on next launch." -ForegroundColor Green
 Write-Host ""
