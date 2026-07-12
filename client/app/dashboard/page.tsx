@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { useAuth } from "@/components/AuthProvider";
 import { formatDisplayYear, posterUrl } from "@/lib/movies";
 import type { ContinueWatchingItem, WatchlistItem } from "@/lib/storage/types";
 import type { LiveTvChannel } from "@/lib/live-tv/types";
@@ -402,6 +403,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const { watchlist, continueWatching } = useUserLibrary();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -479,7 +481,7 @@ export default function DashboardPage() {
   );
   const hours = Math.floor(totalSeconds / 3600);
   const streak = useMemo(() => computeStreak(continueWatching), [continueWatching]);
-  const userName = "Watcher";
+  const userName = user?.displayName || user?.username || "Watcher";
 
   const newlyAddedCount = useMemo(() => {
     const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
