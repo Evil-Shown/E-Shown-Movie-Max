@@ -2,9 +2,8 @@ const fs = require("fs");
 const sharp = require("sharp");
 const path = require("path");
 
-const INPUT = "D:\\Coding\\Ongoing\\E-Shown Movie Max\\scripts\\desktop-shell\\assets\\icon.ico";
-const OUTPUT = INPUT;
-const BACKUP = INPUT.replace(".ico", ".bak.ico");
+const INPUT = "D:\\Coding\\Ongoing\\E-Shown Movie Max\\resources\\application icon\\app icon.png";
+const OUTPUT = "D:\\Coding\\Ongoing\\E-Shown Movie Max\\scripts\\desktop-shell\\assets\\icon.ico";
 
 function parseIco(buf) {
   if (buf.readUInt16LE(0) !== 0) throw new Error("Not ICO");
@@ -57,9 +56,51 @@ async function removeBackground(pngBuf) {
     const r = pixels[i];
     const g = pixels[i + 1];
     const b = pixels[i + 2];
-    // If pixel is nearly white (background), make it transparent
     if (r > 230 && g > 230 && b > 230) {
-      pixels[i + 3] = 0; // set alpha to 0
+      pixels[i + 3] = 0;
+    }
+  }
+
+  return await sharp(pixels, { raw: { width: info.width, height: info.height, channels: 4 } })
+    .png()
+    .toBuffer();
+}
+
+// Remove near-dark/black background by finding the most common color
+async function removeBackgroundDark(pngBuf) {
+  const { data, info } = await sharp(pngBuf)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const pixels = new Uint8Array(data);
+  const w = info.width, h = info.height;
+
+  // Sparse sample to find the most common (background) color
+  const histo = new Map();
+  const step = Math.max(1, Math.floor(Math.min(w, h) / 10));
+  for (let y = 0; y < h; y += step) {
+    for (let x = 0; x < w; x += step) {
+      const idx = (y * w + x) * 4;
+      const key = `${pixels[idx]},${pixels[idx + 1]},${pixels[idx + 2]}`;
+      histo.set(key, (histo.get(key) || 0) + 1);
+    }
+  }
+  let bestKey = null, bestCount = 0;
+  for (const [key, count] of histo) {
+    if (count > bestCount) { bestCount = count; bestKey = key; }
+  }
+  const [bgR, bgG, bgB] = bestKey.split(",").map(Number);
+  console.log(`Most common color: rgb(${bgR},${bgG},${bgB}) (${bestCount} samples)`);
+
+  // Remove pixels close to the background color
+  const threshold = 30;
+  for (let i = 0; i < pixels.length; i += 4) {
+    const dr = pixels[i] - bgR;
+    const dg = pixels[i + 1] - bgG;
+    const db = pixels[i + 2] - bgB;
+    if (Math.abs(dr) < threshold && Math.abs(dg) < threshold && Math.abs(db) < threshold) {
+      pixels[i + 3] = 0;
     }
   }
 
@@ -102,31 +143,39 @@ async function buildSizedIcon(logoBuf, targetSize) {
 
 async function main() {
   let buf;
-  if (fs.existsSync(BACKUP)) {
-    buf = fs.readFileSync(BACKUP);
-    console.log("Using backup (original source)");
-  } else {
+
+  if (INPUT.toLowerCase().endsWith(".png")) {
     buf = fs.readFileSync(INPUT);
+    console.log(`Source PNG: ${INPUT}`);
+  } else {
+    console.log("Source ICO — extracting largest frame");
+    const raw = fs.readFileSync(INPUT);
+    const ico = parseIco(raw);
+    let best = ico.entries[0];
+    for (const e of ico.entries) {
+      if (e.w * e.h > best.w * best.h) best = e;
+    }
+    console.log(`Largest: ${best.w}x${best.h} (${best.size} bytes)`);
+    buf = raw.slice(best.dataOff, best.dataOff + best.size);
   }
 
-  const ico = parseIco(buf);
-  let best = ico.entries[0];
-  for (const e of ico.entries) {
-    if (e.w * e.h > best.w * best.h) best = e;
+  const meta = await sharp(buf).metadata();
+  console.log(`Input: ${meta.width}x${meta.height}, alpha=${meta.hasAlpha}`);
+
+  const hasAlpha = meta.hasAlpha || meta.channels === 4;
+
+  let transparent;
+  if (hasAlpha) {
+    transparent = await removeBackground(buf);
+  } else {
+    transparent = await removeBackgroundDark(buf);
   }
-  console.log(`Largest: ${best.w}x${best.h} (${best.size} bytes)`);
-
-  const srcPng = buf.slice(best.dataOff, best.dataOff + best.size);
-
-  // Step 1: remove near-white background
-  console.log("Stripping background...");
-  const transparent = await removeBackground(srcPng);
 
   // Step 2: trim transparent edges
   console.log("Trimming...");
   const trimmed = await sharp(transparent).trim({ threshold: 10 }).toBuffer();
-  const meta = await sharp(trimmed).metadata();
-  console.log(`Trimmed to ${meta.width}x${meta.height}`);
+  const trimMeta = await sharp(trimmed).metadata();
+  console.log(`Trimmed to ${trimMeta.width}x${trimMeta.height}`);
 
   // Enhance colors: boost contrast + saturation for visibility at small sizes
   console.log("Enhancing colors...");
@@ -135,11 +184,6 @@ async function main() {
     .linear(1.15, -0.04)
     .png()
     .toBuffer();
-
-  if (!fs.existsSync(BACKUP)) {
-    fs.copyFileSync(INPUT, BACKUP);
-    console.log(`Backed up original to ${path.basename(BACKUP)}`);
-  }
 
   const sizes = [16, 20, 24, 32, 40, 48, 64, 128, 256];
   const images = [];
