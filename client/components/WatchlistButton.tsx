@@ -25,7 +25,7 @@ export default function WatchlistButton({ movie, className = "" }: WatchlistButt
       onClick={(e) => {
         e.stopPropagation();
         if (!isAuthenticated) {
-          openAuthModal();
+          openAuthModal({ redirectOnClose: true });
           return;
         }
         toggleWatchlist(movie);

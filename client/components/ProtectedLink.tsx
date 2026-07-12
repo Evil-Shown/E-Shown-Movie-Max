@@ -22,7 +22,7 @@ export default function ProtectedLink({ href, children, className = "", onClick 
         if (!isAuthenticated) {
           e.preventDefault();
           setPendingAction({ type: "page", payload: { href } });
-          openAuthModal();
+          openAuthModal({ redirectOnClose: true });
           return;
         }
         onClick?.();

@@ -5,7 +5,7 @@ import AuthModal from "./AuthModal";
 import { useAuth } from "./AuthProvider";
 
 interface AuthModalContextValue {
-  openAuthModal: () => void;
+  openAuthModal: (options?: { redirectOnClose?: boolean }) => void;
   closeAuthModal: () => void;
 }
 
@@ -19,9 +19,11 @@ export function useAuthModal() {
 
 export default function AuthModalProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [redirectOnClose, setRedirectOnClose] = useState(false);
   const { consumePendingAction } = useAuth();
 
-  const openAuthModal = useCallback(() => {
+  const openAuthModal = useCallback((options?: { redirectOnClose?: boolean }) => {
+    setRedirectOnClose(options?.redirectOnClose ?? false);
     setIsOpen(true);
   }, []);
 
@@ -36,7 +38,7 @@ export default function AuthModalProvider({ children }: { children: ReactNode })
   return (
     <AuthModalContext.Provider value={{ openAuthModal, closeAuthModal }}>
       {children}
-      <AuthModal isOpen={isOpen} onClose={closeAuthModal} />
+      <AuthModal isOpen={isOpen} onClose={closeAuthModal} redirectOnClose={redirectOnClose} />
     </AuthModalContext.Provider>
   );
 }

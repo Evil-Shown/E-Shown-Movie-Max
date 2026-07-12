@@ -7,6 +7,8 @@ import { isTvShow } from "@/lib/streaming";
 import { getMovieEmbedUrl } from "@/lib/streaming";
 import { getTrailerId } from "@/lib/trailers";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { useAuth } from "@/components/AuthProvider";
+import { useAuthModal } from "@/components/AuthModalProvider";
 import PlayerTvSelector from "@/components/PlayerTvSelector";
 import PlayerNextEpisodeOverlay from "@/components/PlayerNextEpisodeOverlay";
 import PlayerSubtitlePicker from "@/components/PlayerSubtitlePicker";
@@ -35,10 +37,20 @@ export default function VideoPlayerModal({
   onProviderChange,
   onSeasonEpisodeChange,
 }: VideoPlayerModalProps) {
+  const { isAuthenticated } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const { movie, mode, season, episode, provider, resumeSeconds } = active;
   const { setProvider } = useUserLibrary();
   const [playerEngaged, setPlayerEngaged] = useState(false);
   const setLoadedRef = useRef<(value: boolean) => void>(() => {});
+
+  // Auth gate: block playback if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      openAuthModal({ redirectOnClose: true });
+      onClose();
+    }
+  }, [isAuthenticated, openAuthModal, onClose]);
 
   const isTrailer = mode === "trailer";
   const isTvPlayer = !isTrailer && isTvShow(movie);
