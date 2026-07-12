@@ -108,8 +108,8 @@ model ContinueWatching {
   mediaType   String
   title       String
   posterPath  String?
-  season      Int?
-  episode     Int?
+  season      Int      @default(0)
+  episode     Int      @default(0)
   currentTime Float    @default(0)
   duration    Float    @default(0)
   progress    Int      @default(0)

@@ -25,7 +25,7 @@ function toProfileResponse(user: Awaited<ReturnType<typeof userRepository.findUs
 async function createAuditLog(userId: string, action: string, metadata?: Record<string, unknown>) {
   try {
     await prisma.auditLog.create({
-      data: { userId, action, metadata },
+      data: { userId, action, metadata: metadata as never },
     });
   } catch (error) {
     logger.warn({ error, userId, action }, "Failed to create audit log");
@@ -39,7 +39,7 @@ export async function getProfile(userId: string): Promise<UserProfileResponse> {
 
 export async function updateProfile(userId: string, input: UpdateProfileInput): Promise<UserProfileResponse> {
   const user = await userRepository.updateProfile(userId, input);
-  await createAuditLog(userId, "PROFILE_UPDATED", input);
+  await createAuditLog(userId, "PROFILE_UPDATED", input as never);
   return toProfileResponse(user);
 }
 
@@ -49,13 +49,13 @@ export async function updateAvatar(userId: string, avatarUrl: string): Promise<U
   }
 
   const user = await userRepository.updateAvatar(userId, avatarUrl);
-  await createAuditLog(userId, "AVATAR_UPDATED", { avatarUrl });
+  await createAuditLog(userId, "AVATAR_UPDATED", { avatarUrl } as never);
   return toProfileResponse(user);
 }
 
 export async function updatePreferences(userId: string, input: UpdatePreferencesInput): Promise<UserProfileResponse> {
   await userRepository.upsertSettings(userId, input);
   const user = await userRepository.findUserById(userId);
-  await createAuditLog(userId, "PREFERENCES_UPDATED", input);
+  await createAuditLog(userId, "PREFERENCES_UPDATED", input as never);
   return toProfileResponse(user);
 }

@@ -44,7 +44,8 @@ export async function removeFromWatchlist(req: Request, res: Response, next: Nex
       });
       return;
     }
-    await watchlistService.removeFromWatchlist(req.user.id, req.params.id);
+    const id = req.params.id as string;
+    await watchlistService.removeFromWatchlist(req.user.id, id);
     success(res, { message: "Removed from watchlist" });
   } catch (error) {
     next(error);

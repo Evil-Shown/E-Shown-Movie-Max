@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const addWatchlistSchema = z.object({
+export const addWatchlistSchema = {
   body: z.object({
     tmdbId: z.string().min(1),
     mediaType: z.enum(["movie", "tv"]),
@@ -10,10 +10,10 @@ export const addWatchlistSchema = z.object({
     rating: z.number().optional(),
     genres: z.string().optional(),
   }),
-});
+};
 
-export const removeWatchlistSchema = z.object({
+export const removeWatchlistSchema = {
   params: z.object({
     id: z.string().min(1),
   }),
-});
+};

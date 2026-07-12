@@ -29,7 +29,7 @@ export async function trackStream(query: string, userId?: string, sessionId?: st
         data: {
           userId,
           event: "movie_started",
-          properties: { query: normalized },
+          properties: { query: normalized } as unknown as never,
           sessionId,
         },
       });
@@ -49,7 +49,7 @@ export async function trackDownload(query: string, userId?: string, sessionId?: 
         data: {
           userId,
           event: "download_started",
-          properties: { query: normalized },
+          properties: { query: normalized } as unknown as never,
           sessionId,
         },
       });

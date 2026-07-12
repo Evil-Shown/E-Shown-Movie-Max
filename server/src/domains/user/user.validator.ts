@@ -1,13 +1,13 @@
 import { z } from "zod";
 
-export const updateProfileSchema = z.object({
+export const updateProfileSchema = {
   body: z.object({
     displayName: z.string().max(50).optional(),
     bio: z.string().max(500).optional(),
   }),
-});
+};
 
-export const updatePreferencesSchema = z.object({
+export const updatePreferencesSchema = {
   body: z.object({
     language: z.string().length(2).optional(),
     autoplay: z.boolean().optional(),
@@ -16,4 +16,4 @@ export const updatePreferencesSchema = z.object({
     quality: z.string().optional(),
     notifications: z.boolean().optional(),
   }),
-});
+};

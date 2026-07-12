@@ -38,7 +38,8 @@ export async function heartbeat(req: Request, res: Response, next: NextFunction)
 
 export async function stats(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const providedSecret = req.query.secret || req.headers["x-admin-secret"];
+    const providedSecret =
+      (req.query.secret as string | undefined) || (req.headers["x-admin-secret"] as string | undefined);
     const stats = telemetryService.getStats(providedSecret);
     success(res, stats);
   } catch (error) {

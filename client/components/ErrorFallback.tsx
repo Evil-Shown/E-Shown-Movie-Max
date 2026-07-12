@@ -39,12 +39,15 @@ export default function ErrorFallback({ error, reset, standalone = false }: Erro
             Try again
           </button>
           {standalone ? (
-            <a
-              href="/"
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/";
+              }}
               className="inline-flex rounded-full border border-[var(--border-strong)] px-5 py-2.5 text-sm font-medium text-[var(--text-primary)] transition hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
             >
               Go home
-            </a>
+            </button>
           ) : (
             <Link
               href="/"

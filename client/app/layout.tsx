@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Cinzel, Inter, Noto_Sans_Sinhala, Oswald, Playfair_Display } from "next/font/google";
 import { Suspense } from "react";
+import AuthActionHandler from "@/components/AuthActionHandler";
+import AuthModalProvider from "@/components/AuthModalProvider";
+import AuthProvider from "@/components/AuthProvider";
 import BackToTop from "@/components/BackToTop";
 import CinemaIntroLoader from "@/components/CinemaIntroLoader";
 import StartupSplashLoader from "@/components/StartupSplashLoader";
@@ -84,24 +87,29 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <StartupSplashLoader />
         <CinemaIntroLoader />
-        <QueryProvider>
-          <UserLibraryProvider>
-            <VideoPlayerProvider>
-              <QuickViewProvider>
-                <NavigationProgress />
-                <Suspense fallback={<HeaderFallback />}>
-                  <Header />
-                </Suspense>
-                <main className="site-main flex-1">
-                  <PageTransition>{children}</PageTransition>
-                </main>
-                <Footer />
-                <BackToTop />
-              </QuickViewProvider>
-              <DesktopMediaPauseHandler />
-            </VideoPlayerProvider>
-          </UserLibraryProvider>
-        </QueryProvider>
+        <AuthProvider>
+          <AuthModalProvider>
+            <AuthActionHandler />
+            <QueryProvider>
+              <UserLibraryProvider>
+                <VideoPlayerProvider>
+                  <QuickViewProvider>
+                    <NavigationProgress />
+                    <Suspense fallback={<HeaderFallback />}>
+                      <Header />
+                    </Suspense>
+                    <main className="site-main flex-1">
+                      <PageTransition>{children}</PageTransition>
+                    </main>
+                    <Footer />
+                    <BackToTop />
+                  </QuickViewProvider>
+                  <DesktopMediaPauseHandler />
+                </VideoPlayerProvider>
+              </UserLibraryProvider>
+            </QueryProvider>
+          </AuthModalProvider>
+        </AuthProvider>
       </body>
     </html>
   );

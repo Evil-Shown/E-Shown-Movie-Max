@@ -6,13 +6,13 @@ export function validate(schema: { body?: z.ZodSchema; query?: z.ZodSchema; para
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
       if (schema.body) {
-        req.body = await schema.body.parseAsync(req.body);
+        req.body = (await schema.body.parseAsync(req.body)) as typeof req.body;
       }
       if (schema.query) {
-        req.query = await schema.query.parseAsync(req.query);
+        req.query = (await schema.query.parseAsync(req.query)) as typeof req.query;
       }
       if (schema.params) {
-        req.params = await schema.params.parseAsync(req.params);
+        req.params = (await schema.params.parseAsync(req.params)) as typeof req.params;
       }
       next();
     } catch (error) {

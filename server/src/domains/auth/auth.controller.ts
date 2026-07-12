@@ -24,7 +24,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 
 export async function logout(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    await authService.logout(req.token);
+    await authService.logout(req.user?.authUserId);
     success(res, { message: "Logged out successfully" });
   } catch (error) {
     next(error);

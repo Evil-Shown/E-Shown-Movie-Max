@@ -5,9 +5,11 @@ import type { StreamProvider } from "@/lib/providers";
 import { getBestProvider } from "@/lib/storage/provider-performance";
 import { warmStreamProvidersForPlayback } from "@/lib/stream-optimizer";
 import { isTvShow } from "@/lib/streaming";
+import { useAuth } from "@/components/AuthProvider";
+import { useAuthModal } from "@/components/AuthModalProvider";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { AnimatePresence } from "framer-motion";
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import VideoPlayerModal from "./VideoPlayerModal";
 import type { ActivePlayer, OpenMovieOptions, PlayerMode } from "./types";
 
@@ -28,10 +30,12 @@ export function useVideoPlayer() {
 export type { OpenMovieOptions } from "./types";
 
 export default function VideoPlayerProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, setPendingAction } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const { preferredProvider, getResumeTime } = useUserLibrary();
   const [active, setActive] = useState<ActivePlayer | null>(null);
 
-  const openMovie = useCallback(
+  const doOpenMovie = useCallback(
     (movie: Movie, options?: OpenMovieOptions) => {
       warmStreamProvidersForPlayback();
       const resume = options?.resumeSeconds ?? getResumeTime(movie.id);
@@ -46,6 +50,21 @@ export default function VideoPlayerProvider({ children }: { children: React.Reac
       });
     },
     [preferredProvider, getResumeTime]
+  );
+
+  const openMovie = useCallback(
+    (movie: Movie, options?: OpenMovieOptions) => {
+      if (!isAuthenticated) {
+        setPendingAction({
+          type: "watch",
+          payload: { movie, options },
+        });
+        openAuthModal();
+        return;
+      }
+      doOpenMovie(movie, options);
+    },
+    [isAuthenticated, setPendingAction, openAuthModal, doOpenMovie]
   );
 
   const openTrailer = useCallback(
@@ -66,6 +85,19 @@ export default function VideoPlayerProvider({ children }: { children: React.Reac
   }, []);
 
   const closePlayer = useCallback(() => setActive(null), []);
+
+  // Replay pending watch action after successful auth
+  useEffect(() => {
+    const handleAuthActionReady = (event: Event) => {
+      const pending = (event as CustomEvent).detail;
+      if (pending?.type === "watch" && pending?.payload?.movie) {
+        doOpenMovie(pending.payload.movie, pending.payload.options);
+      }
+    };
+
+    window.addEventListener("authActionReady", handleAuthActionReady);
+    return () => window.removeEventListener("authActionReady", handleAuthActionReady);
+  }, [doOpenMovie]);
 
   return (
     <VideoPlayerContext.Provider value={{ openMovie, openTrailer, closePlayer }}>

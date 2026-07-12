@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const upsertContinueSchema = z.object({
+export const upsertContinueSchema = {
   body: z.object({
     tmdbId: z.string().min(1),
     mediaType: z.enum(["movie", "tv"]),
@@ -13,10 +13,10 @@ export const upsertContinueSchema = z.object({
     progress: z.number().min(0).max(100).optional(),
     provider: z.string().optional(),
   }),
-});
+};
 
-export const removeContinueSchema = z.object({
+export const removeContinueSchema = {
   params: z.object({
     id: z.string().min(1),
   }),
-});
+};
