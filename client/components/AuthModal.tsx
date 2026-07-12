@@ -20,6 +20,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -76,10 +77,12 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccessMsg(null);
     try {
       await login(loginForm.email, loginForm.password);
       didAuth.current = true;
-      onClose(true);
+      setSuccessMsg("Welcome back! You're signed in.");
+      setTimeout(() => onClose(true), 800);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -91,6 +94,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccessMsg(null);
     if (registerForm.password !== registerForm.confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
@@ -104,7 +108,8 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
     try {
       await register(registerForm.username, registerForm.email, registerForm.password);
       didAuth.current = true;
-      onClose(true);
+      setSuccessMsg("Account created! Welcome to Chithra.");
+      setTimeout(() => onClose(true), 1000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -225,6 +230,21 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
                   />
                 </svg>
                 <span>{error}</span>
+              </div>
+            )}
+
+            {/* Success */}
+            {successMsg && (
+              <div className="mb-5 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-300 text-sm flex items-center gap-2.5">
+                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span>{successMsg}</span>
               </div>
             )}
 
