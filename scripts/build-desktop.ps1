@@ -61,6 +61,16 @@ function Get-ReleaseNotes([string]$version) {
     return $ReleaseNotes.Trim()
   }
 
+  # Auto-detect release notes file in desktop/assets
+  $autoPath = Join-Path (Split-Path $PSScriptRoot -Parent) "desktop\assets\release-notes.md"
+  if (Test-Path $autoPath -PathType Leaf) {
+    $content = (Get-Content $autoPath -Raw).Trim()
+    if ($content) {
+      Write-Host "  Using release notes from $autoPath" -ForegroundColor DarkGray
+      return $content
+    }
+  }
+
   Write-Host ""
   Write-Host "Release notes for v$version" -ForegroundColor Cyan
   Write-Host "  Type your notes below. Press Enter twice on a blank line to finish." -ForegroundColor DarkGray
@@ -273,6 +283,8 @@ $releaseNotes = Get-ReleaseNotes -version $desktopVersion
 $releaseNotesPath = Join-Path $desktop "assets/release-notes.md"
 Write-ReleaseNotesFile -Path $releaseNotesPath -Version $desktopVersion -Notes $releaseNotes
 Write-Host "  Release notes saved to $releaseNotesPath" -ForegroundColor DarkGray
+# Clear release notes to avoid stale content in future builds
+Write-Utf8NoBom -Path $releaseNotesPath -Content ""
 
 $clientStaging = Join-Path $env:TEMP "chithra-desktop-client-$([Guid]::NewGuid().ToString('N'))"
 $serverStaging = Join-Path $env:TEMP "chithra-desktop-server-$([Guid]::NewGuid().ToString('N'))"
