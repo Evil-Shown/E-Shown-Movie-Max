@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthProvider";
 
 interface AuthModalProps {
@@ -8,11 +8,22 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
+const cinemaGradients = [
+  "radial-gradient(ellipse at 20% 50%, #e65100 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, #0f3460 0%, transparent 50%), #0a0a0f",
+  "radial-gradient(ellipse at 80% 50%, #c62828 0%, transparent 50%), radial-gradient(ellipse at 20% 80%, #1a237e 0%, transparent 50%), #0a0a0f",
+  "radial-gradient(ellipse at 30% 30%, #bf360c 0%, transparent 50%), radial-gradient(ellipse at 70% 70%, #263238 0%, transparent 50%), #0a0a0f",
+];
+
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const { login, register } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [gradientIndex] = useState(() => Math.floor(Math.random() * cinemaGradients.length));
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
@@ -21,6 +32,27 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     password: "",
     confirmPassword: "",
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      const t = setTimeout(() => setMounted(true), 50);
+      document.body.style.overflow = "hidden";
+      return () => {
+        clearTimeout(t);
+        document.body.style.overflow = "";
+      };
+    } else {
+      setMounted(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [onClose]);
 
   if (!isOpen) return null;
 
@@ -50,6 +82,12 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       return;
     }
 
+    if (registerForm.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      setLoading(false);
+      return;
+    }
+
     try {
       await register(registerForm.username, registerForm.email, registerForm.password);
       onClose();
@@ -60,154 +98,469 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+  const switchMode = (newMode: "login" | "register") => {
+    setMode(newMode);
+    setError(null);
+  };
 
-      <div className="relative z-10 w-full max-w-md mx-4">
-        <div className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-2xl shadow-2xl border border-[#0f3460]/30 overflow-hidden">
-          <div className="p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">{mode === "login" ? "Welcome Back" : "Create Account"}</h2>
-              <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      {/* Backdrop with animated gradient */}
+      <div
+        className="absolute inset-0 backdrop-blur-xl transition-all duration-700"
+        style={{ background: cinemaGradients[gradientIndex] }}
+        onClick={onClose}
+      />
+
+      {/* Ambient orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute w-[600px] h-[600px] rounded-full opacity-20 animate-pulse"
+          style={{
+            background: "radial-gradient(circle, #e65100 0%, transparent 70%)",
+            top: "-10%",
+            left: "-15%",
+            animationDuration: "8s",
+          }}
+        />
+        <div
+          className="absolute w-[400px] h-[400px] rounded-full opacity-15 animate-pulse"
+          style={{
+            background: "radial-gradient(circle, #4a7c8e 0%, transparent 70%)",
+            bottom: "-10%",
+            right: "-10%",
+            animationDuration: "12s",
+          }}
+        />
+      </div>
+
+      {/* Modal container */}
+      <div
+        ref={modalRef}
+        className={`relative z-10 w-full max-w-[440px] transition-all duration-500 ${
+          mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"
+        }`}
+      >
+        {/* Floating film strip decoration */}
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex gap-1" aria-hidden="true">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="w-3 h-3 rounded-sm bg-[#e65100]/40 rotate-45"
+              style={{ animationDelay: `${i * 0.1}s` }}
+            />
+          ))}
+        </div>
+
+        {/* Main card */}
+        <div className="relative rounded-3xl overflow-hidden backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50">
+          {/* Glass background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0f0f1a]/90 via-[#1a1a2e]/85 to-[#16213e]/90" />
+
+          {/* Content */}
+          <div className="relative px-8 py-10">
+            {/* Brand header */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <svg
+                  className="w-8 h-8"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  style={{ color: "#e65100" }}
+                >
+                  <circle cx="12" cy="8" r="3" />
+                  <path d="M6 20v-1a6 6 0 0 1 12 0v1" />
+                  <path d="M4 22h16" strokeWidth="1.5" opacity="0.3" />
                 </svg>
-              </button>
+                <span
+                  className="text-2xl font-bold tracking-wider text-white"
+                  style={{ fontFamily: "var(--font-cinzel), serif" }}
+                >
+                  CHITH<span style={{ color: "#e65100" }}>RA</span>
+                </span>
+              </div>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-[#FFB87A]/70 font-semibold">
+                The God&apos;s Eye Observes
+              </p>
             </div>
 
-            <div className="flex gap-2 mb-6">
+            {/* Mode tabs */}
+            <div className="relative flex mb-8 bg-white/5 rounded-xl p-1">
+              <div
+                className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-[#e65100] transition-all duration-300 ease-out"
+                style={{ left: mode === "login" ? "4px" : "calc(50%)" }}
+              />
               <button
-                onClick={() => setMode("login")}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-                  mode === "login" ? "bg-[#e94560] text-white" : "bg-[#0f3460]/50 text-gray-400 hover:text-white"
+                onClick={() => switchMode("login")}
+                className={`relative z-10 flex-1 py-3 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${
+                  mode === "login" ? "text-white" : "text-gray-400 hover:text-gray-200"
                 }`}
               >
-                Login
+                Sign In
               </button>
               <button
-                onClick={() => setMode("register")}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-                  mode === "register" ? "bg-[#e94560] text-white" : "bg-[#0f3460]/50 text-gray-400 hover:text-white"
+                onClick={() => switchMode("register")}
+                className={`relative z-10 flex-1 py-3 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${
+                  mode === "register" ? "text-white" : "text-gray-400 hover:text-gray-200"
                 }`}
               >
                 Register
               </button>
             </div>
 
+            {/* Error */}
             {error && (
-              <div className="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-300 text-sm">
-                {error}
+              <div className="mb-6 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm flex items-center gap-2.5 animate-pulse">
+                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span>{error}</span>
               </div>
             )}
 
+            {/* Forms */}
             {mode === "login" ? (
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={loginForm.email}
-                    onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-lg bg-[#0f3460]/50 border border-[#0f3460] text-white placeholder-gray-500 focus:outline-none focus:border-[#e94560] transition-colors"
-                    placeholder="you@example.com"
-                    required
-                  />
+              <form key="login" onSubmit={handleLoginSubmit} className="space-y-5">
+                <InputGroup
+                  icon={
+                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                  }
+                  label="Email"
+                  type="email"
+                  value={loginForm.email}
+                  onChange={(val) => setLoginForm((f) => ({ ...f, email: val }))}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                />
+                <InputGroup
+                  icon={
+                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                  }
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  value={loginForm.password}
+                  onChange={(val) => setLoginForm((f) => ({ ...f, password: val }))}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  trailing={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-gray-500 hover:text-gray-300 transition-colors"
+                    >
+                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  }
+                />
+
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <label className="flex items-center gap-2 text-gray-400 cursor-pointer select-none">
+                    <input type="checkbox" className="w-3.5 h-3.5 accent-[#e65100] cursor-pointer" />
+                    Remember me
+                  </label>
+                  <button type="button" className="text-[#FFB87A] hover:text-[#e65100] transition-colors font-medium">
+                    Forgot password?
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
-                  <input
-                    type="password"
-                    value={loginForm.password}
-                    onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-lg bg-[#0f3460]/50 border border-[#0f3460] text-white placeholder-gray-500 focus:outline-none focus:border-[#e94560] transition-colors"
-                    placeholder="••••••••"
-                    required
-                  />
-                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 rounded-lg bg-[#e94560] hover:bg-[#e94560]/90 text-white font-semibold transition-colors disabled:opacity-50"
+                  className="relative w-full py-3.5 mt-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#e65100] to-[#ff7b1c] text-white font-semibold text-sm uppercase tracking-wider shadow-lg shadow-[#e65100]/25 transition-all hover:shadow-xl hover:shadow-[#e65100]/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {loading ? "Signing in..." : "Sign In"}
+                  <span className="relative z-10">
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
+                        </svg>
+                        Signing in...
+                      </span>
+                    ) : (
+                      "Sign In"
+                    )}
+                  </span>
                 </button>
               </form>
             ) : (
-              <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Username</label>
-                  <input
-                    type="text"
-                    value={registerForm.username}
-                    onChange={(e) => setRegisterForm((f) => ({ ...f, username: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-lg bg-[#0f3460]/50 border border-[#0f3460] text-white placeholder-gray-500 focus:outline-none focus:border-[#e94560] transition-colors"
-                    placeholder="Choose a username"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={registerForm.email}
-                    onChange={(e) => setRegisterForm((f) => ({ ...f, email: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-lg bg-[#0f3460]/50 border border-[#0f3460] text-white placeholder-gray-500 focus:outline-none focus:border-[#e94560] transition-colors"
-                    placeholder="you@example.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
-                  <input
-                    type="password"
-                    value={registerForm.password}
-                    onChange={(e) => setRegisterForm((f) => ({ ...f, password: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-lg bg-[#0f3460]/50 border border-[#0f3460] text-white placeholder-gray-500 focus:outline-none focus:border-[#e94560] transition-colors"
-                    placeholder="••••••••"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Confirm Password</label>
-                  <input
-                    type="password"
-                    value={registerForm.confirmPassword}
-                    onChange={(e) => setRegisterForm((f) => ({ ...f, confirmPassword: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-lg bg-[#0f3460]/50 border border-[#0f3460] text-white placeholder-gray-500 focus:outline-none focus:border-[#e94560] transition-colors"
-                    placeholder="••••••••"
-                    required
-                  />
-                </div>
+              <form key="register" onSubmit={handleRegisterSubmit} className="space-y-4">
+                <InputGroup
+                  icon={
+                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  }
+                  label="Username"
+                  type="text"
+                  value={registerForm.username}
+                  onChange={(val) => setRegisterForm((f) => ({ ...f, username: val }))}
+                  placeholder="Choose a username"
+                  autoComplete="username"
+                />
+                <InputGroup
+                  icon={
+                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                  }
+                  label="Email"
+                  type="email"
+                  value={registerForm.email}
+                  onChange={(val) => setRegisterForm((f) => ({ ...f, email: val }))}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                />
+                <InputGroup
+                  icon={
+                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                  }
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  value={registerForm.password}
+                  onChange={(val) => setRegisterForm((f) => ({ ...f, password: val }))}
+                  placeholder="At least 6 characters"
+                  autoComplete="new-password"
+                  trailing={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-gray-500 hover:text-gray-300 transition-colors"
+                    >
+                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  }
+                />
+                <InputGroup
+                  icon={
+                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                      />
+                    </svg>
+                  }
+                  label="Confirm Password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={registerForm.confirmPassword}
+                  onChange={(val) => setRegisterForm((f) => ({ ...f, confirmPassword: val }))}
+                  placeholder="Repeat your password"
+                  autoComplete="new-password"
+                  trailing={
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="text-gray-500 hover:text-gray-300 transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  }
+                />
+
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 rounded-lg bg-[#e94560] hover:bg-[#e94560]/90 text-white font-semibold transition-colors disabled:opacity-50"
+                  className="relative w-full py-3.5 mt-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#e65100] to-[#ff7b1c] text-white font-semibold text-sm uppercase tracking-wider shadow-lg shadow-[#e65100]/25 transition-all hover:shadow-xl hover:shadow-[#e65100]/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {loading ? "Creating account..." : "Create Account"}
+                  <span className="relative z-10">
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
+                        </svg>
+                        Creating account...
+                      </span>
+                    ) : (
+                      "Create Account"
+                    )}
+                  </span>
                 </button>
               </form>
             )}
 
-            <p className="mt-6 text-center text-sm text-gray-400">
-              {mode === "login" ? (
-                <>
-                  Don&apos;t have an account?{" "}
-                  <button onClick={() => setMode("register")} className="text-[#e94560] hover:underline font-medium">
-                    Register
-                  </button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{" "}
-                  <button onClick={() => setMode("login")} className="text-[#e94560] hover:underline font-medium">
-                    Login
-                  </button>
-                </>
-              )}
-            </p>
+            {/* Bottom switch */}
+            <div className="mt-8 pt-6 border-t border-white/5">
+              <p className="text-center text-sm text-gray-400">
+                {mode === "login" ? (
+                  <>
+                    Don&apos;t have an account?{" "}
+                    <button
+                      onClick={() => switchMode("register")}
+                      className="text-[#FFB87A] hover:text-[#e65100] underline underline-offset-4 font-medium transition-colors"
+                    >
+                      Create one
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    Already have an account?{" "}
+                    <button
+                      onClick={() => switchMode("login")}
+                      className="text-[#FFB87A] hover:text-[#e65100] underline underline-offset-4 font-medium transition-colors"
+                    >
+                      Sign in
+                    </button>
+                  </>
+                )}
+              </p>
+            </div>
+
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+      />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+      />
+    </svg>
+  );
+}
+
+function InputGroup({
+  icon,
+  label,
+  type,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  trailing,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  type: string;
+  value: string;
+  onChange: (val: string) => void;
+  placeholder: string;
+  autoComplete?: string;
+  trailing?: React.ReactNode;
+}) {
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <div>
+      <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2 ml-1">
+        {label}
+      </label>
+      <div
+        className={`relative flex items-center rounded-xl border transition-all duration-300 ${
+          focused
+            ? "border-[#e65100]/70 bg-white/[0.06] shadow-[0_0_20px_rgba(230,81,0,0.08)]"
+            : "border-white/10 bg-white/[0.03]"
+        }`}
+      >
+        <span className={`pl-4 transition-colors duration-300 ${focused ? "text-[#e65100]" : "text-gray-500"}`}>
+          {icon}
+        </span>
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          required
+          className="flex-1 px-3 py-3.5 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
+        />
+        {trailing && <span className="pr-4">{trailing}</span>}
       </div>
     </div>
   );
