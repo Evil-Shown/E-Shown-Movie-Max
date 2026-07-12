@@ -139,15 +139,17 @@ async function tmdbGet<T>(path: string, params: Record<string, string>) {
 
 ## File Locations
 
-| File                   | Purpose                 | Committed?         |
-| ---------------------- | ----------------------- | ------------------ |
-| `mobile/.env.example`  | Template for mobile dev | ✅ Yes             |
-| `mobile/.env`          | Local mobile dev values | ❌ No (gitignored) |
-| `server/.env.example`  | Template for server dev | ✅ Yes             |
-| `server/.env`          | Local server dev values | ❌ No (gitignored) |
-| `client/.env.example`  | Template for web dev    | ✅ Yes             |
-| `client/.env.local`    | Local web dev values    | ❌ No (gitignored) |
-| GitHub Actions Secrets | CI/CD values            | N/A (UI)           |
+| File                                 | Purpose                             | Committed?         |
+| ------------------------------------ | ----------------------------------- | ------------------ |
+| `mobile/.env.example`                | Template for mobile dev             | ✅ Yes             |
+| `mobile/.env`                        | Local mobile dev values             | ❌ No (gitignored) |
+| `server/.env.example`                | Template for server dev             | ✅ Yes             |
+| `server/.env`                        | Local server dev values             | ❌ No (gitignored) |
+| `client/.env.example`                | Template for web dev                | ✅ Yes             |
+| `client/.env.local`                  | Local web dev values                | ❌ No (gitignored) |
+| `desktop/package.json`               | Electron + builder config           | ✅ Yes             |
+| `scripts/desktop-shell/package.json` | Version source of truth for desktop | ✅ Yes             |
+| GitHub Actions Secrets               | CI/CD values                        | N/A (UI)           |
 
 ### `.gitignore` (Relevant Entries)
 
@@ -185,6 +187,14 @@ cp .env.example .env
 npx tsx watch src/index.ts
 ```
 
+### Desktop App
+
+```bash
+cd desktop
+# No .env needed — the client and server .env files are bundled at build time
+npm start
+```
+
 ### Web Client
 
 ```bash
@@ -205,6 +215,8 @@ npm run dev
 | -------------------------- | --------------------- | ------------------------- |
 | `EXPO_TOKEN`               | `mobile-release.yml`  | Expo auth for EAS builds  |
 | `TMDB_API_KEY`             | Server deploy / build | Backend TMDB proxy        |
+| `OMDB_API_KEY`             | `release-desktop.yml` | Desktop package env       |
+| `WYZIE_API_KEY`            | `release-desktop.yml` | Desktop package env       |
 | `VIRUSTOTAL_API_KEY`       | `release-desktop.yml` | Desktop security features |
 | `UPSTASH_REDIS_REST_URL`   | Server deploy         | Caching                   |
 | `UPSTASH_REDIS_REST_TOKEN` | Server deploy         | Caching                   |
