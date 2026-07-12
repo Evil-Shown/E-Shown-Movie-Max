@@ -55,9 +55,33 @@ function nodeEnv(extra = {}) {
   };
 }
 
+function getNodeExecutable() {
+  if (!app.isPackaged) return process.execPath;
+
+  const { execSync } = require("child_process");
+  try {
+    const sysNode = execSync("where node", { encoding: "utf8", timeout: 3000 })
+      .split(/\r?\n/)[0]
+      ?.trim();
+    if (sysNode && fs.existsSync(sysNode)) {
+      const ver = execSync(`"${sysNode}" -v`, { encoding: "utf8", timeout: 3000 }).trim();
+      const major = parseInt(ver.replace("v", "").split(".")[0], 10);
+      if (major >= 22) {
+        logInfo("Using system Node.js:", sysNode, ver);
+        return sysNode;
+      }
+    }
+  } catch { /* fall through to bundled Node */ }
+  logInfo("Using bundled Node.js:", process.version);
+  return process.execPath;
+}
+
+let _nodeExe = null;
+function nodeExe() { return _nodeExe || (_nodeExe = getNodeExecutable()); }
+
 function spawnNode(args, cwd, extraEnv = {}) {
   const label = path.basename(args.find(a => !a.startsWith("-")) || "node");
-  const child = spawn(process.execPath, args, {
+  const child = spawn(nodeExe(), args, {
     cwd,
     env: nodeEnv(extraEnv),
     stdio: packagedLogPipe(),
@@ -107,7 +131,7 @@ function loadEnvFile(filePath) {
 
 function startBackend(serverDir) {
   const serverEnv = loadEnvFile(path.join(serverDir, ".env"));
-  return spawnNode([path.join(serverDir, "dist", "index.js")], serverDir, {
+  return spawnNode([path.join(serverDir, "dist", "src", "index.js")], serverDir, {
     PORT: String(API_PORT),
     USER_DATA_PATH: app.getPath("userData"),
     ...serverEnv
@@ -211,13 +235,33 @@ ipcMain.on("splash-ready", () => {
   }, 1500);
 });
 
+ipcMain.handle("open-external", async (_event, url) => {
+  try {
+    await shell.openExternal(url);
+    return true;
+  } catch (err) {
+    logError("Failed to open external URL:", url, err);
+    return false;
+  }
+});
+
 function isAllowedAppUrl(url) {
   try {
     const parsed = new URL(url);
-    return (
-      (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") &&
-      parsed.port === String(WEB_PORT)
-    );
+    // Allow local app URLs
+    if ((parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") &&
+        parsed.port === String(WEB_PORT)) {
+      return true;
+    }
+    // Allow Supabase OAuth redirect (Google sign-in)
+    if (parsed.hostname.endsWith(".supabase.co") && parsed.pathname.startsWith("/auth/v1/authorize")) {
+      return true;
+    }
+    // Allow Google accounts domain for the actual OAuth consent page
+    if (parsed.hostname === "accounts.google.com") {
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }
@@ -287,6 +331,14 @@ function attachWindowGuards(window) {
       return { action: "deny" };
     }
     if (isEmbedProviderUrl(url)) {
+      return { action: "allow" };
+    }
+    // Allow Supabase OAuth popup for Google sign-in
+    const parsed = new URL(url);
+    if (parsed.hostname.endsWith(".supabase.co") && parsed.pathname.startsWith("/auth/v1/authorize")) {
+      return { action: "allow" };
+    }
+    if (parsed.hostname === "accounts.google.com") {
       return { action: "allow" };
     }
     return { action: "deny" };
@@ -367,6 +419,7 @@ function createMainWindow() {
       mainWindow?.show();
       mainWindow?.focus();
     }, 500);
+    setTimeout(() => checkForUpdates(), 8000);
   });
 
   logInfo("Loading main window URL", `${WEB_URL}?app=desktop`);
@@ -473,7 +526,6 @@ if (!gotLock) {
       setupAutoUpdater({ getMainWindow: () => mainWindow });
       setupTelemetry();
       await bootApplication();
-      checkForUpdates();
     } catch (error) {
       logError("Fatal error during boot", error);
       const { dialog } = require("electron");

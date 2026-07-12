@@ -16,4 +16,5 @@ contextBridge.exposeInMainWorld("chithraDesktop", {
     ipcRenderer.on("app-window-event", handler);
     return () => ipcRenderer.removeListener("app-window-event", handler);
   },
+  openExternal: (url) => ipcRenderer.invoke("open-external", url),
 });

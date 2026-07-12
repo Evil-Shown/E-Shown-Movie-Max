@@ -33,6 +33,15 @@ export interface RegisterInput extends LoginInput {
   username: string;
 }
 
+export interface OAuthInput {
+  accessToken: string;
+  deviceId?: string;
+  deviceName?: string;
+  platform?: string;
+  browser?: string;
+  appVersion?: string;
+}
+
 export interface AuthResponse {
   user: AuthUser;
   tokens: AuthTokens;

@@ -101,6 +101,42 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setIsLoading(false);
+
+    // Listen for auth from OAuth callback (stored in another tab/window)
+    const onAuthStored = () => {
+      const t = getStoredToken();
+      const u = getStoredUser();
+      if (t && u) {
+        setToken(t);
+        setUser(u);
+      }
+    };
+    window.addEventListener("auth-stored", onAuthStored);
+
+    // Poll for OAuth sessions relayed from system browser (Electron desktop)
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    const isElectron = typeof window !== "undefined" && (window as any).chithraDesktop?.isDesktopApp;
+    if (isElectron && !getStoredToken()) {
+      pollTimer = setInterval(async () => {
+        try {
+          const resp = await fetch("http://localhost:5000/api/v1/auth/claim-session");
+          const json = await resp.json();
+          if (json.success && json.data) {
+            localStorage.setItem("chithra-auth-token", json.data.accessToken);
+            localStorage.setItem("chithra-auth-user", JSON.stringify(json.data.user));
+            setToken(json.data.accessToken);
+            setUser(json.data.user);
+          }
+        } catch {
+          /* server not ready */
+        }
+      }, 2000);
+    }
+
+    return () => {
+      window.removeEventListener("auth-stored", onAuthStored);
+      if (pollTimer) clearInterval(pollTimer);
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string, deviceId?: string) => {

@@ -219,10 +219,6 @@ export default function Header() {
               </svg>
             </Link>
 
-            <Link href="/browse" className={styles.watchButton}>
-              Watch Free
-            </Link>
-
             <UserDashboard />
           </div>
         </div>
@@ -238,9 +234,6 @@ export default function Header() {
           <ProtectedLink href="/gods-eye" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
             THE GOD&apos;S EYE
           </ProtectedLink>
-          <Link href="/browse" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
-            Watch Free
-          </Link>
         </div>
       )}
     </>

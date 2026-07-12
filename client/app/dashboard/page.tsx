@@ -403,7 +403,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { watchlist, continueWatching } = useUserLibrary();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -705,8 +705,11 @@ export default function DashboardPage() {
               <SidebarNavLink key={link.href} {...link} active={isActive(link.href)} />
             ))}
             <button
-              className="sidebar-link group flex w-[calc(100%-24px)] mx-3 items-center gap-3 px-5 py-3 text-sm font-medium text-left"
-              onClick={() => {}}
+              className="sidebar-link group flex items-center gap-3 px-5 py-3 text-sm font-medium text-left w-full border-none cursor-pointer bg-transparent"
+              onClick={async () => {
+                await logout();
+                window.location.href = "/";
+              }}
             >
               <span className="text-[#A0785A] group-hover:text-[#E65100] transition-colors">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

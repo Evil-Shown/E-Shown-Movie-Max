@@ -1,73 +1,90 @@
-const titleEl = document.getElementById("update-title");
+const titleEl = document.getElementById("title");
 const subtitleEl = document.getElementById("subtitle");
+const badgeEl = document.getElementById("badge");
 const badgeTextEl = document.getElementById("badge-text");
-const versionsEl = document.getElementById("versions");
-const notesSectionEl = document.getElementById("notes-section");
+const badgeDot = badgeEl?.querySelector(".badge-dot");
+const versionText = document.getElementById("version-text");
+const notesWrap = document.getElementById("notes-wrap");
 const notesEl = document.getElementById("notes");
 const btnSecondary = document.getElementById("btn-secondary");
 const btnPrimary = document.getElementById("btn-primary");
 const btnClose = document.getElementById("btn-close");
+const footer = document.getElementById("footer");
+const iconRing = document.getElementById("icon-ring");
+const iconCheck = document.getElementById("icon-check");
+const iconDownload = document.getElementById("icon-download");
+const iconRestart = document.getElementById("icon-restart");
 
-function formatVersion(version) {
-  return version ? `v${version}` : "Latest";
+function hideAllIcons() {
+  [iconCheck, iconDownload, iconRestart].forEach(el => { if (el) el.style.display = "none"; });
 }
 
-function renderVersions(currentVersion, nextVersion) {
-  versionsEl.innerHTML = "";
+function setBadge(kind) {
+  badgeEl?.classList.remove("badge-uptodate", "badge-available", "badge-ready");
+  if (kind === "uptodate") badgeEl?.classList.add("badge-uptodate");
+  else if (kind === "ready") badgeEl?.classList.add("badge-ready");
+  else badgeEl?.classList.add("badge-available");
+}
 
-  if (currentVersion) {
-    const current = document.createElement("div");
-    current.className = "version-pill";
-    current.innerHTML = `Installed <strong>${formatVersion(currentVersion)}</strong>`;
-    versionsEl.appendChild(current);
-  }
-
-  if (nextVersion) {
-    const next = document.createElement("div");
-    next.className = "version-pill next";
-    next.innerHTML = `Available <strong>${formatVersion(nextVersion)}</strong>`;
-    versionsEl.appendChild(next);
+function setIcon(kind) {
+  hideAllIcons();
+  iconRing?.classList.remove("icon-ring-uptodate", "icon-ring-available", "icon-ring-ready");
+  if (kind === "uptodate") {
+    iconRing?.classList.add("icon-ring-uptodate");
+    if (iconCheck) iconCheck.style.display = "block";
+  } else if (kind === "ready") {
+    iconRing?.classList.add("icon-ring-ready");
+    if (iconRestart) iconRestart.style.display = "block";
+  } else {
+    iconRing?.classList.add("icon-ring-available");
+    if (iconDownload) iconDownload.style.display = "block";
   }
 }
 
 function render(payload) {
   const kind = payload.kind || "available";
+  setBadge(kind);
+  setIcon(kind);
 
   if (kind === "ready") {
     badgeTextEl.textContent = "Ready to install";
-    titleEl.textContent = `${formatVersion(payload.nextVersion)} is downloaded`;
-    subtitleEl.textContent = "Restart CHITHRA — CINEMA to finish installing this update.";
-    notesSectionEl.style.display = "none";
+    titleEl.textContent = `${payload.nextVersion ? "v" + payload.nextVersion : "Update"} downloaded`;
+    subtitleEl.textContent = "Restart CHITHRA — CINEMA to finish installing.";
+    notesWrap?.classList.add("hidden");
     btnPrimary.textContent = "Restart now";
     btnSecondary.textContent = "Later";
-    renderVersions(payload.currentVersion, payload.nextVersion);
+    btnSecondary.style.display = "";
+    footer?.classList.remove("solo");
+    versionText.textContent = payload.currentVersion ? "v" + payload.currentVersion : "—";
     return;
   }
 
   if (kind === "uptodate") {
     badgeTextEl.textContent = "Up to date";
     titleEl.textContent = "You're on the latest version";
-    subtitleEl.textContent = "CHITHRA — CINEMA will automatically check for updates on startup.";
-    notesSectionEl.style.display = "none";
+    subtitleEl.textContent = "CHITHRA — CINEMA will check for updates on startup.";
+    notesWrap?.classList.add("hidden");
     btnPrimary.textContent = "OK";
     btnSecondary.style.display = "none";
-    renderVersions(payload.currentVersion, "");
+    footer?.classList.add("solo");
+    versionText.textContent = payload.currentVersion ? "v" + payload.currentVersion : "—";
     return;
   }
 
   badgeTextEl.textContent = "Update available";
-  titleEl.textContent = `${formatVersion(payload.nextVersion)} is available`;
-  subtitleEl.textContent = "Stay on the latest build for fixes, performance, and new features.";
+  titleEl.textContent = (payload.nextVersion ? "v" + payload.nextVersion : "New version") + " is available";
+  subtitleEl.textContent = "Download the latest build for fixes and new features.";
   btnPrimary.textContent = "Download update";
   btnSecondary.textContent = "Not now";
-  renderVersions(payload.currentVersion, payload.nextVersion);
+  btnSecondary.style.display = "";
+  footer?.classList.remove("solo");
+  versionText.textContent = payload.currentVersion ? "v" + payload.currentVersion : "—";
 
   if (payload.notesHtml) {
     notesEl.innerHTML = payload.notesHtml;
-    notesEl.classList.remove("empty");
+    notesWrap?.classList.remove("hidden");
   } else {
-    notesEl.textContent = "This release includes improvements and bug fixes.";
-    notesEl.classList.add("empty");
+    notesWrap?.classList.add("hidden");
   }
 }
 
@@ -77,8 +94,8 @@ function respond(action) {
   }
 }
 
-btnSecondary.addEventListener("click", () => respond("secondary"));
-btnPrimary.addEventListener("click", () => respond("primary"));
+btnSecondary?.addEventListener("click", () => respond("secondary"));
+btnPrimary?.addEventListener("click", () => respond("primary"));
 btnClose?.addEventListener("click", () => respond("secondary"));
 
 window.addEventListener("keydown", (event) => {

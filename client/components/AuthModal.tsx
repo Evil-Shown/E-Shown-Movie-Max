@@ -41,11 +41,9 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
       // Auth succeeded — replay pending action
       onClose(true);
     } else {
-      // Dismissed without login — redirect home if needed
-      if (redirectOnClose && typeof window !== "undefined") {
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 200);
+      // Dismissed without login — only redirect home if not already there
+      if (redirectOnClose && typeof window !== "undefined" && window.location.pathname !== "/") {
+        window.location.href = "/";
       }
       onClose(false);
     }
@@ -193,9 +191,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
                   CHITH<span style={{ color: "#e65100" }}>RA</span>
                 </span>
               </div>
-              <p className="text-[10px] uppercase tracking-[0.25em] text-[#FFB87A]/70 font-semibold">
-                The God&apos;s Eye Observes
-              </p>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-[#FFB87A]/70 font-semibold">CINEMA</p>
             </div>
 
             {/* Tabs */}
@@ -249,83 +245,89 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
             )}
 
             {mode === "login" ? (
-              <form key="login" onSubmit={handleLoginSubmit} className="space-y-4">
-                <InputGroup
-                  icon={<EmailIcon />}
-                  label="Email"
-                  type="email"
-                  value={loginForm.email}
-                  onChange={(v) => setLoginForm((f) => ({ ...f, email: v }))}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                />
-                <InputGroup
-                  icon={<LockIcon />}
-                  label="Password"
-                  type={showPassword ? "text" : "password"}
-                  value={loginForm.password}
-                  onChange={(v) => setLoginForm((f) => ({ ...f, password: v }))}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  trailing={<EyeToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />}
-                />
-                <div className="flex items-center justify-between text-xs pt-1">
-                  <label className="flex items-center gap-2 text-gray-400 cursor-pointer select-none">
-                    <input type="checkbox" className="w-3.5 h-3.5 accent-[#e65100] cursor-pointer" /> Remember me
-                  </label>
-                  <button type="button" className="text-[#FFB87A] hover:text-[#e65100] transition-colors font-medium">
-                    Forgot password?
-                  </button>
-                </div>
-                <SubmitButton loading={loading} text="Sign In" loadingText="Signing in..." />
-              </form>
+              <>
+                <form key="login" onSubmit={handleLoginSubmit} autoComplete="off" className="space-y-4">
+                  <InputGroup
+                    icon={<EmailIcon />}
+                    label="Email"
+                    type="email"
+                    value={loginForm.email}
+                    onChange={(v) => setLoginForm((f) => ({ ...f, email: v }))}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                  />
+                  <InputGroup
+                    icon={<LockIcon />}
+                    label="Password"
+                    type={showPassword ? "text" : "password"}
+                    value={loginForm.password}
+                    onChange={(v) => setLoginForm((f) => ({ ...f, password: v }))}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    trailing={<EyeToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />}
+                  />
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <label className="flex items-center gap-2 text-gray-400 cursor-pointer select-none">
+                      <input type="checkbox" className="w-3.5 h-3.5 accent-[#e65100] cursor-pointer" /> Remember me
+                    </label>
+                    <button type="button" className="text-[#FFB87A] hover:text-[#e65100] transition-colors font-medium">
+                      Forgot password?
+                    </button>
+                  </div>
+                  <SubmitButton loading={loading} text="Sign In" loadingText="Signing in..." />
+                </form>
+                <GoogleOAuthButton />
+              </>
             ) : (
-              <form key="register" onSubmit={handleRegisterSubmit} className="space-y-4">
-                <InputGroup
-                  icon={<UserIcon />}
-                  label="Username"
-                  type="text"
-                  value={registerForm.username}
-                  onChange={(v) => setRegisterForm((f) => ({ ...f, username: v }))}
-                  placeholder="Choose a username"
-                  autoComplete="username"
-                />
-                <InputGroup
-                  icon={<EmailIcon />}
-                  label="Email"
-                  type="email"
-                  value={registerForm.email}
-                  onChange={(v) => setRegisterForm((f) => ({ ...f, email: v }))}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                />
-                <InputGroup
-                  icon={<LockIcon />}
-                  label="Password"
-                  type={showPassword ? "text" : "password"}
-                  value={registerForm.password}
-                  onChange={(v) => setRegisterForm((f) => ({ ...f, password: v }))}
-                  placeholder="At least 6 characters"
-                  autoComplete="new-password"
-                  trailing={<EyeToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />}
-                />
-                <InputGroup
-                  icon={<ShieldIcon />}
-                  label="Confirm Password"
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={registerForm.confirmPassword}
-                  onChange={(v) => setRegisterForm((f) => ({ ...f, confirmPassword: v }))}
-                  placeholder="Repeat your password"
-                  autoComplete="new-password"
-                  trailing={
-                    <EyeToggle
-                      shown={showConfirmPassword}
-                      onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
-                    />
-                  }
-                />
-                <SubmitButton loading={loading} text="Create Account" loadingText="Creating account..." />
-              </form>
+              <>
+                <form key="register" onSubmit={handleRegisterSubmit} autoComplete="off" className="space-y-4">
+                  <InputGroup
+                    icon={<UserIcon />}
+                    label="Username"
+                    type="text"
+                    value={registerForm.username}
+                    onChange={(v) => setRegisterForm((f) => ({ ...f, username: v }))}
+                    placeholder="Choose a username"
+                    autoComplete="username"
+                  />
+                  <InputGroup
+                    icon={<EmailIcon />}
+                    label="Email"
+                    type="email"
+                    value={registerForm.email}
+                    onChange={(v) => setRegisterForm((f) => ({ ...f, email: v }))}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                  />
+                  <InputGroup
+                    icon={<LockIcon />}
+                    label="Password"
+                    type={showPassword ? "text" : "password"}
+                    value={registerForm.password}
+                    onChange={(v) => setRegisterForm((f) => ({ ...f, password: v }))}
+                    placeholder="At least 6 characters"
+                    autoComplete="new-password"
+                    trailing={<EyeToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />}
+                  />
+                  <InputGroup
+                    icon={<ShieldIcon />}
+                    label="Confirm Password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={registerForm.confirmPassword}
+                    onChange={(v) => setRegisterForm((f) => ({ ...f, confirmPassword: v }))}
+                    placeholder="Repeat your password"
+                    autoComplete="new-password"
+                    trailing={
+                      <EyeToggle
+                        shown={showConfirmPassword}
+                        onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+                      />
+                    }
+                  />
+                  <SubmitButton loading={loading} text="Create Account" loadingText="Creating account..." />
+                </form>
+                <GoogleOAuthButton />
+              </>
             )}
 
             <div className="mt-6 pt-5 border-t border-white/5">
@@ -427,9 +429,13 @@ function InputGroup({
         {label}
       </label>
       <div
-        className={`relative flex items-center rounded-xl border transition-all duration-300 ${focused ? "border-[#e65100]/70 bg-white/[0.06] shadow-[0_0_20px_rgba(230,81,0,0.08)]" : "border-white/10 bg-white/[0.03]"}`}
+        className={`group relative flex items-center h-[46px] rounded-xl border bg-white/[0.03] transition-all duration-200
+          ${focused ? "border-[#e65100] shadow-[0_0_0_3px_rgba(230,81,0,0.15)]" : "border-white/10 hover:border-white/25"}
+        `}
       >
-        <span className={`pl-4 transition-colors duration-300 ${focused ? "text-[#e65100]" : "text-gray-500"}`}>
+        <span
+          className={`flex items-center justify-center shrink-0 w-10 h-11 transition-colors duration-200 ${focused ? "text-[#e65100]" : "text-gray-500"}`}
+        >
           {icon}
         </span>
         <input
@@ -441,10 +447,161 @@ function InputGroup({
           placeholder={placeholder}
           autoComplete={autoComplete}
           required
-          className="flex-1 px-3 py-3 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
+          style={{ outline: "none" }}
+          className="flex-1 h-11 pl-3 pr-0 bg-transparent text-[15px] text-white placeholder-gray-500 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 [&:-webkit-autofill]:!bg-transparent [&:-webkit-autofill]:[transition-delay:9999s] [&:-webkit-autofill]:shadow-[0_0_0_1000px_transparent_inset]"
         />
-        {trailing && <span className="pr-4">{trailing}</span>}
+        {trailing && <span className="flex items-center justify-center shrink-0 w-10 h-11">{trailing}</span>}
       </div>
+      <style jsx global>{`
+        input[type="password"]::-ms-reveal {
+          display: none;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function GoogleOAuthButton() {
+  const [loading, setLoading] = useState(false);
+
+  const handleGoogleAuth = async () => {
+    setLoading(true);
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      const url = `${baseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&prompt=select_account`;
+
+      const isElectron = (window as any).chithraDesktop?.isDesktopApp;
+
+      if (isElectron) {
+        // Open in the system browser (has saved Google accounts)
+        const opened = await (window as any).chithraDesktop.openExternal(url);
+        if (!opened) {
+          // fallback
+          window.location.href = url;
+          return;
+        }
+        // Start polling for the OAuth session relay
+        startPolling();
+      } else {
+        // Browser: open popup
+        const popup = window.open(url, "google-auth", "width=600,height=700");
+        if (!popup) {
+          window.location.href = url;
+          return;
+        }
+        pollPopupToken(popup);
+      }
+    } catch (err) {
+      console.error("Google OAuth error:", err);
+      setLoading(false);
+    }
+  };
+
+  const pollPopupToken = (popup: Window) => {
+    const timer = setInterval(() => {
+      try {
+        if (popup.closed) {
+          clearInterval(timer);
+          setLoading(false);
+          return;
+        }
+        const popupUrl = popup.location.href;
+        if (popupUrl?.startsWith(window.location.origin + "/auth/callback")) {
+          clearInterval(timer);
+          const hash = popupUrl.includes("#") ? popupUrl.substring(popupUrl.indexOf("#") + 1) : "";
+          const token = new URLSearchParams(hash).get("access_token");
+          if (token) {
+            popup.close();
+            finalizeOAuth(token);
+          } else {
+            setLoading(false);
+          }
+        }
+      } catch {
+        /* cross-origin */
+      }
+    }, 300);
+  };
+
+  const startPolling = () => {
+    const poll = async () => {
+      try {
+        const resp = await fetch("http://localhost:5000/api/v1/auth/claim-session");
+        const json = await resp.json();
+        if (json.success && json.data) {
+          localStorage.setItem("chithra-auth-token", json.data.accessToken);
+          localStorage.setItem("chithra-auth-user", JSON.stringify(json.data.user));
+          window.dispatchEvent(new Event("auth-stored"));
+          window.location.reload();
+          return;
+        }
+      } catch {
+        /* server not ready */
+      }
+      setTimeout(startPolling, 1500);
+    };
+    poll();
+    setLoading(false);
+  };
+
+  const finalizeOAuth = async (accessToken: string) => {
+    try {
+      const { api } = await import("@/lib/api");
+      const result = await api.post<{ user: Record<string, unknown>; tokens: { accessToken: string } }>(
+        "/api/v1/auth/oauth",
+        { accessToken }
+      );
+      if (result.success && result.data) {
+        const { user, tokens } = result.data;
+        localStorage.setItem("chithra-auth-token", tokens.accessToken);
+        localStorage.setItem("chithra-auth-user", JSON.stringify(user));
+        window.dispatchEvent(new Event("auth-stored"));
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error("OAuth finalize error:", err);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 my-4">
+        <div className="flex-1 h-px bg-white/5" />
+        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">or continue with</span>
+        <div className="flex-1 h-px bg-white/5" />
+      </div>
+      <button
+        type="button"
+        onClick={handleGoogleAuth}
+        disabled={loading}
+        className="w-full flex items-center justify-center gap-3 py-2.5 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] text-gray-300 hover:text-white text-sm font-medium transition-all disabled:opacity-50 disabled:pointer-events-none"
+      >
+        {loading ? (
+          <span className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <path
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+              fill="#4285F4"
+            />
+            <path
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              fill="#34A853"
+            />
+            <path
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              fill="#FBBC05"
+            />
+            <path
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              fill="#EA4335"
+            />
+          </svg>
+        )}
+        <span>{loading ? "Redirecting..." : "Continue with Google"}</span>
+      </button>
     </div>
   );
 }

@@ -61,13 +61,16 @@ function Get-ReleaseNotes([string]$version) {
     return $ReleaseNotes.Trim()
   }
 
-  # Auto-detect release notes file in desktop/assets
-  $autoPath = Join-Path (Split-Path $PSScriptRoot -Parent) "desktop\assets\release-notes.md"
+  # Auto-detect release notes file in desktop-shell/assets
+  $autoPath = Join-Path $PSScriptRoot "desktop-shell\assets\release-notes.md"
   if (Test-Path $autoPath -PathType Leaf) {
-    $content = (Get-Content $autoPath -Raw).Trim()
-    if ($content) {
-      Write-Host "  Using release notes from $autoPath" -ForegroundColor DarkGray
-      return $content
+    $raw = Get-Content $autoPath -Raw
+    if ($raw) {
+      $content = $raw.Trim()
+      if ($content) {
+        Write-Host "  Using release notes from $autoPath" -ForegroundColor DarkGray
+        return $content
+      }
     }
   }
 

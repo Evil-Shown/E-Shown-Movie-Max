@@ -28,3 +28,14 @@ export const registerSchema = {
     appVersion: z.string().optional(),
   }),
 };
+
+export const oauthSchema = {
+  body: z.object({
+    accessToken: z.string().min(1, "Access token is required"),
+    deviceId: z.string().optional(),
+    deviceName: z.string().optional(),
+    platform: z.string().optional(),
+    browser: z.string().optional(),
+    appVersion: z.string().optional(),
+  }),
+};
