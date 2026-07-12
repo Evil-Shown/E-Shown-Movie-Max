@@ -1,5 +1,5 @@
 import { prisma } from "../../infrastructure/prisma";
-import type { Role } from "../../generated/prisma";
+import type { Role } from "../../../generated/prisma";
 
 export async function findUserByAuthId(authUserId: string) {
   return prisma.user.findUnique({

@@ -1,4 +1,4 @@
-import type { User, UserSettings } from "../../generated/prisma";
+import type { User, UserSettings } from "../../../generated/prisma";
 
 export interface AuthTokens {
   accessToken: string;

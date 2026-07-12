@@ -18,6 +18,7 @@ export default defineConfig([
     "*.js",
     "scripts/**",
     "server/src/generated/**",
+    "server/generated/**",
   ]),
   ...tseslint.config(
     {

@@ -103,10 +103,53 @@ app.use((_req, res) => {
 // Global error handler
 app.use(errorHandler);
 
-const PORT = Number(env.PORT) || 5000;
+async function main() {
+  // ── Database connectivity check ──────────────────────────────────
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    logger.info("✔ PostgreSQL database connected successfully");
+    const versionResult = await prisma.$queryRaw`SELECT version() as version`;
+    const dbVersion = Array.isArray(versionResult) ? (versionResult[0] as { version?: string })?.version : "unknown";
+    if (dbVersion && dbVersion !== "unknown") {
+      logger.info(`  Database: ${dbVersion}`);
+    }
+  } catch (dbError) {
+    logger.error({ err: dbError }, "✘ Failed to connect to PostgreSQL database");
+    logger.error("  Check your DATABASE_URL in server/.env");
+    process.exit(1);
+  }
 
-app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT} in ${env.NODE_ENV} mode`);
+  // ── Supabase Auth check ─────────────────────────────────────────
+  const supabaseUrlOk = env.SUPABASE_URL?.startsWith("http");
+  const supabaseKeyOk = env.SUPABASE_ANON_KEY?.length > 20;
+  const supabaseSecretOk = env.SUPABASE_SERVICE_ROLE_KEY?.length > 20;
+  if (supabaseUrlOk && supabaseKeyOk && supabaseSecretOk) {
+    logger.info("✔ Supabase Auth configured");
+  } else {
+    logger.warn("✘ Supabase Auth not fully configured — auth endpoints will fail");
+  }
+
+  // ── Redis check ─────────────────────────────────────────────────
+  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
+    logger.info("✔ Upstash Redis configured");
+  } else {
+    logger.warn("○ Upstash Redis not configured — using in-memory cache fallback");
+  }
+
+  // ── Start HTTP server ───────────────────────────────────────────
+  const PORT = Number(env.PORT) || 5000;
+  app.listen(PORT, () => {
+    logger.info(`──────────────────────────────────────────`);
+    logger.info(`  Server running on http://localhost:${PORT}`);
+    logger.info(`  Environment: ${env.NODE_ENV}`);
+    logger.info(`  API base:    http://localhost:${PORT}/api/v1`);
+    logger.info(`──────────────────────────────────────────`);
+  });
+}
+
+main().catch((err) => {
+  logger.error({ err }, "Fatal startup error");
+  process.exit(1);
 });
 
 // Graceful shutdown
