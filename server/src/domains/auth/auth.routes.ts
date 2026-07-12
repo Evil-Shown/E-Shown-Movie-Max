@@ -2,12 +2,13 @@ import { Router } from "express";
 import { authMiddleware } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import * as controller from "./auth.controller";
-import { loginSchema, registerSchema } from "./auth.validator";
+import { loginSchema, registerSchema, oauthSchema } from "./auth.validator";
 
 const router = Router();
 
 router.post("/register", validate(registerSchema), controller.register);
 router.post("/login", validate(loginSchema), controller.login);
+router.post("/oauth", validate(oauthSchema), controller.oauth);
 router.post("/logout", authMiddleware, controller.logout);
 router.get("/me", authMiddleware, controller.me);
 

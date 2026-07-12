@@ -4,7 +4,7 @@ import { AppError } from "../../utils/response";
 import { logger } from "../../config/logger";
 import { env } from "../../config/env";
 import * as authRepository from "./auth.repository";
-import type { RegisterInput, LoginInput, AuthResponse, AuthUser } from "./auth.types";
+import type { RegisterInput, LoginInput, OAuthInput, AuthResponse, AuthUser } from "./auth.types";
 import { toAuthUser } from "./auth.types";
 
 async function createAuditLog(userId: string, action: string, metadata?: Record<string, unknown>) {
@@ -190,6 +190,80 @@ export async function logout(authUserId?: string): Promise<void> {
   } catch (error) {
     logger.warn({ error, authUserId }, "Supabase admin signOut threw");
   }
+}
+
+export async function oauth(input: OAuthInput, ip?: string): Promise<AuthResponse> {
+  const { accessToken } = input;
+
+  const { data, error } = await supabaseAnon.auth.getUser(accessToken);
+  if (error || !data.user) {
+    throw new AppError(401, "INVALID_TOKEN", "Invalid or expired access token");
+  }
+
+  const supabaseUser = data.user;
+  const email = supabaseUser.email;
+  const username =
+    supabaseUser.user_metadata?.username || supabaseUser.email?.split("@")[0] || `user_${supabaseUser.id.slice(0, 8)}`;
+  const avatarUrl = supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture || null;
+
+  let localUser = await authRepository.findUserByAuthId(supabaseUser.id);
+
+  if (!localUser) {
+    if (email) {
+      const existingByEmail = await authRepository.findUserByEmail(email);
+      if (existingByEmail) {
+        throw new AppError(
+          409,
+          "EMAIL_EXISTS",
+          "An account with this email already exists. Try logging in with your password."
+        );
+      }
+    }
+
+    let finalUsername = username;
+    let attempt = 0;
+    while (await authRepository.findUserByUsername(finalUsername)) {
+      attempt++;
+      finalUsername = `${username}_${attempt}`;
+    }
+
+    localUser = await authRepository.createUser({
+      email: email || `${supabaseUser.id}@oauth.chithra`,
+      username: finalUsername,
+      authUserId: supabaseUser.id,
+      isVerified: true,
+    });
+
+    if (avatarUrl) {
+      await prisma.user
+        .update({
+          where: { id: localUser.id },
+          data: { avatarUrl },
+        })
+        .catch(() => {});
+    }
+  }
+
+  await upsertDevice(localUser.id, {
+    deviceId: input.deviceId,
+    deviceName: input.deviceName,
+    platform: input.platform,
+    browser: input.browser,
+    appVersion: input.appVersion,
+    ip,
+  });
+
+  await createAuditLog(localUser.id, "OAUTH_LOGIN", { email, provider: "google", ip });
+
+  return {
+    user: toAuthUser(localUser),
+    tokens: {
+      accessToken,
+      refreshToken: "",
+      expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      expiresIn: 3600,
+    },
+  };
 }
 
 export function getMe(user: AuthUser): AuthUser {

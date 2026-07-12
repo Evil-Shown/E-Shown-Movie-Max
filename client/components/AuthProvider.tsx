@@ -101,6 +101,18 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setIsLoading(false);
+
+    // Listen for auth from OAuth callback (stored in another tab/window)
+    const onAuthStored = () => {
+      const t = getStoredToken();
+      const u = getStoredUser();
+      if (t && u) {
+        setToken(t);
+        setUser(u);
+      }
+    };
+    window.addEventListener("auth-stored", onAuthStored);
+    return () => window.removeEventListener("auth-stored", onAuthStored);
   }, []);
 
   const login = useCallback(async (email: string, password: string, deviceId?: string) => {
