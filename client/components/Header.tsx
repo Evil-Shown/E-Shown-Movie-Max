@@ -115,13 +115,6 @@ export default function Header() {
         <div className={styles.headerGoldBar} aria-hidden />
 
         <div className={styles.inner}>
-          <nav className={styles.leftNav}>
-            <ConnectionIndicator />
-            {navLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} label={link.label} series={link.series} />
-            ))}
-          </nav>
-
           <button
             type="button"
             aria-label="Toggle menu"
@@ -132,6 +125,13 @@ export default function Header() {
               {menuOpen ? <path d="M6 18L18 6M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
             </svg>
           </button>
+
+          <nav className={styles.leftNav}>
+            <ConnectionIndicator />
+            {navLinks.map((link) => (
+              <NavLink key={link.href} href={link.href} label={link.label} series={link.series} />
+            ))}
+          </nav>
 
           <Link href="/" className={styles.logo} aria-label={`${BRAND_NAME} home`}>
             <svg
@@ -162,7 +162,7 @@ export default function Header() {
           </Link>
 
           <div className={styles.rightActions}>
-            <div className="hidden md:block">
+            <div className="hidden xl:block">
               <InstantSearch />
             </div>
 

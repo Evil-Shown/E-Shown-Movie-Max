@@ -252,7 +252,7 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
     ? `Season ${item.season || 1} · Episode ${item.episode || 1}`
     : item.genres?.slice(0, 2).join(" · ") || "Movie";
   const remaining = remainingTime(item.currentTime, item.duration);
-  const href = isTv ? `/tv/${item.id}` : `/movie/${item.id}`;
+  const href = `/movie/${item.id}`;
   const pausedAt = formatDuration(item.currentTime);
   const totalDuration = formatDuration(item.duration);
 
@@ -317,28 +317,24 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
   );
 }
 
-function LiveFavoriteCard({ channel }: { channel: LiveTvChannel }) {
+function LiveFavoriteListItem({ channel }: { channel: LiveTvChannel }) {
   return (
-    <Link href={`/live-tv?channel=${channel.id}`} className="live-fav-card group">
+    <Link
+      href={`/live-tv?channel=${channel.id}`}
+      className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFE8D1]/40 transition group"
+    >
       <div
-        className="live-fav-thumb"
-        style={{
-          background: `linear-gradient(135deg, ${channel.logoColor}22, ${channel.logoColor}44)`,
-        }}
+        className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0"
+        style={{ background: channel.logoColor, color: "#FFFBF5" }}
       >
-        <div
-          className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg"
-          style={{ background: channel.logoColor, color: "#FFFBF5" }}
-        >
-          {channel.logoInitials}
-        </div>
-        <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider bg-[#E65100] text-white px-1.5 py-0.5 rounded">
-          Live
-        </span>
+        {channel.logoInitials}
       </div>
-      <div className="mt-2 text-center">
+      <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-[#3E2723] truncate">{channel.name}</p>
       </div>
+      <span className="text-[10px] font-bold uppercase tracking-wider bg-[#E65100] text-white px-2 py-1 rounded-full">
+        Live
+      </span>
     </Link>
   );
 }
@@ -444,17 +440,23 @@ export default function DashboardPage() {
     const items: ActivityItem[] = [];
     continueWatching
       .sort((a, b) => b.updatedAt - a.updatedAt)
-      .slice(0, 5)
+      .slice(0, 6)
       .forEach((item) => {
+        const isCompleted = item.progress >= 98;
         const meta =
           item.mediaType === "tv"
-            ? `S${item.season || 1} E${item.episode || 1} · Stopped at ${formatDuration(item.currentTime)}`
-            : `${item.genres?.[0] || "Movie"} · Stopped at ${formatDuration(item.currentTime)}`;
-        items.push({ type: "watching", title: item.title, meta, timestamp: item.updatedAt });
+            ? `S${item.season || 1} E${item.episode || 1} · ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`
+            : `${item.genres?.[0] || "Movie"} · ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`;
+        items.push({
+          type: isCompleted ? "completed" : "watching",
+          title: item.title,
+          meta,
+          timestamp: item.updatedAt,
+        });
       });
     watchlist
       .sort((a, b) => b.addedAt - a.addedAt)
-      .slice(0, 3)
+      .slice(0, 4)
       .forEach((item) => {
         items.push({
           type: "watchlist",
@@ -463,7 +465,7 @@ export default function DashboardPage() {
           timestamp: item.addedAt,
         });
       });
-    return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, 6);
+    return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, 8);
   }, [continueWatching, watchlist]);
 
   const filteredActivities = useMemo(() => {
@@ -592,30 +594,6 @@ export default function DashboardPage() {
           background: rgba(255, 251, 245, 0.85);
           backdrop-filter: blur(16px);
           border-bottom: 1px solid rgba(212, 165, 116, 0.25);
-        }
-        .live-fav-card {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          transition: transform 0.3s ease;
-        }
-        .live-fav-card:hover {
-          transform: translateY(-4px);
-        }
-        .live-fav-thumb {
-          width: 80px;
-          height: 80px;
-          border-radius: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          transition: all 0.3s ease;
-          border: 1px solid rgba(212, 165, 116, 0.3);
-        }
-        .live-fav-card:hover .live-fav-thumb {
-          border-color: #e65100;
-          box-shadow: 0 8px 24px rgba(62, 39, 35, 0.12);
         }
         .activity-row {
           transition: background 0.2s ease;
@@ -1005,38 +983,41 @@ export default function DashboardPage() {
                   <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Live Favorites</h2>
                   <p className="text-xs text-[#A0785A] mt-1 ml-4">Your favorite channels</p>
                 </div>
-                <Link
-                  href="/live-tv"
-                  className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
-                >
-                  All Channels
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                    <polyline points="12 5 19 12 12 19" />
-                  </svg>
-                </Link>
               </div>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                {channels.map((channel) => (
-                  <LiveFavoriteCard key={channel.id} channel={channel} />
-                ))}
-                {channels.length < 6 && (
-                  <Link href="/live-tv" className="live-fav-card group">
-                    <div className="live-fav-thumb bg-[#FFE8D1] border-dashed border-2 border-[#D4A574]">
-                      <svg
-                        className="w-8 h-8 text-[#E65100]"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
+              <div className="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-2">
+                <div className="flex items-center justify-between px-3 py-2 mb-1">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#A0785A]">All Channels</span>
+                  <span className="text-xs text-[#A0785A]">{channelCount} channels</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
+                  {channels.map((channel) => (
+                    <LiveFavoriteListItem key={channel.id} channel={channel} />
+                  ))}
+                  <Link
+                    href="/live-tv"
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFE8D1]/40 transition"
+                  >
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-[#FFE8D1] text-[#E65100] flex-shrink-0">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="12" y1="5" x2="12" y2="19" />
                         <line x1="5" y1="12" x2="19" y2="12" />
                       </svg>
                     </div>
-                    <p className="mt-2 text-xs text-[#6B4423] font-semibold">Add Channel</p>
+                    <p className="text-sm font-semibold text-[#3E2723]">Add Channel</p>
                   </Link>
-                )}
+                </div>
+                <div className="mt-2 pt-2 border-t border-[#D4A574]/20 px-3">
+                  <Link
+                    href="/live-tv"
+                    className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
+                  >
+                    Browse all
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                  </Link>
+                </div>
               </div>
             </section>
 
@@ -1048,13 +1029,19 @@ export default function DashboardPage() {
                   <p className="text-xs text-[#A0785A] mt-1 ml-4">Your latest actions</p>
                 </div>
                 <div className="flex bg-[#FFFBF5] border border-[#D4A574]/30 rounded-lg p-1">
-                  {(["all", "watching", "watchlist"] as const).map((f) => (
+                  {(["all", "watching", "watchlist", "completed"] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => setActivityFilter(f)}
                       className={`filter-btn px-3 py-1 text-xs font-semibold rounded ${activityFilter === f ? "active" : "text-[#6B4423]"}`}
                     >
-                      {f === "all" ? "All" : f === "watching" ? "Watching" : "Watchlist"}
+                      {f === "all"
+                        ? "All"
+                        : f === "watching"
+                          ? "Watching"
+                          : f === "watchlist"
+                            ? "Watchlist"
+                            : "Completed"}
                     </button>
                   ))}
                 </div>
