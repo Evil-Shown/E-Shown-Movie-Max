@@ -247,7 +247,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
             )}
 
             {mode === "login" ? (
-              <form key="login" onSubmit={handleLoginSubmit} className="space-y-4">
+              <form key="login" onSubmit={handleLoginSubmit} autoComplete="off" className="space-y-4">
                 <InputGroup
                   icon={<EmailIcon />}
                   label="Email"
@@ -278,7 +278,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
                 <SubmitButton loading={loading} text="Sign In" loadingText="Signing in..." />
               </form>
             ) : (
-              <form key="register" onSubmit={handleRegisterSubmit} className="space-y-4">
+              <form key="register" onSubmit={handleRegisterSubmit} autoComplete="off" className="space-y-4">
                 <InputGroup
                   icon={<UserIcon />}
                   label="Username"
@@ -425,9 +425,13 @@ function InputGroup({
         {label}
       </label>
       <div
-        className={`relative flex items-center rounded-xl border transition-all duration-300 ${focused ? "border-[#e65100]/70 bg-white/[0.06] shadow-[0_0_20px_rgba(230,81,0,0.08)]" : "border-white/10 bg-white/[0.03]"}`}
+        className={`group relative flex items-center h-[46px] rounded-xl border bg-white/[0.03] transition-all duration-200
+          ${focused ? "border-[#e65100] shadow-[0_0_0_3px_rgba(230,81,0,0.15)]" : "border-white/10 hover:border-white/25"}
+        `}
       >
-        <span className={`pl-4 transition-colors duration-300 ${focused ? "text-[#e65100]" : "text-gray-500"}`}>
+        <span
+          className={`flex items-center justify-center shrink-0 w-10 h-11 transition-colors duration-200 ${focused ? "text-[#e65100]" : "text-gray-500"}`}
+        >
           {icon}
         </span>
         <input
@@ -439,10 +443,16 @@ function InputGroup({
           placeholder={placeholder}
           autoComplete={autoComplete}
           required
-          className="flex-1 px-3 py-3 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
+          style={{ outline: "none" }}
+          className="flex-1 h-11 pl-3 pr-0 bg-transparent text-[15px] text-white placeholder-gray-500 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 [&:-webkit-autofill]:!bg-transparent [&:-webkit-autofill]:[transition-delay:9999s] [&:-webkit-autofill]:shadow-[0_0_0_1000px_transparent_inset]"
         />
-        {trailing && <span className="pr-4">{trailing}</span>}
+        {trailing && <span className="flex items-center justify-center shrink-0 w-10 h-11">{trailing}</span>}
       </div>
+      <style jsx global>{`
+        input[type="password"]::-ms-reveal {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }
