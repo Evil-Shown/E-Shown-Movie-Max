@@ -28,6 +28,7 @@ export function getStartupSplashMode(): StartupSplashMode {
     const appVersion = window.chithraDesktop?.appVersion || "0";
     const lastFullIntroVersion = localStorage.getItem(FULL_INTRO_VERSION_KEY);
     if (lastFullIntroVersion !== appVersion) return "full";
+    // Subsequent launches: show just the 3D Spline animation, no cinema intro
     return "spline-only";
   }
 
