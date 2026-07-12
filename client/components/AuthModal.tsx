@@ -11,8 +11,7 @@ const cinemaGradients = [
 
 interface AuthModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  /** If true, redirect to home when user closes without logging in */
+  onClose: (authenticated?: boolean) => void;
   redirectOnClose?: boolean;
 }
 
@@ -26,6 +25,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
   const [mounted, setMounted] = useState(false);
   const [gradientIndex] = useState(() => Math.floor(Math.random() * cinemaGradients.length));
   const modalRef = useRef<HTMLDivElement>(null);
+  const didAuth = useRef(false);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
@@ -36,16 +36,23 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
   });
 
   const handleClose = useCallback(() => {
-    if (redirectOnClose && typeof window !== "undefined") {
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 200);
+    if (didAuth.current) {
+      // Auth succeeded — replay pending action
+      onClose(true);
+    } else {
+      // Dismissed without login — redirect home if needed
+      if (redirectOnClose && typeof window !== "undefined") {
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 200);
+      }
+      onClose(false);
     }
-    onClose();
   }, [redirectOnClose, onClose]);
 
   useEffect(() => {
     if (isOpen) {
+      didAuth.current = false;
       const t = setTimeout(() => setMounted(true), 50);
       document.body.style.overflow = "hidden";
       return () => {
@@ -69,10 +76,10 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     try {
       await login(loginForm.email, loginForm.password);
-      onClose();
+      didAuth.current = true;
+      onClose(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -84,22 +91,20 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     if (registerForm.password !== registerForm.confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
       return;
     }
-
     if (registerForm.password.length < 6) {
       setError("Password must be at least 6 characters");
       setLoading(false);
       return;
     }
-
     try {
       await register(registerForm.username, registerForm.email, registerForm.password);
-      onClose();
+      didAuth.current = true;
+      onClose(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -116,14 +121,12 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop with animated gradient */}
       <div
         className="absolute inset-0 backdrop-blur-xl transition-all duration-700"
         style={{ background: cinemaGradients[gradientIndex] }}
         onClick={handleClose}
       />
 
-      {/* Ambient orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute w-[600px] h-[600px] rounded-full opacity-20 animate-pulse"
@@ -145,14 +148,10 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
         />
       </div>
 
-      {/* Modal container */}
       <div
         ref={modalRef}
-        className={`relative z-10 w-full max-w-[440px] transition-all duration-500 ${
-          mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"
-        }`}
+        className={`relative z-10 w-full max-w-[440px] transition-all duration-500 ${mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"}`}
       >
-        {/* Floating film strip decoration */}
         <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex gap-1" aria-hidden="true">
           {[...Array(5)].map((_, i) => (
             <div
@@ -163,14 +162,11 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
           ))}
         </div>
 
-        {/* Main card */}
         <div className="relative rounded-3xl overflow-hidden backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50">
-          {/* Glass background */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#0f0f1a]/90 via-[#1a1a2e]/85 to-[#16213e]/90" />
 
-          {/* Content - responsive with max-height and scroll */}
           <div className="relative px-6 py-8 max-h-[90vh] overflow-y-auto">
-            {/* Brand header */}
+            {/* Brand */}
             <div className="text-center mb-6">
               <div className="inline-flex items-center gap-2 mb-3">
                 <svg
@@ -197,7 +193,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
               </p>
             </div>
 
-            {/* Mode tabs */}
+            {/* Tabs */}
             <div className="relative flex mb-6 bg-white/5 rounded-xl p-1">
               <div
                 className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-[#e65100] transition-all duration-300 ease-out"
@@ -205,17 +201,13 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
               />
               <button
                 onClick={() => switchMode("login")}
-                className={`relative z-10 flex-1 py-2.5 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${
-                  mode === "login" ? "text-white" : "text-gray-400 hover:text-gray-200"
-                }`}
+                className={`relative z-10 flex-1 py-2.5 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${mode === "login" ? "text-white" : "text-gray-400 hover:text-gray-200"}`}
               >
                 Sign In
               </button>
               <button
                 onClick={() => switchMode("register")}
-                className={`relative z-10 flex-1 py-2.5 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${
-                  mode === "register" ? "text-white" : "text-gray-400 hover:text-gray-200"
-                }`}
+                className={`relative z-10 flex-1 py-2.5 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${mode === "register" ? "text-white" : "text-gray-400 hover:text-gray-200"}`}
               >
                 Register
               </button>
@@ -236,225 +228,86 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
               </div>
             )}
 
-            {/* Forms */}
             {mode === "login" ? (
               <form key="login" onSubmit={handleLoginSubmit} className="space-y-4">
                 <InputGroup
-                  icon={
-                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
-                  }
+                  icon={<EmailIcon />}
                   label="Email"
                   type="email"
                   value={loginForm.email}
-                  onChange={(val) => setLoginForm((f) => ({ ...f, email: val }))}
+                  onChange={(v) => setLoginForm((f) => ({ ...f, email: v }))}
                   placeholder="you@example.com"
                   autoComplete="email"
                 />
                 <InputGroup
-                  icon={
-                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      />
-                    </svg>
-                  }
+                  icon={<LockIcon />}
                   label="Password"
                   type={showPassword ? "text" : "password"}
                   value={loginForm.password}
-                  onChange={(val) => setLoginForm((f) => ({ ...f, password: val }))}
+                  onChange={(v) => setLoginForm((f) => ({ ...f, password: v }))}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  trailing={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="text-gray-500 hover:text-gray-300 transition-colors"
-                    >
-                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                    </button>
-                  }
+                  trailing={<EyeToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />}
                 />
-
                 <div className="flex items-center justify-between text-xs pt-1">
                   <label className="flex items-center gap-2 text-gray-400 cursor-pointer select-none">
-                    <input type="checkbox" className="w-3.5 h-3.5 accent-[#e65100] cursor-pointer" />
-                    Remember me
+                    <input type="checkbox" className="w-3.5 h-3.5 accent-[#e65100] cursor-pointer" /> Remember me
                   </label>
                   <button type="button" className="text-[#FFB87A] hover:text-[#e65100] transition-colors font-medium">
                     Forgot password?
                   </button>
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="relative w-full py-3 mt-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#e65100] to-[#ff7b1c] text-white font-semibold text-sm uppercase tracking-wider shadow-lg shadow-[#e65100]/25 transition-all hover:shadow-xl hover:shadow-[#e65100]/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  <span className="relative z-10">
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="none"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                          />
-                        </svg>
-                        Signing in...
-                      </span>
-                    ) : (
-                      "Sign In"
-                    )}
-                  </span>
-                </button>
+                <SubmitButton loading={loading} text="Sign In" loadingText="Signing in..." />
               </form>
             ) : (
               <form key="register" onSubmit={handleRegisterSubmit} className="space-y-4">
                 <InputGroup
-                  icon={
-                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                  }
+                  icon={<UserIcon />}
                   label="Username"
                   type="text"
                   value={registerForm.username}
-                  onChange={(val) => setRegisterForm((f) => ({ ...f, username: val }))}
+                  onChange={(v) => setRegisterForm((f) => ({ ...f, username: v }))}
                   placeholder="Choose a username"
                   autoComplete="username"
                 />
                 <InputGroup
-                  icon={
-                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
-                  }
+                  icon={<EmailIcon />}
                   label="Email"
                   type="email"
                   value={registerForm.email}
-                  onChange={(val) => setRegisterForm((f) => ({ ...f, email: val }))}
+                  onChange={(v) => setRegisterForm((f) => ({ ...f, email: v }))}
                   placeholder="you@example.com"
                   autoComplete="email"
                 />
                 <InputGroup
-                  icon={
-                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      />
-                    </svg>
-                  }
+                  icon={<LockIcon />}
                   label="Password"
                   type={showPassword ? "text" : "password"}
                   value={registerForm.password}
-                  onChange={(val) => setRegisterForm((f) => ({ ...f, password: val }))}
+                  onChange={(v) => setRegisterForm((f) => ({ ...f, password: v }))}
                   placeholder="At least 6 characters"
                   autoComplete="new-password"
-                  trailing={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="text-gray-500 hover:text-gray-300 transition-colors"
-                    >
-                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                    </button>
-                  }
+                  trailing={<EyeToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />}
                 />
                 <InputGroup
-                  icon={
-                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                      />
-                    </svg>
-                  }
+                  icon={<ShieldIcon />}
                   label="Confirm Password"
                   type={showConfirmPassword ? "text" : "password"}
                   value={registerForm.confirmPassword}
-                  onChange={(val) => setRegisterForm((f) => ({ ...f, confirmPassword: val }))}
+                  onChange={(v) => setRegisterForm((f) => ({ ...f, confirmPassword: v }))}
                   placeholder="Repeat your password"
                   autoComplete="new-password"
                   trailing={
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="text-gray-500 hover:text-gray-300 transition-colors"
-                    >
-                      {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
-                    </button>
+                    <EyeToggle
+                      shown={showConfirmPassword}
+                      onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+                    />
                   }
                 />
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="relative w-full py-3 mt-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#e65100] to-[#ff7b1c] text-white font-semibold text-sm uppercase tracking-wider shadow-lg shadow-[#e65100]/25 transition-all hover:shadow-xl hover:shadow-[#e65100]/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  <span className="relative z-10">
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="none"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                          />
-                        </svg>
-                        Creating account...
-                      </span>
-                    ) : (
-                      "Create Account"
-                    )}
-                  </span>
-                </button>
+                <SubmitButton loading={loading} text="Create Account" loadingText="Creating account..." />
               </form>
             )}
 
-            {/* Bottom switch */}
             <div className="mt-6 pt-5 border-t border-white/5">
               <p className="text-center text-sm text-gray-400">
                 {mode === "login" ? (
@@ -481,7 +334,6 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
               </p>
             </div>
 
-            {/* Close button */}
             <button
               onClick={handleClose}
               className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
@@ -497,30 +349,35 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
   );
 }
 
-function EyeIcon() {
+function SubmitButton({ loading, text, loadingText }: { loading: boolean; text: string; loadingText: string }) {
   return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-      />
-    </svg>
+    <button
+      type="submit"
+      disabled={loading}
+      className="relative w-full py-3 mt-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#e65100] to-[#ff7b1c] text-white font-semibold text-sm uppercase tracking-wider shadow-lg shadow-[#e65100]/25 transition-all hover:shadow-xl hover:shadow-[#e65100]/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
+    >
+      <span className="relative z-10">
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            {loadingText}
+          </span>
+        ) : (
+          text
+        )}
+      </span>
+    </button>
   );
 }
 
-function EyeOffIcon() {
+function EyeToggle({ shown, onToggle }: { shown: boolean; onToggle: () => void }) {
   return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-      />
-    </svg>
+    <button type="button" onClick={onToggle} className="text-gray-500 hover:text-gray-300 transition-colors">
+      {shown ? <EyeOffIcon /> : <EyeIcon />}
+    </button>
   );
 }
 
@@ -538,24 +395,19 @@ function InputGroup({
   label: string;
   type: string;
   value: string;
-  onChange: (val: string) => void;
+  onChange: (v: string) => void;
   placeholder: string;
   autoComplete?: string;
   trailing?: React.ReactNode;
 }) {
   const [focused, setFocused] = useState(false);
-
   return (
     <div>
       <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2 ml-1">
         {label}
       </label>
       <div
-        className={`relative flex items-center rounded-xl border transition-all duration-300 ${
-          focused
-            ? "border-[#e65100]/70 bg-white/[0.06] shadow-[0_0_20px_rgba(230,81,0,0.08)]"
-            : "border-white/10 bg-white/[0.03]"
-        }`}
+        className={`relative flex items-center rounded-xl border transition-all duration-300 ${focused ? "border-[#e65100]/70 bg-white/[0.06] shadow-[0_0_20px_rgba(230,81,0,0.08)]" : "border-white/10 bg-white/[0.03]"}`}
       >
         <span className={`pl-4 transition-colors duration-300 ${focused ? "text-[#e65100]" : "text-gray-500"}`}>
           {icon}
@@ -574,5 +426,79 @@ function InputGroup({
         {trailing && <span className="pr-4">{trailing}</span>}
       </div>
     </div>
+  );
+}
+
+function EmailIcon() {
+  return (
+    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+      />
+    </svg>
+  );
+}
+function LockIcon() {
+  return (
+    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+      />
+    </svg>
+  );
+}
+function UserIcon() {
+  return (
+    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
+    </svg>
+  );
+}
+function ShieldIcon() {
+  return (
+    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+      />
+    </svg>
+  );
+}
+function EyeIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+      />
+    </svg>
+  );
+}
+function EyeOffIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+      />
+    </svg>
   );
 }
