@@ -190,54 +190,31 @@
   background: var(--bg-card);
 }
 
-.watchButton {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  padding: 8px 18px;
-  border-radius: 20px;
-  background: var(--accent-primary);
-  color: #fff;
-  font-family: var(--font-inter), Inter, sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  box-shadow: 0 2px 10px rgba(201, 106, 43, 0.22);
-  transition: all 0.2s ease;
-}
-
 .tBoomButton {
   display: none;
   align-items: center;
-  justify-content: center;
-  min-width: 138px;
+  gap: 4px;
   white-space: nowrap;
   padding: 8px 16px;
-  border-radius: 20px;
-  border: 0.5px solid rgba(201, 106, 43, 0.35);
-  background: rgba(254, 252, 248, 0.9);
-  color: var(--accent-primary);
+  border-radius: 8px;
+  border: 1px solid rgba(156, 163, 175, 0.2);
+  background: transparent;
+  color: var(--text-secondary, #9ca3af);
   font-family: var(--font-inter), Inter, sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   transition: all 0.2s ease;
 }
 
 .tBoomButton:hover {
-  border-color: rgba(201, 106, 43, 0.6);
-  background: #fff;
-  box-shadow: 0 2px 10px rgba(201, 106, 43, 0.18);
-}
-
-.watchButton:hover {
-  background: #b85c24;
-  box-shadow: 0 4px 14px rgba(201, 106, 43, 0.3);
+  border-color: rgba(201, 106, 43, 0.4);
+  background: rgba(201, 106, 43, 0.06);
+  color: var(--accent-primary, #c96a2b);
 }
 
 @media (min-width: 768px) {
-  .tBoomButton,
-  .watchButton {
+  .tBoomButton {
     display: inline-flex;
   }
 }
