@@ -1,0 +1,1143 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { formatDisplayYear, posterUrl } from "@/lib/movies";
+import type { ContinueWatchingItem, WatchlistItem } from "@/lib/storage/types";
+import type { LiveTvChannel } from "@/lib/live-tv/types";
+import { getProfileIcon, setProfileIcon, PROFILE_ICONS } from "@/lib/storage/profile-icon";
+
+function formatDuration(seconds: number) {
+  if (!seconds || seconds <= 0) return "0m";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function remainingTime(current: number, duration: number) {
+  const left = Math.max(0, (duration || 0) - (current || 0));
+  return formatDuration(left);
+}
+
+function formatToday() {
+  return new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function computeStreak(items: ContinueWatchingItem[]) {
+  if (!items.length) return 0;
+  const dates = new Set<number>();
+  items.forEach((item) => {
+    const d = new Date(item.updatedAt);
+    d.setHours(0, 0, 0, 0);
+    dates.add(d.getTime());
+  });
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let streak = 0;
+  for (let i = 0; i < 365; i++) {
+    const check = new Date(today.getTime() - i * 86400000).getTime();
+    if (dates.has(check)) streak++;
+    else if (i === 0) continue;
+    else break;
+  }
+  return streak;
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function timeAgo(timestamp: number) {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const hours = Math.floor(diff / 3600000);
+  if (hours < 1) return "Just now";
+  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return new Date(timestamp).toLocaleDateString();
+}
+
+const browseNav = [
+  { href: "/", label: "Home", icon: "home" },
+  { href: "/browse", label: "Movies", icon: "movies" },
+  { href: "/browse?type=tv", label: "Series", icon: "series" },
+  { href: "/live-tv", label: "Live TV", icon: "live" },
+  { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
+];
+
+const libraryNav = [
+  { href: "/watchlist", label: "Watchlist", icon: "watchlist" },
+  { href: "/history", label: "History", icon: "history" },
+  { href: "/downloads", label: "Downloads", icon: "downloads" },
+  { href: "/favorites", label: "Favorites", icon: "favorites" },
+];
+
+const accountNav = [{ href: "/settings", label: "Settings", icon: "settings" }];
+
+function NavIcon({ name }: { name: string }) {
+  const className = "w-5 h-5";
+  switch (name) {
+    case "home":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+      );
+    case "movies":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="2" y="2" width="20" height="20" rx="2.18" />
+          <line x1="7" y1="2" x2="7" y2="22" />
+          <line x1="17" y1="2" x2="17" y2="22" />
+          <line x1="2" y1="7" x2="22" y2="7" />
+          <line x1="2" y1="17" x2="22" y2="17" />
+        </svg>
+      );
+    case "series":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="2" y="7" width="20" height="15" rx="2" />
+          <polyline points="17 2 12 7 7 2" />
+        </svg>
+      );
+    case "live":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 19c-3.87 0-7-3.13-7-7 0-3.87 3.13-7 7-7 3.87 0 7 3.13 7 7 0 3.87-3.13 7-7 7z" />
+          <circle cx="12" cy="12" r="3" fill="currentColor" />
+        </svg>
+      );
+    case "dashboard":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="3" width="7" height="7" />
+          <rect x="14" y="3" width="7" height="7" />
+          <rect x="3" y="14" width="7" height="7" />
+          <rect x="14" y="14" width="7" height="7" />
+        </svg>
+      );
+    case "watchlist":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+        </svg>
+      );
+    case "history":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      );
+    case "downloads":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+      );
+    case "favorites":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M20.84 4.61a5.5 5.5 0 0 1-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 1-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 1 0-7.78z" />
+        </svg>
+      );
+    case "settings":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+function SidebarNavLink({
+  href,
+  label,
+  icon,
+  active,
+  badge,
+}: {
+  href: string;
+  label: string;
+  icon: string;
+  active?: boolean;
+  badge?: string | number;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`sidebar-link group flex items-center gap-3 px-5 py-3 text-sm font-medium ${active ? "active" : ""}`}
+    >
+      <span className={`transition-colors ${active ? "text-[#FFB87A]" : "text-[#A0785A] group-hover:text-[#E65100]"}`}>
+        <NavIcon name={icon} />
+      </span>
+      <span className="flex-1">{label}</span>
+      {badge !== undefined && (
+        <span
+          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${active ? "bg-[#E65100] text-white" : "text-[#A0785A]"}`}
+        >
+          {badge}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+function StatCard({
+  icon,
+  value,
+  label,
+  badge,
+  progress,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+  badge?: { text: string; color: "green" | "orange" | "brown" };
+  progress?: number;
+}) {
+  const badgeColors = {
+    green: "text-green-700 bg-green-100",
+    orange: "text-[#E65100] bg-[#FFE8D1]",
+    brown: "text-[#3E2723] bg-[#D4A574]/30",
+  };
+  return (
+    <div className="stat-card rounded-xl p-6">
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-12 h-12 rounded-lg stat-icon-box flex items-center justify-center">{icon}</div>
+        {badge && (
+          <span
+            className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${badgeColors[badge.color]}`}
+          >
+            {badge.text}
+          </span>
+        )}
+      </div>
+      <p className="font-cinzel text-3xl font-bold text-[#3E2723]">{value}</p>
+      <p className="text-sm text-[#6B4423] mt-1">{label}</p>
+      {progress !== undefined && (
+        <div className="mt-3 h-1 bg-[#FFE8D1] rounded-full overflow-hidden">
+          <div className="h-full bg-[#E65100] rounded-full" style={{ width: `${progress}%` }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResumeCard({ item }: { item: ContinueWatchingItem }) {
+  const isTv = item.mediaType === "tv";
+  const meta = isTv
+    ? `Season ${item.season || 1} · Episode ${item.episode || 1}`
+    : item.genres?.slice(0, 2).join(" · ") || "Movie";
+  const remaining = remainingTime(item.currentTime, item.duration);
+  const href = isTv ? `/tv/${item.id}` : `/movie/${item.id}`;
+  const pausedAt = formatDuration(item.currentTime);
+  const totalDuration = formatDuration(item.duration);
+
+  return (
+    <Link href={href} className="resume-card rounded-xl flex flex-col md:flex-row group">
+      <div className="md:w-72 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
+        <img
+          src={posterUrl(item.posterPath, "w780")}
+          alt={item.title}
+          className="resume-thumb w-full h-full object-cover"
+          loading="lazy"
+        />
+        <div className="absolute top-3 left-3 bg-[#E65100] text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
+          {isTv ? "Series" : item.genres?.[0] || "Movie"}
+        </div>
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+          <button className="play-btn w-14 h-14 rounded-full flex items-center justify-center text-white">
+            <svg className="w-6 h-6 ml-1" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 p-5 flex flex-col justify-between">
+        <div>
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <div>
+              <h3 className="font-cinzel text-xl font-bold text-[#3E2723]">{item.title}</h3>
+              <p className="text-xs text-[#A0785A] mt-1">{meta}</p>
+            </div>
+            <button className="text-[#A0785A] hover:text-[#E65100] transition">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="5" cy="12" r="2" />
+                <circle cx="12" cy="12" r="2" />
+                <circle cx="19" cy="12" r="2" />
+              </svg>
+            </button>
+          </div>
+          <p className="text-sm text-[#6B4423] mt-2 line-clamp-2">
+            Continue where you left off. {remaining} remaining.
+          </p>
+        </div>
+
+        <div className="mt-4">
+          <div className="flex justify-between text-xs text-[#6B4423] mb-1.5">
+            <span className="flex items-center gap-1.5">
+              <svg className="w-3 h-3 text-[#E65100]" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
+              </svg>
+              <span className="font-semibold">Paused at {pausedAt}</span>
+            </span>
+            <span>{totalDuration}</span>
+          </div>
+          <div className="progress-track">
+            <div className="progress-fill" style={{ width: `${Math.min(item.progress, 100)}%` }} />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function LiveFavoriteCard({ channel }: { channel: LiveTvChannel }) {
+  return (
+    <Link href={`/live-tv?channel=${channel.id}`} className="live-fav-card group">
+      <div
+        className="live-fav-thumb"
+        style={{
+          background: `linear-gradient(135deg, ${channel.logoColor}22, ${channel.logoColor}44)`,
+        }}
+      >
+        <div
+          className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg"
+          style={{ background: channel.logoColor, color: "#FFFBF5" }}
+        >
+          {channel.logoInitials}
+        </div>
+        <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider bg-[#E65100] text-white px-1.5 py-0.5 rounded">
+          Live
+        </span>
+      </div>
+      <div className="mt-2 text-center">
+        <p className="text-sm font-semibold text-[#3E2723] truncate">{channel.name}</p>
+      </div>
+    </Link>
+  );
+}
+
+interface ActivityItem {
+  type: "watching" | "watchlist" | "completed" | "downloaded";
+  title: string;
+  meta?: string;
+  timestamp: number;
+}
+
+function ActivityRow({ item }: { item: ActivityItem }) {
+  const icons = {
+    watching: (
+      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polygon points="5 3 19 12 5 21 5 3" />
+      </svg>
+    ),
+    watchlist: (
+      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+    completed: (
+      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    ),
+    downloaded: (
+      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
+      </svg>
+    ),
+  };
+  const labels = {
+    watching: "Started watching",
+    watchlist: "Added to watchlist",
+    completed: "Completed watching",
+    downloaded: "Downloaded",
+  };
+  const colors = {
+    watching: "bg-[#FFE8D1] text-[#E65100]",
+    watchlist: "bg-[#E0F2F7] text-[#4A7C8E]",
+    completed: "bg-[#E8F5E9] text-[#2E7D32]",
+    downloaded: "bg-[#EBE5DE] text-[#6B4423]",
+  };
+
+  return (
+    <div className="activity-row flex items-start gap-4 p-4 rounded-xl hover:bg-[#FFFBF5] transition">
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${colors[item.type]}`}>
+        {icons[item.type]}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-[#3E2723]">
+          <span className="font-semibold">{labels[item.type]}</span>{" "}
+          <span className="text-[#6B4423]">{item.title}</span>
+        </p>
+        {item.meta && <p className="text-xs text-[#A0785A] mt-0.5">{item.meta}</p>}
+        <p className="text-xs text-[#A0785A] mt-1">{timeAgo(item.timestamp)}</p>
+      </div>
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  const { watchlist, continueWatching } = useUserLibrary();
+  const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [channels, setChannels] = useState<LiveTvChannel[]>([]);
+  const [channelCount, setChannelCount] = useState<number>(0);
+  const [activityFilter, setActivityFilter] = useState<"all" | "watching" | "watchlist" | "completed">("all");
+  const [profileIcon, setProfileIconState] = useState<string | null>(null);
+  const [showProfileSelector, setShowProfileSelector] = useState(false);
+
+  useEffect(() => {
+    setProfileIconState(getProfileIcon());
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/live-tv/channels")
+      .then((res) => res.json())
+      .then((data: { channels?: LiveTvChannel[] }) => {
+        if (data.channels) {
+          setChannels(data.channels.slice(0, 6));
+          setChannelCount(data.channels.length);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const resumeItems = useMemo(
+    () =>
+      continueWatching
+        .filter((item) => item.progress > 5 && item.progress < 98)
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .slice(0, 3),
+    [continueWatching]
+  );
+
+  const activities = useMemo<ActivityItem[]>(() => {
+    const items: ActivityItem[] = [];
+    continueWatching
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, 5)
+      .forEach((item) => {
+        const meta =
+          item.mediaType === "tv"
+            ? `S${item.season || 1} E${item.episode || 1} · Stopped at ${formatDuration(item.currentTime)}`
+            : `${item.genres?.[0] || "Movie"} · Stopped at ${formatDuration(item.currentTime)}`;
+        items.push({ type: "watching", title: item.title, meta, timestamp: item.updatedAt });
+      });
+    watchlist
+      .sort((a, b) => b.addedAt - a.addedAt)
+      .slice(0, 3)
+      .forEach((item) => {
+        items.push({
+          type: "watchlist",
+          title: item.title,
+          meta: `${item.genres?.[0] || (item.mediaType === "tv" ? "Series" : "Movie")} · ${formatDisplayYear(item.year)}`,
+          timestamp: item.addedAt,
+        });
+      });
+    return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, 6);
+  }, [continueWatching, watchlist]);
+
+  const filteredActivities = useMemo(() => {
+    if (activityFilter === "all") return activities;
+    return activities.filter((a) => a.type === activityFilter);
+  }, [activities, activityFilter]);
+
+  const totalSeconds = useMemo(
+    () => continueWatching.reduce((acc, item) => acc + (item.currentTime || 0), 0),
+    [continueWatching]
+  );
+  const hours = Math.floor(totalSeconds / 3600);
+  const streak = useMemo(() => computeStreak(continueWatching), [continueWatching]);
+  const userName = "Watcher";
+
+  const newlyAddedCount = useMemo(() => {
+    const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    return watchlist.filter((item) => item.addedAt > monthAgo).length;
+  }, [watchlist]);
+
+  const watchTimeProgress = useMemo(() => {
+    if (hours <= 0) return 0;
+    const goal = Math.max(10, Math.ceil(hours / 10) * 10);
+    return Math.min(100, Math.round((hours / goal) * 100));
+  }, [hours]);
+
+  const savedTitlesProgress = useMemo(() => {
+    if (watchlist.length <= 0) return 0;
+    const goal = Math.max(10, Math.ceil(watchlist.length / 10) * 10);
+    return Math.min(100, Math.round((watchlist.length / goal) * 100));
+  }, [watchlist.length]);
+
+  const handleSelectProfileIcon = (icon: string) => {
+    setProfileIcon(icon);
+    setProfileIconState(icon);
+    setShowProfileSelector(false);
+  };
+
+  const isActive = (href: string) => {
+    if (href === "/dashboard") return pathname === "/dashboard";
+    if (href === "/") return pathname === "/";
+    if (href === "/browse") return pathname === "/browse" && !pathname.includes("type=tv");
+    if (href === "/browse?type=tv") return pathname.includes("type=tv");
+    return pathname === href;
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FAF3E8] font-sans text-[#3E2723] dashboard-root">
+      <style jsx>{`
+        .dashboard-root {
+          background-image:
+            radial-gradient(circle at 15% 20%, rgba(230, 81, 0, 0.04) 0%, transparent 40%),
+            radial-gradient(circle at 85% 70%, rgba(62, 39, 35, 0.05) 0%, transparent 40%);
+          background-attachment: fixed;
+        }
+        .sidebar {
+          background: #fffbf5;
+          border-right: 1px solid rgba(212, 165, 116, 0.25);
+        }
+        .sidebar-link {
+          color: #6b4423;
+          transition: all 0.25s ease;
+          border-left: 3px solid transparent;
+        }
+        .sidebar-link:hover {
+          background: rgba(230, 81, 0, 0.06);
+          color: #e65100;
+          border-left-color: #e65100;
+        }
+        .sidebar-link.active {
+          background: #3e2723;
+          color: #fffbf5;
+          border-left-color: #e65100;
+        }
+        .stat-card {
+          background: #fffbf5;
+          border: 1px solid rgba(212, 165, 116, 0.3);
+          transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+          border-color: #e65100;
+          transform: translateY(-3px);
+          box-shadow: 0 12px 30px rgba(62, 39, 35, 0.08);
+        }
+        .stat-icon-box {
+          background: #ffe8d1;
+          color: #e65100;
+        }
+        .resume-card {
+          background: #fffbf5;
+          border: 1px solid rgba(212, 165, 116, 0.3);
+          transition: all 0.3s ease;
+          overflow: hidden;
+        }
+        .resume-card:hover {
+          border-color: #e65100;
+          box-shadow: 0 15px 40px rgba(62, 39, 35, 0.12);
+        }
+        .resume-card:hover .resume-thumb {
+          transform: scale(1.05);
+        }
+        .resume-thumb {
+          transition: transform 0.5s ease;
+        }
+        .progress-track {
+          background: #ffe8d1;
+          height: 4px;
+          border-radius: 2px;
+          overflow: hidden;
+        }
+        .progress-fill {
+          background: #e65100;
+          height: 100%;
+          border-radius: 2px;
+          transition: width 0.8s ease;
+        }
+        .play-btn {
+          background: #e65100;
+          transition: all 0.3s ease;
+        }
+        .play-btn:hover {
+          background: #3e2723;
+          transform: scale(1.1);
+        }
+        .topbar {
+          background: rgba(255, 251, 245, 0.85);
+          backdrop-filter: blur(16px);
+          border-bottom: 1px solid rgba(212, 165, 116, 0.25);
+        }
+        .live-fav-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          transition: transform 0.3s ease;
+        }
+        .live-fav-card:hover {
+          transform: translateY(-4px);
+        }
+        .live-fav-thumb {
+          width: 80px;
+          height: 80px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          transition: all 0.3s ease;
+          border: 1px solid rgba(212, 165, 116, 0.3);
+        }
+        .live-fav-card:hover .live-fav-thumb {
+          border-color: #e65100;
+          box-shadow: 0 8px 24px rgba(62, 39, 35, 0.12);
+        }
+        .activity-row {
+          transition: background 0.2s ease;
+        }
+        .filter-btn {
+          transition: all 0.2s ease;
+        }
+        .filter-btn.active {
+          background: #3e2723;
+          color: #fffbf5;
+        }
+        .filter-btn:not(.active):hover {
+          color: #e65100;
+        }
+        @keyframes fadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(15px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .fade-up {
+          animation: fadeUp 0.6s ease forwards;
+        }
+        .delay-1 {
+          animation-delay: 0.1s;
+          opacity: 0;
+        }
+        .delay-2 {
+          animation-delay: 0.2s;
+          opacity: 0;
+        }
+        .delay-3 {
+          animation-delay: 0.3s;
+          opacity: 0;
+        }
+        .delay-4 {
+          animation-delay: 0.4s;
+          opacity: 0;
+        }
+        .section-heading {
+          position: relative;
+          padding-left: 16px;
+        }
+        .section-heading::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 4px;
+          height: 70%;
+          background: #e65100;
+          border-radius: 2px;
+        }
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #faf3e8;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #d4a574;
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #e65100;
+        }
+      `}</style>
+
+      <div className="flex min-h-screen">
+        {/* Desktop Sidebar */}
+        <aside className="sidebar fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col">
+          <div className="px-6 py-6 border-b border-[#D4A574]/25" />
+
+          <nav className="flex-1 py-4 overflow-y-auto">
+            <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">Browse</p>
+            {browseNav.map((link) => (
+              <SidebarNavLink
+                key={link.href}
+                {...link}
+                active={isActive(link.href)}
+                badge={link.label === "Live TV" ? `${channelCount}+` : undefined}
+              />
+            ))}
+
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">
+              Library
+            </p>
+            {libraryNav.map((link) => (
+              <SidebarNavLink
+                key={link.href}
+                {...link}
+                active={isActive(link.href)}
+                badge={link.label === "Watchlist" ? watchlist.length : link.label === "Downloads" ? 7 : undefined}
+              />
+            ))}
+
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">
+              Account
+            </p>
+            {accountNav.map((link) => (
+              <SidebarNavLink key={link.href} {...link} active={isActive(link.href)} />
+            ))}
+            <button
+              className="sidebar-link group flex w-[calc(100%-24px)] mx-3 items-center gap-3 px-5 py-3 text-sm font-medium text-left"
+              onClick={() => {}}
+            >
+              <span className="text-[#A0785A] group-hover:text-[#E65100] transition-colors">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </span>
+              <span>Logout</span>
+            </button>
+          </nav>
+
+          <div className="p-4 border-t border-[#D4A574]/25">
+            <button
+              onClick={() => setShowProfileSelector(true)}
+              className="w-full bg-[#3E2723] rounded-xl p-3 flex items-center gap-3 text-left hover:bg-[#4E342E] transition"
+            >
+              {profileIcon ? (
+                <img
+                  src={`/avatars/${profileIcon}`}
+                  alt="Profile"
+                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-[#FFB87A]"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FFB87A] to-[#E65100] flex items-center justify-center font-bold text-[#3E2723] flex-shrink-0">
+                  {getInitials(userName)}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[#FFFBF5] truncate">{userName}</p>
+                <div className="flex items-center gap-1">
+                  <svg className="w-2.5 h-2.5 text-[#FFB87A]" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  <span className="text-[10px] text-[#D4A574]">Premium Member</span>
+                </div>
+              </div>
+              <span className="text-[10px] text-[#D4A574]">Edit</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Mobile Header */}
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 topbar px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="font-cinzel text-lg font-bold text-[#3E2723]">Dashboard</span>
+          </div>
+          <button
+            type="button"
+            aria-label="Toggle menu"
+            className="p-2 rounded-lg hover:bg-[#FFE8D1] transition"
+            onClick={() => setMobileMenuOpen((o) => !o)}
+          >
+            <svg
+              className="w-6 h-6 text-[#3E2723]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              {mobileMenuOpen ? <path d="M6 18L18 6M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
+            </svg>
+          </button>
+        </div>
+
+        {/* Mobile Menu Overlay */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-40 bg-[#FFFBF5] pt-20 px-6 pb-6 overflow-y-auto">
+            <div className="space-y-6">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold mb-2">Browse</p>
+                <div className="space-y-1">
+                  {browseNav.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
+                        isActive(link.href) ? "bg-[#3E2723] text-[#FFFBF5]" : "text-[#6B4423] hover:bg-[#FFE8D1]"
+                      }`}
+                    >
+                      <NavIcon name={link.icon} />
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold mb-2">Library</p>
+                <div className="space-y-1">
+                  {libraryNav.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
+                        isActive(link.href) ? "bg-[#3E2723] text-[#FFFBF5]" : "text-[#6B4423] hover:bg-[#FFE8D1]"
+                      }`}
+                    >
+                      <NavIcon name={link.icon} />
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <main className="flex-1 lg:ml-64 min-h-screen pt-[60px] lg:pt-0">
+          {/* Desktop Topbar */}
+          <header className="topbar sticky top-0 z-30 hidden lg:flex items-center justify-between px-8 py-4">
+            <div className="flex items-center gap-2 text-xs text-[#A0785A]">
+              <span>Chithira</span>
+              <svg className="w-2 h-2" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              <span className="text-[#3E2723] font-semibold">Dashboard</span>
+            </div>
+
+            <div className="flex-1 max-w-md mx-6">
+              <div className="relative">
+                <svg
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A0785A]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search for your next obsession..."
+                  className="w-full bg-[#FFFBF5] border border-[#D4A574]/40 rounded-full pl-11 pr-4 py-2 text-sm text-[#3E2723] placeholder-[#A0785A] focus:outline-none focus:border-[#E65100] focus:ring-2 focus:ring-[#E65100]/15 transition"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button className="relative w-10 h-10 rounded-full bg-[#FFFBF5] border border-[#D4A574]/30 hover:border-[#E65100] flex items-center justify-center text-[#3E2723] hover:text-[#E65100] transition">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#E65100] rounded-full" />
+              </button>
+              <button
+                onClick={() => setShowProfileSelector(true)}
+                className="w-10 h-10 rounded-full overflow-hidden border border-[#D4A574]/40 hover:border-[#E65100] transition"
+                aria-label="Change profile icon"
+              >
+                {profileIcon ? (
+                  <img src={`/avatars/${profileIcon}`} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#FFB87A] to-[#E65100] flex items-center justify-center font-bold text-[#3E2723]">
+                    {getInitials(userName)}
+                  </div>
+                )}
+              </button>
+            </div>
+          </header>
+
+          <div className="px-6 md:px-8 py-8 max-w-7xl mx-auto">
+            {/* Cinematic Greeting */}
+            <section className="mb-10 fade-up">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg
+                      className="w-3 h-3 text-[#E65100]"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span className="text-[10px] tracking-[0.3em] uppercase text-[#E65100] font-semibold">
+                      The God&apos;s Eye Observes
+                    </span>
+                  </div>
+                  <h1 className="font-cinzel text-4xl md:text-5xl font-bold text-[#3E2723] leading-tight">
+                    Welcome back,
+                    <br />
+                    <span className="text-[#E65100]">{userName}</span>
+                  </h1>
+                  <p className="text-[#6B4423] mt-3 max-w-md">
+                    Every story, carved in light. Pick up where you left off, or let the eye find your next obsession.
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="text-xs text-[#A0785A] uppercase tracking-wider">Today</p>
+                    <p className="font-cinzel text-lg font-semibold text-[#3E2723]">{formatToday()}</p>
+                  </div>
+                  <div className="w-px h-12 bg-[#D4A574]/40" />
+                  <div className="text-right">
+                    <p className="text-xs text-[#A0785A] uppercase tracking-wider">Streak</p>
+                    <p className="font-cinzel text-lg font-semibold text-[#E65100]">{streak} Days</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Dashboard Stats */}
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12 fade-up delay-1">
+              <StatCard
+                icon={
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                }
+                value={`${hours} hrs`}
+                label="Watch Time"
+                badge={{ text: "Total", color: "green" }}
+                progress={watchTimeProgress}
+              />
+              <StatCard
+                icon={
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </svg>
+                }
+                value={`${watchlist.length} titles`}
+                label="Saved Titles"
+                badge={{ text: `${newlyAddedCount} new this month`, color: "orange" }}
+                progress={savedTitlesProgress}
+              />
+              <StatCard
+                icon={
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                }
+                value="0 GB"
+                label="Downloads"
+                badge={{ text: "0 offline", color: "brown" }}
+                progress={0}
+              />
+            </section>
+
+            {/* Resume Watching */}
+            {resumeItems.length > 0 && (
+              <section className="mb-12 fade-up delay-2">
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Resume Watching</h2>
+                  <Link
+                    href="/history"
+                    className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
+                  >
+                    View All
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                  </Link>
+                </div>
+                <div className="space-y-4">
+                  {resumeItems.map((item) => (
+                    <ResumeCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Live Favorites */}
+            <section className="mb-12 fade-up delay-3">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Live Favorites</h2>
+                  <p className="text-xs text-[#A0785A] mt-1 ml-4">Your favorite channels</p>
+                </div>
+                <Link
+                  href="/live-tv"
+                  className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
+                >
+                  All Channels
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </Link>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                {channels.map((channel) => (
+                  <LiveFavoriteCard key={channel.id} channel={channel} />
+                ))}
+                {channels.length < 6 && (
+                  <Link href="/live-tv" className="live-fav-card group">
+                    <div className="live-fav-thumb bg-[#FFE8D1] border-dashed border-2 border-[#D4A574]">
+                      <svg
+                        className="w-8 h-8 text-[#E65100]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                    </div>
+                    <p className="mt-2 text-xs text-[#6B4423] font-semibold">Add Channel</p>
+                  </Link>
+                )}
+              </div>
+            </section>
+
+            {/* Recent Activity */}
+            <section className="mb-12 fade-up delay-4">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Recent Activity</h2>
+                  <p className="text-xs text-[#A0785A] mt-1 ml-4">Your latest actions</p>
+                </div>
+                <div className="flex bg-[#FFFBF5] border border-[#D4A574]/30 rounded-lg p-1">
+                  {(["all", "watching", "watchlist"] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setActivityFilter(f)}
+                      className={`filter-btn px-3 py-1 text-xs font-semibold rounded ${activityFilter === f ? "active" : "text-[#6B4423]"}`}
+                    >
+                      {f === "all" ? "All" : f === "watching" ? "Watching" : "Watchlist"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-2">
+                {filteredActivities.length > 0 ? (
+                  filteredActivities.map((item, i) => <ActivityRow key={i} item={item} />)
+                ) : (
+                  <div className="p-8 text-center">
+                    <p className="text-sm text-[#6B4423]">No activity yet. Start watching to see your history here.</p>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <footer className="mt-12 py-6 border-t border-[#D4A574]/30">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <p className="text-xs text-[#6B4423] font-cinzel tracking-wider">
+                  CHITHIRA · EVERY STORY, CARVED IN LIGHT
+                </p>
+                <div className="flex gap-5 text-xs">
+                  <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
+                    Help Center
+                  </a>
+                  <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
+                    Privacy
+                  </a>
+                  <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
+                    Terms
+                  </a>
+                  <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
+                    Contact
+                  </a>
+                </div>
+              </div>
+            </footer>
+          </div>
+
+          {/* Profile Icon Selector Modal */}
+          {showProfileSelector && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#3E2723]/60 backdrop-blur-sm">
+              <div className="bg-[#FFFBF5] rounded-2xl w-full max-w-lg p-6 shadow-2xl">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="font-cinzel text-xl font-bold text-[#3E2723]">Choose Your Avatar</h3>
+                    <p className="text-xs text-[#6B4423] mt-1">Select a profile icon to personalize your experience</p>
+                  </div>
+                  <button
+                    onClick={() => setShowProfileSelector(false)}
+                    className="w-8 h-8 rounded-full hover:bg-[#FFE8D1] flex items-center justify-center text-[#6B4423] transition"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
+                  {PROFILE_ICONS.map((icon) => (
+                    <button
+                      key={icon}
+                      onClick={() => handleSelectProfileIcon(icon)}
+                      className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition hover:scale-105 ${
+                        profileIcon === icon
+                          ? "border-[#E65100] ring-2 ring-[#E65100]/20"
+                          : "border-transparent hover:border-[#D4A574]"
+                      }`}
+                    >
+                      <img src={`/avatars/${icon}`} alt="Avatar option" className="w-full h-full object-cover" />
+                      {profileIcon === icon && (
+                        <div className="absolute inset-0 bg-[#E65100]/20 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-[#E65100]" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}

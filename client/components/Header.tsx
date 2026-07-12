@@ -42,19 +42,29 @@ function NavLink({ href, label, series }: { href: string; label: string; series?
   }, [afterHydration, href, pathname, searchParams, series]);
 
   return (
-    <Link href={href} className={`${styles.navLink} ${afterHydration && active ? styles.navLinkActive : ""}`}>
+    <Link
+      href={href}
+      className={`${styles.navLink} ${afterHydration && active ? styles.navLinkActive : ""} whitespace-nowrap`}
+    >
       {label}
     </Link>
   );
 }
 
 export default function Header() {
+  const pathname = usePathname();
+  const isDashboard = pathname === "/dashboard";
   const { watchlistCount } = useUserLibrary();
   const afterHydration = useAfterHydration();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    document.body.classList.toggle("dashboard-page", isDashboard);
+    return () => document.body.classList.remove("dashboard-page");
+  }, [isDashboard]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -92,6 +102,8 @@ export default function Header() {
       document.body.style.overflow = "";
     };
   }, [menuOpen]);
+
+  if (isDashboard) return null;
 
   return (
     <>
@@ -150,8 +162,6 @@ export default function Header() {
           </Link>
 
           <div className={styles.rightActions}>
-            <UserDashboard />
-
             <div className="hidden md:block">
               <InstantSearch />
             </div>
@@ -181,6 +191,8 @@ export default function Header() {
             <Link href="/browse" className={styles.watchButton}>
               Watch Free
             </Link>
+
+            <UserDashboard />
           </div>
         </div>
       </header>

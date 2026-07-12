@@ -103,12 +103,16 @@ function SignalBars({ quality }: { quality: ConnectionQuality }) {
 }
 
 export default function ConnectionIndicator() {
-  const [connection, setConnection] = useState<ConnectionInfo>(getConnectionQuality());
+  const [connection, setConnection] = useState<ConnectionInfo>({ quality: "strong" });
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    setHydrated(true);
     const updateConnection = () => {
       setConnection(getConnectionQuality());
     };
+
+    updateConnection();
 
     window.addEventListener("online", updateConnection);
     window.addEventListener("offline", updateConnection);
@@ -139,6 +143,18 @@ export default function ConnectionIndicator() {
         return "Strong connection";
     }
   };
+
+  if (!hydrated) {
+    return (
+      <div
+        className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--bg-card)] px-2 py-1 transition-all hover:border-[var(--accent-primary)]"
+        aria-label="Connection: checking..."
+      >
+        <SignalBars quality="strong" />
+        <span className="text-[9px] font-medium uppercase tracking-wider text-[var(--text-muted)]">Connecting</span>
+      </div>
+    );
+  }
 
   return (
     <div
