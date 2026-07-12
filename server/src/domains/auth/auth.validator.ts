@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const loginSchema = z.object({
+export const loginSchema = {
   body: z.object({
     email: z.string().email("Invalid email address"),
     password: z.string().min(6, "Password must be at least 6 characters"),
@@ -10,9 +10,9 @@ export const loginSchema = z.object({
     browser: z.string().optional(),
     appVersion: z.string().optional(),
   }),
-});
+};
 
-export const registerSchema = z.object({
+export const registerSchema = {
   body: z.object({
     username: z
       .string()
@@ -27,4 +27,4 @@ export const registerSchema = z.object({
     browser: z.string().optional(),
     appVersion: z.string().optional(),
   }),
-});
+};

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/components/AuthProvider";
+import { api } from "@/lib/api";
 import { getProfileIcon, PROFILE_ICONS, setProfileIcon } from "@/lib/storage/profile-icon";
 
 const navItems = [
@@ -27,36 +29,80 @@ function SidebarNavLink({ href, label, active }: { href: string; label: string; 
 
 export default function SettingsPage() {
   const pathname = usePathname();
+  const { user, token, isAuthenticated } = useAuth();
   const [profileIcon, setProfileIconState] = useState<string | null>(null);
   const [form, setForm] = useState({
     username: "Watcher",
     email: "",
-    mobile: "",
+    displayName: "",
+    bio: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setProfileIconState(getProfileIcon());
-  }, []);
+    if (user) {
+      setForm((f) => ({
+        ...f,
+        username: user.username || "",
+        email: user.email || "",
+        displayName: user.displayName || "",
+        bio: "",
+      }));
+    }
+  }, [user]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
     setSaved(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Not fully implementing backend save yet
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    if (!isAuthenticated || !token) {
+      setError("Please log in to save changes");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await api.patch(
+        "/api/v1/users/profile",
+        {
+          displayName: form.displayName,
+          bio: form.bio,
+        },
+        token
+      );
+
+      if (!result.success) {
+        throw new Error(result.error?.message || "Failed to save profile");
+      }
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save profile");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSelectIcon = (icon: string) => {
+  const handleSelectIcon = async (icon: string) => {
     setProfileIcon(icon);
     setProfileIconState(icon);
+
+    if (isAuthenticated && token) {
+      const avatarUrl = `/avatars/${icon}`;
+      await api.patch("/api/v1/users/avatar", { avatarUrl }, token).catch(console.error);
+    }
   };
 
   return (
@@ -139,6 +185,9 @@ export default function SettingsPage() {
             {/* Account Form */}
             <form onSubmit={handleSubmit} className="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-6 mb-6">
               <h2 className="font-cinzel text-lg font-bold text-[#3E2723] mb-5">Account Details</h2>
+              {error && (
+                <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-[#6B4423] mb-1.5">
@@ -148,8 +197,8 @@ export default function SettingsPage() {
                     type="text"
                     name="username"
                     value={form.username}
-                    onChange={handleChange}
-                    className="form-input w-full rounded-xl px-4 py-2.5 text-sm text-[#3E2723] placeholder:text-[#A0785A]"
+                    readOnly
+                    className="form-input w-full rounded-xl px-4 py-2.5 text-sm text-[#A0785A] bg-[#FFF8ED] cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -160,22 +209,34 @@ export default function SettingsPage() {
                     type="email"
                     name="email"
                     value={form.email}
-                    onChange={handleChange}
-                    placeholder="you@example.com"
-                    className="form-input w-full rounded-xl px-4 py-2.5 text-sm text-[#3E2723] placeholder:text-[#A0785A]"
+                    readOnly
+                    className="form-input w-full rounded-xl px-4 py-2.5 text-sm text-[#A0785A] bg-[#FFF8ED] cursor-not-allowed"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-[#6B4423] mb-1.5">
-                    Mobile Number
+                    Display Name
                   </label>
                   <input
-                    type="tel"
-                    name="mobile"
-                    value={form.mobile}
+                    type="text"
+                    name="displayName"
+                    value={form.displayName}
                     onChange={handleChange}
-                    placeholder="+94 77 123 4567"
+                    placeholder="How you want to appear"
                     className="form-input w-full rounded-xl px-4 py-2.5 text-sm text-[#3E2723] placeholder:text-[#A0785A]"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#6B4423] mb-1.5">
+                    Bio
+                  </label>
+                  <textarea
+                    name="bio"
+                    value={form.bio}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Tell us a little about yourself"
+                    className="form-input w-full rounded-xl px-4 py-2.5 text-sm text-[#3E2723] placeholder:text-[#A0785A] resize-none"
                   />
                 </div>
               </div>
@@ -229,17 +290,16 @@ export default function SettingsPage() {
               <div className="mt-6 flex items-center gap-4">
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-[#E65100] hover:bg-[#FF7B1C] text-white text-sm font-semibold rounded-xl transition"
+                  disabled={loading}
+                  className="px-6 py-2.5 bg-[#E65100] hover:bg-[#FF7B1C] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition"
                 >
-                  Save Changes
+                  {loading ? "Saving..." : "Save Changes"}
                 </button>
                 {saved && <span className="text-sm font-medium text-green-700">Settings saved.</span>}
               </div>
             </form>
 
-            <p className="text-xs text-[#A0785A]">
-              Account authentication and backend storage are coming soon. Changes here are stored locally for now.
-            </p>
+            <p className="text-xs text-[#A0785A]">Your profile information is synced across all your devices.</p>
           </div>
         </main>
       </div>

@@ -7,11 +7,11 @@ import { z } from "zod";
 
 const router = Router();
 
-const updateAvatarSchema = z.object({
+const updateAvatarSchema = {
   body: z.object({
     avatarUrl: z.string().min(1),
   }),
-});
+};
 
 router.get("/profile", authMiddleware, controller.getProfile);
 router.patch("/profile", authMiddleware, validate(updateProfileSchema), controller.updateProfile);

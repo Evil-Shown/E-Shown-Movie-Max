@@ -44,7 +44,8 @@ export async function removeContinueWatching(req: Request, res: Response, next: 
       });
       return;
     }
-    await continueService.removeContinueWatching(req.user.id, req.params.id);
+    const id = req.params.id as string;
+    await continueService.removeContinueWatching(req.user.id, id);
     success(res, { message: "Removed from continue watching" });
   } catch (error) {
     next(error);

@@ -20,7 +20,7 @@ function mapItem(item: Awaited<ReturnType<typeof watchlistRepository.findByUser>
 
 async function createAuditLog(userId: string, action: string, metadata?: Record<string, unknown>) {
   try {
-    await prisma.auditLog.create({ data: { userId, action, metadata } });
+    await prisma.auditLog.create({ data: { userId, action, metadata: metadata as never } });
   } catch (error) {
     logger.warn({ error, userId, action }, "Failed to create audit log");
   }
@@ -33,7 +33,10 @@ export async function getWatchlist(userId: string): Promise<WatchlistItemRespons
 
 export async function addToWatchlist(userId: string, input: WatchlistItemInput): Promise<WatchlistItemResponse> {
   const item = await watchlistRepository.create(userId, input);
-  await createAuditLog(userId, "WATCHLIST_ADDED", { tmdbId: input.tmdbId, title: input.title });
+  await createAuditLog(userId, "WATCHLIST_ADDED", { tmdbId: input.tmdbId, title: input.title } as unknown as Record<
+    string,
+    unknown
+  >);
   return mapItem(item);
 }
 
@@ -42,10 +45,10 @@ export async function removeFromWatchlist(userId: string, id: string): Promise<v
   if (result.count === 0) {
     throw new AppError(404, "NOT_FOUND", "Watchlist item not found");
   }
-  await createAuditLog(userId, "WATCHLIST_REMOVED", { id });
+  await createAuditLog(userId, "WATCHLIST_REMOVED", { id } as unknown as Record<string, unknown>);
 }
 
 export async function removeFromWatchlistByTmdb(userId: string, tmdbId: string): Promise<void> {
   await watchlistRepository.removeByTmdb(userId, tmdbId);
-  await createAuditLog(userId, "WATCHLIST_REMOVED", { tmdbId });
+  await createAuditLog(userId, "WATCHLIST_REMOVED", { tmdbId } as unknown as Record<string, unknown>);
 }

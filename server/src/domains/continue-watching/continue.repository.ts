@@ -14,8 +14,8 @@ export async function upsert(userId: string, data: ContinueWatchingInput) {
       userId_tmdbId_season_episode: {
         userId,
         tmdbId: data.tmdbId,
-        season: data.season ?? null,
-        episode: data.episode ?? null,
+        season: data.season ?? 0,
+        episode: data.episode ?? 0,
       },
     },
     update: {
@@ -33,8 +33,8 @@ export async function upsert(userId: string, data: ContinueWatchingInput) {
       mediaType: data.mediaType,
       title: data.title,
       posterPath: data.posterPath,
-      season: data.season,
-      episode: data.episode,
+      season: data.season ?? 0,
+      episode: data.episode ?? 0,
       currentTime: data.currentTime,
       duration: data.duration,
       progress: data.progress,

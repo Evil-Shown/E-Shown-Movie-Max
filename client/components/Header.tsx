@@ -2,6 +2,7 @@
 
 import ConnectionIndicator from "@/components/ConnectionIndicator";
 import InstantSearch from "@/components/InstantSearch";
+import ProtectedLink from "@/components/ProtectedLink";
 import UserDashboard from "@/components/UserDashboard";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { BRAND_NAME, BRAND_NAME_SINHALA } from "@/lib/brand";
@@ -15,12 +16,22 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/browse", label: "Movies", series: false },
   { href: "/browse?type=tv", label: "Series", series: true },
-  { href: "/watchlist", label: "Watchlist" },
-  { href: "/live-tv", label: "Live TV" },
+  { href: "/watchlist", label: "Watchlist", protected: true },
+  { href: "/live-tv", label: "Live TV", protected: true },
   { href: "/anime", label: "Anime" },
 ];
 
-function NavLink({ href, label, series }: { href: string; label: string; series?: boolean }) {
+function NavLink({
+  href,
+  label,
+  series,
+  protected: isProtected,
+}: {
+  href: string;
+  label: string;
+  series?: boolean;
+  protected?: boolean;
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const afterHydration = useAfterHydration();
@@ -40,6 +51,20 @@ function NavLink({ href, label, series }: { href: string; label: string; series?
       setActive(pathname === href || pathname.startsWith(`${href}/`));
     }
   }, [afterHydration, href, pathname, searchParams, series]);
+
+  const linkContent = (
+    <span className={`${styles.navLink} ${afterHydration && active ? styles.navLinkActive : ""} whitespace-nowrap`}>
+      {label}
+    </span>
+  );
+
+  if (isProtected) {
+    return (
+      <ProtectedLink href={href} className="inline-block">
+        {linkContent}
+      </ProtectedLink>
+    );
+  }
 
   return (
     <Link
@@ -129,7 +154,13 @@ export default function Header() {
           <nav className={styles.leftNav}>
             <ConnectionIndicator />
             {navLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} label={link.label} series={link.series} />
+              <NavLink
+                key={link.href}
+                href={link.href}
+                label={link.label}
+                series={link.series}
+                protected={link.protected}
+              />
             ))}
           </nav>
 
@@ -166,11 +197,11 @@ export default function Header() {
               <InstantSearch />
             </div>
 
-            <Link href="/gods-eye" className={styles.tBoomButton}>
+            <ProtectedLink href="/gods-eye" className={styles.tBoomButton}>
               THE GOD&apos;S EYE
-            </Link>
+            </ProtectedLink>
 
-            <Link href="/watchlist" aria-label="Watchlist" className={`${styles.searchButton} relative`}>
+            <ProtectedLink href="/watchlist" aria-label="Watchlist" className={`${styles.searchButton} relative`}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
@@ -179,7 +210,7 @@ export default function Header() {
                   {watchlistCount > 9 ? "9+" : watchlistCount}
                 </span>
               )}
-            </Link>
+            </ProtectedLink>
 
             <Link href="/search" aria-label="Search" className={`${styles.searchButton} md:hidden`}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
@@ -204,9 +235,9 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
-          <Link href="/gods-eye" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
+          <ProtectedLink href="/gods-eye" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
             THE GOD&apos;S EYE
-          </Link>
+          </ProtectedLink>
           <Link href="/browse" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
             Watch Free
           </Link>
