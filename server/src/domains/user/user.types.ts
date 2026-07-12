@@ -1,4 +1,4 @@
-import type { UserSettings } from "../../generated/prisma";
+import type { UserSettings } from "../../../generated/prisma";
 
 export interface UpdateProfileInput {
   displayName?: string;

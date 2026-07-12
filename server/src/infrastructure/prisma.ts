@@ -1,4 +1,4 @@
-import { PrismaClient } from "../generated/prisma";
+import { PrismaClient } from "../../generated/prisma";
 import { env } from "../config/env";
 import { logger } from "../config/logger";
 

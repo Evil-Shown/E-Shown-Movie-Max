@@ -1,0 +1,168 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  MODERATOR
+  CONTENT_MANAGER
+  SUPPORT
+  ADMIN
+  DEVELOPER
+  OWNER
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  username    String   @unique
+  displayName String?
+  bio         String?
+  avatarUrl   String?
+  role        Role     @default(USER)
+  isVerified  Boolean  @default(false)
+  authUserId  String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  settings         UserSettings?
+  devices          Device[]
+  watchlist        WatchlistItem[]
+  continueWatching ContinueWatching[]
+  watchedEpisodes  WatchedEpisode[]
+  auditLogs        AuditLog[]
+  analyticsEvents  AnalyticsEvent[]
+
+  @@index([authUserId])
+  @@map("users")
+}
+
+model UserSettings {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  language          String   @default("en")
+  autoplay          Boolean  @default(true)
+  preferredProvider String?
+  subtitleLang      String?  @default("en")
+  quality           String?  @default("auto")
+  notifications     Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("user_settings")
+}
+
+model Device {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId   String
+  deviceName String?
+  platform   String?
+  browser    String?
+  appVersion String?
+  lastActive DateTime @default(now())
+  lastIp     String?
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@index([lastActive])
+  @@map("devices")
+}
+
+model WatchlistItem {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tmdbId     String
+  mediaType  String
+  title      String
+  posterPath String?
+  year       Int?
+  rating     Float?
+  genres     String?
+  addedAt    DateTime @default(now())
+
+  @@unique([userId, tmdbId])
+  @@index([userId])
+  @@index([addedAt])
+  @@map("watchlist_items")
+}
+
+model ContinueWatching {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tmdbId      String
+  mediaType   String
+  title       String
+  posterPath  String?
+  season      Int      @default(0)
+  episode     Int      @default(0)
+  currentTime Float    @default(0)
+  duration    Float    @default(0)
+  progress    Int      @default(0)
+  provider    String?
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, tmdbId, season, episode])
+  @@index([userId])
+  @@index([updatedAt])
+  @@map("continue_watching")
+}
+
+model WatchedEpisode {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tvdbId    String
+  season    Int
+  episode   Int
+  watchedAt DateTime @default(now())
+
+  @@unique([userId, tvdbId, season, episode])
+  @@index([userId, tvdbId])
+  @@map("watched_episodes")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  metadata  Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  event      String
+  properties Json?
+  sessionId  String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([event, createdAt])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("analytics_events")
+}

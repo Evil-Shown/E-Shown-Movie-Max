@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import type { Role } from "../generated/prisma";
+import type { Role } from "../../generated/prisma";
 import { AppError } from "../utils/response";
 
 const roleHierarchy: Record<Role, number> = {
