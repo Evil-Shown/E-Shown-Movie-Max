@@ -238,10 +238,20 @@ ipcMain.on("splash-ready", () => {
 function isAllowedAppUrl(url) {
   try {
     const parsed = new URL(url);
-    return (
-      (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") &&
-      parsed.port === String(WEB_PORT)
-    );
+    // Allow local app URLs
+    if ((parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") &&
+        parsed.port === String(WEB_PORT)) {
+      return true;
+    }
+    // Allow Supabase OAuth redirect (Google sign-in)
+    if (parsed.hostname.endsWith(".supabase.co") && parsed.pathname.startsWith("/auth/v1/authorize")) {
+      return true;
+    }
+    // Allow Google accounts domain for the actual OAuth consent page
+    if (parsed.hostname === "accounts.google.com") {
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }
@@ -311,6 +321,14 @@ function attachWindowGuards(window) {
       return { action: "deny" };
     }
     if (isEmbedProviderUrl(url)) {
+      return { action: "allow" };
+    }
+    // Allow Supabase OAuth popup for Google sign-in
+    const parsed = new URL(url);
+    if (parsed.hostname.endsWith(".supabase.co") && parsed.pathname.startsWith("/auth/v1/authorize")) {
+      return { action: "allow" };
+    }
+    if (parsed.hostname === "accounts.google.com") {
       return { action: "allow" };
     }
     return { action: "deny" };
