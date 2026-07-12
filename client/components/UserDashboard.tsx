@@ -19,17 +19,17 @@ export default function UserDashboard() {
   return (
     <Link
       href="/dashboard"
-      className="flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--bg-card)] px-2 py-1.5 transition-all hover:border-[var(--accent-primary)] hover:shadow-sm"
+      className="block rounded-full transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2"
       aria-label="User dashboard"
     >
       {icon ? (
-        <div className="h-9 w-9 rounded-full overflow-hidden border border-[var(--border-strong)]">
+        <div className="h-11 w-11 rounded-full overflow-hidden shadow-md ring-2 ring-white/60">
           <img src={`/avatars/${icon}`} alt="Profile" className="h-full w-full object-cover" />
         </div>
       ) : (
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-warm)] text-white">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-warm)] text-white shadow-md ring-2 ring-white/60">
           <svg
-            className="h-5 w-5"
+            className="h-6 w-6"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
