@@ -59,7 +59,7 @@ export default function VideoPlayerProvider({ children }: { children: React.Reac
           type: "watch",
           payload: { movie, options },
         });
-        openAuthModal();
+        openAuthModal({ redirectOnClose: true });
         return;
       }
       doOpenMovie(movie, options);

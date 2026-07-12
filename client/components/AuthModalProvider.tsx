@@ -27,13 +27,20 @@ export default function AuthModalProvider({ children }: { children: ReactNode })
     setIsOpen(true);
   }, []);
 
-  const closeAuthModal = useCallback(() => {
-    setIsOpen(false);
-    const pending = consumePendingAction();
-    if (pending) {
-      window.dispatchEvent(new CustomEvent("authActionReady", { detail: pending }));
-    }
-  }, [consumePendingAction]);
+  const closeAuthModal = useCallback(
+    (authenticated?: boolean) => {
+      setIsOpen(false);
+      if (authenticated) {
+        const pending = consumePendingAction();
+        if (pending) {
+          window.dispatchEvent(new CustomEvent("authActionReady", { detail: pending }));
+        }
+      } else {
+        consumePendingAction();
+      }
+    },
+    [consumePendingAction]
+  );
 
   return (
     <AuthModalContext.Provider value={{ openAuthModal, closeAuthModal }}>
