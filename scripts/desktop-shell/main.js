@@ -235,6 +235,16 @@ ipcMain.on("splash-ready", () => {
   }, 1500);
 });
 
+ipcMain.handle("open-external", async (_event, url) => {
+  try {
+    await shell.openExternal(url);
+    return true;
+  } catch (err) {
+    logError("Failed to open external URL:", url, err);
+    return false;
+  }
+});
+
 function isAllowedAppUrl(url) {
   try {
     const parsed = new URL(url);

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthProvider";
-import { getSupabaseClient } from "@/lib/supabase/client";
 
 const cinemaGradients = [
   "radial-gradient(ellipse at 20% 50%, #e65100 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, #0f3460 0%, transparent 50%), #0a0a0f",
@@ -468,22 +467,102 @@ function GoogleOAuthButton() {
   const handleGoogleAuth = async () => {
     setLoading(true);
     try {
-      const sb = getSupabaseClient();
-      const { error } = await sb.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (error) {
-        console.error("Google OAuth error:", error.message);
-        setLoading(false);
+      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      const url = `${baseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&prompt=select_account`;
+
+      const isElectron = (window as any).chithraDesktop?.isDesktopApp;
+
+      if (isElectron) {
+        // Open in the system browser (has saved Google accounts)
+        const opened = await (window as any).chithraDesktop.openExternal(url);
+        if (!opened) {
+          // fallback
+          window.location.href = url;
+          return;
+        }
+        // Start polling for the OAuth session relay
+        startPolling();
+      } else {
+        // Browser: open popup
+        const popup = window.open(url, "google-auth", "width=600,height=700");
+        if (!popup) {
+          window.location.href = url;
+          return;
+        }
+        pollPopupToken(popup);
       }
-      // else: browser navigates away to Google, no need to reset state
     } catch (err) {
       console.error("Google OAuth error:", err);
       setLoading(false);
     }
+  };
+
+  const pollPopupToken = (popup: Window) => {
+    const timer = setInterval(() => {
+      try {
+        if (popup.closed) {
+          clearInterval(timer);
+          setLoading(false);
+          return;
+        }
+        const popupUrl = popup.location.href;
+        if (popupUrl?.startsWith(window.location.origin + "/auth/callback")) {
+          clearInterval(timer);
+          const hash = popupUrl.includes("#") ? popupUrl.substring(popupUrl.indexOf("#") + 1) : "";
+          const token = new URLSearchParams(hash).get("access_token");
+          if (token) {
+            popup.close();
+            finalizeOAuth(token);
+          } else {
+            setLoading(false);
+          }
+        }
+      } catch {
+        /* cross-origin */
+      }
+    }, 300);
+  };
+
+  const startPolling = () => {
+    const poll = async () => {
+      try {
+        const resp = await fetch("http://localhost:5000/api/v1/auth/claim-session");
+        const json = await resp.json();
+        if (json.success && json.data) {
+          localStorage.setItem("chithra-auth-token", json.data.accessToken);
+          localStorage.setItem("chithra-auth-user", JSON.stringify(json.data.user));
+          window.dispatchEvent(new Event("auth-stored"));
+          window.location.reload();
+          return;
+        }
+      } catch {
+        /* server not ready */
+      }
+      setTimeout(startPolling, 1500);
+    };
+    poll();
+    setLoading(false);
+  };
+
+  const finalizeOAuth = async (accessToken: string) => {
+    try {
+      const { api } = await import("@/lib/api");
+      const result = await api.post<{ user: Record<string, unknown>; tokens: { accessToken: string } }>(
+        "/api/v1/auth/oauth",
+        { accessToken }
+      );
+      if (result.success && result.data) {
+        const { user, tokens } = result.data;
+        localStorage.setItem("chithra-auth-token", tokens.accessToken);
+        localStorage.setItem("chithra-auth-user", JSON.stringify(user));
+        window.dispatchEvent(new Event("auth-stored"));
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error("OAuth finalize error:", err);
+    }
+    setLoading(false);
   };
 
   return (
