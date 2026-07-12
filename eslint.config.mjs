@@ -17,6 +17,7 @@ export default defineConfig([
     "client/next-env.d.ts",
     "*.js",
     "scripts/**",
+    "server/src/generated/**",
   ]),
   ...tseslint.config(
     {

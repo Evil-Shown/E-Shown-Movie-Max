@@ -1,12 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthProvider";
-
-interface AuthModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
 
 const cinemaGradients = [
   "radial-gradient(ellipse at 20% 50%, #e65100 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, #0f3460 0%, transparent 50%), #0a0a0f",
@@ -14,7 +9,14 @@ const cinemaGradients = [
   "radial-gradient(ellipse at 30% 30%, #bf360c 0%, transparent 50%), radial-gradient(ellipse at 70% 70%, #263238 0%, transparent 50%), #0a0a0f",
 ];
 
-export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
+interface AuthModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  /** If true, redirect to home when user closes without logging in */
+  redirectOnClose?: boolean;
+}
+
+export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: AuthModalProps) {
   const { login, register } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     confirmPassword: "",
   });
 
+  const handleClose = useCallback(() => {
+    if (redirectOnClose && typeof window !== "undefined") {
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 200);
+    }
+    onClose();
+  }, [redirectOnClose, onClose]);
+
   useEffect(() => {
     if (isOpen) {
       const t = setTimeout(() => setMounted(true), 50);
@@ -48,13 +59,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     };
     window.addEventListener("keydown", onEsc);
     return () => window.removeEventListener("keydown", onEsc);
-  }, [onClose]);
-
-  if (!isOpen) return null;
+  }, [handleClose]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,13 +112,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null);
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop with animated gradient */}
       <div
         className="absolute inset-0 backdrop-blur-xl transition-all duration-700"
         style={{ background: cinemaGradients[gradientIndex] }}
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       {/* Ambient orbs */}
@@ -157,13 +168,13 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           {/* Glass background */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#0f0f1a]/90 via-[#1a1a2e]/85 to-[#16213e]/90" />
 
-          {/* Content */}
-          <div className="relative px-8 py-10">
+          {/* Content - responsive with max-height and scroll */}
+          <div className="relative px-6 py-8 max-h-[90vh] overflow-y-auto">
             {/* Brand header */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-6">
               <div className="inline-flex items-center gap-2 mb-3">
                 <svg
-                  className="w-8 h-8"
+                  className="w-7 h-7"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -175,7 +186,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   <path d="M4 22h16" strokeWidth="1.5" opacity="0.3" />
                 </svg>
                 <span
-                  className="text-2xl font-bold tracking-wider text-white"
+                  className="text-xl font-bold tracking-wider text-white"
                   style={{ fontFamily: "var(--font-cinzel), serif" }}
                 >
                   CHITH<span style={{ color: "#e65100" }}>RA</span>
@@ -187,14 +198,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </div>
 
             {/* Mode tabs */}
-            <div className="relative flex mb-8 bg-white/5 rounded-xl p-1">
+            <div className="relative flex mb-6 bg-white/5 rounded-xl p-1">
               <div
                 className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-[#e65100] transition-all duration-300 ease-out"
                 style={{ left: mode === "login" ? "4px" : "calc(50%)" }}
               />
               <button
                 onClick={() => switchMode("login")}
-                className={`relative z-10 flex-1 py-3 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${
+                className={`relative z-10 flex-1 py-2.5 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${
                   mode === "login" ? "text-white" : "text-gray-400 hover:text-gray-200"
                 }`}
               >
@@ -202,7 +213,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </button>
               <button
                 onClick={() => switchMode("register")}
-                className={`relative z-10 flex-1 py-3 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${
+                className={`relative z-10 flex-1 py-2.5 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${
                   mode === "register" ? "text-white" : "text-gray-400 hover:text-gray-200"
                 }`}
               >
@@ -212,7 +223,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
             {/* Error */}
             {error && (
-              <div className="mb-6 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm flex items-center gap-2.5 animate-pulse">
+              <div className="mb-5 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm flex items-center gap-2.5 animate-pulse">
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
@@ -227,7 +238,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
             {/* Forms */}
             {mode === "login" ? (
-              <form key="login" onSubmit={handleLoginSubmit} className="space-y-5">
+              <form key="login" onSubmit={handleLoginSubmit} className="space-y-4">
                 <InputGroup
                   icon={
                     <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -287,7 +298,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="relative w-full py-3.5 mt-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#e65100] to-[#ff7b1c] text-white font-semibold text-sm uppercase tracking-wider shadow-lg shadow-[#e65100]/25 transition-all hover:shadow-xl hover:shadow-[#e65100]/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
+                  className="relative w-full py-3 mt-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#e65100] to-[#ff7b1c] text-white font-semibold text-sm uppercase tracking-wider shadow-lg shadow-[#e65100]/25 transition-all hover:shadow-xl hover:shadow-[#e65100]/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
                 >
                   <span className="relative z-10">
                     {loading ? (
@@ -412,7 +423,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="relative w-full py-3.5 mt-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#e65100] to-[#ff7b1c] text-white font-semibold text-sm uppercase tracking-wider shadow-lg shadow-[#e65100]/25 transition-all hover:shadow-xl hover:shadow-[#e65100]/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
+                  className="relative w-full py-3 mt-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#e65100] to-[#ff7b1c] text-white font-semibold text-sm uppercase tracking-wider shadow-lg shadow-[#e65100]/25 transition-all hover:shadow-xl hover:shadow-[#e65100]/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
                 >
                   <span className="relative z-10">
                     {loading ? (
@@ -444,7 +455,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             )}
 
             {/* Bottom switch */}
-            <div className="mt-8 pt-6 border-t border-white/5">
+            <div className="mt-6 pt-5 border-t border-white/5">
               <p className="text-center text-sm text-gray-400">
                 {mode === "login" ? (
                   <>
@@ -472,8 +483,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
             {/* Close button */}
             <button
-              onClick={onClose}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+              onClick={handleClose}
+              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -558,7 +569,7 @@ function InputGroup({
           placeholder={placeholder}
           autoComplete={autoComplete}
           required
-          className="flex-1 px-3 py-3.5 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
+          className="flex-1 px-3 py-3 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
         />
         {trailing && <span className="pr-4">{trailing}</span>}
       </div>
