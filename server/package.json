@@ -6,7 +6,7 @@
   "main": "dist/src/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc && xcopy /E /I /Y generated\\prisma dist\\generated\\prisma >nul 2>&1",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc && xcopy /E /I /Y generated\\prisma dist\\generated\\prisma >nul 2>&1",
     "start": "node dist/src/index.js",
     "lint": "tsc --noEmit",
     "db:generate": "prisma generate",

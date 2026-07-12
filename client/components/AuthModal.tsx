@@ -41,11 +41,9 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
       // Auth succeeded — replay pending action
       onClose(true);
     } else {
-      // Dismissed without login — redirect home if needed
-      if (redirectOnClose && typeof window !== "undefined") {
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 200);
+      // Dismissed without login — only redirect home if not already there
+      if (redirectOnClose && typeof window !== "undefined" && window.location.pathname !== "/") {
+        window.location.href = "/";
       }
       onClose(false);
     }
