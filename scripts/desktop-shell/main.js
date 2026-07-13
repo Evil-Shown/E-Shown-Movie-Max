@@ -429,12 +429,31 @@ function createMainWindow() {
   });
 }
 
+function extractPngFromIco(buf) {
+  const count = buf.readUInt16LE(4);
+  let bestOffset = 0, bestSize = 0, bestPixels = 0;
+  for (let i = 0; i < count; i++) {
+    const off = 6 + i * 16;
+    const w = buf.readUInt8(off) || 256;
+    const h = buf.readUInt8(off + 1) || 256;
+    const size = buf.readUInt32LE(off + 8);
+    const dataOff = buf.readUInt32LE(off + 12);
+    if (w * h > bestPixels) {
+      bestPixels = w * h;
+      bestSize = size;
+      bestOffset = dataOff;
+    }
+  }
+  return buf.slice(bestOffset, bestOffset + bestSize);
+}
+
 function createTray() {
   const iconPath = path.join(__dirname, "assets", "icon.ico");
   if (!fs.existsSync(iconPath)) return;
 
   const iconBuf = fs.readFileSync(iconPath);
-  const trayIcon = nativeImage.createFromBuffer(iconBuf).resize({ width: 16, height: 16 });
+  const pngBuf = extractPngFromIco(iconBuf);
+  const trayIcon = nativeImage.createFromBuffer(pngBuf).resize({ width: 16, height: 16 });
   tray = new Tray(trayIcon);
   tray.setToolTip("CHITHRA - CINEMA");
   tray.setContextMenu(
