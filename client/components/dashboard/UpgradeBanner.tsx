@@ -73,8 +73,8 @@ export default function UpgradeBanner({ onUpgradeClick }: { onUpgradeClick: () =
             Unlock The God&apos;s Eye & Live TV
           </h2>
           <p className="text-[#FFFBF5]/60 text-sm mb-4 max-w-lg">
-            Don&apos;t be limited by the 7-day trial. Upgrade to Pro for unlimited torrent streaming, offline downloads,
-            and 4K cinematic quality.
+            Don&apos;t be limited by the 7-day trial. Upgrade to Pro for unlimited torrent downloading, movies and tv
+            series offline downloads, and best cinematic quality and fast streaming.
           </p>
 
           <div className="flex flex-wrap gap-4 mb-4">
@@ -90,14 +90,22 @@ export default function UpgradeBanner({ onUpgradeClick }: { onUpgradeClick: () =
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-3 bg-[#FFFBF5]/5 backdrop-blur-sm p-6 rounded-xl border border-[#FFFBF5]/10 min-w-[260px]">
+        <div className="relative flex flex-col items-center gap-3 bg-[#FFFBF5]/5 backdrop-blur-sm p-6 rounded-xl border border-[#FFFBF5]/10 min-w-[260px]">
+          <div className="absolute -top-3 right-4 bg-[#FFB87A] text-[#3E2723] text-[10px] font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
+            LIMITED OFFER
+          </div>
           <div className="text-center">
-            <span className="text-[#FFFBF5]/60 text-xs uppercase tracking-wider">Starting at</span>
-            <div className="flex items-baseline justify-center gap-1 mt-1">
-              <span className="text-3xl font-bold text-[#FFB87A]">LKR 200</span>
-              <span className="text-[#FFFBF5]/40 text-sm">/mo</span>
+            <span className="text-[#FFFBF5]/60 text-xs uppercase tracking-wider">Limited Time Offer</span>
+            <div className="flex items-center justify-center gap-3 mt-2">
+              <span className="text-lg text-[#FFFBF5]/40 line-through decoration-2">LKR 500</span>
+              <span className="text-4xl font-extrabold text-[#FFB87A]">LKR 200</span>
+              <span className="text-[#FFFBF5]/40 text-sm self-end mb-1">/mo</span>
             </div>
-            <div className="text-[#FFFBF5]/40 text-xs mt-1">or $0.99/mo for global users</div>
+            <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-red-500/15 border border-red-400/30">
+              <span className="text-red-300 text-xs font-bold">🔥 Save 60%</span>
+            </div>
+            <div className="text-[#FFFBF5]/40 text-xs mt-3">Only LKR 6.67 per day &bull; Cancel anytime</div>
+            <div className="text-[#FFFBF5]/40 text-xs mt-1">or $0.99/month for global users</div>
           </div>
 
           <button

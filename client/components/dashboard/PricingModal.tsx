@@ -92,9 +92,20 @@ export default function PricingModal({ isOpen, onClose }: { isOpen: boolean; onC
             <h3 className="text-xl font-bold text-[#FFB87A] mb-1 mt-4 md:mt-0">Chithira Pro</h3>
             <p className="text-[#FFFBF5]/60 text-sm mb-6">The ultimate cinematic experience</p>
 
-            <div className="mb-2">
-              <span className="text-4xl font-bold text-[#FFFBF5]">{price}</span>
-              <span className="text-[#FFFBF5]/60">/month</span>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-lg text-[#FFFBF5]/40 line-through decoration-2">
+                  {region === "LKR" ? "LKR 500" : "$2.49"}
+                </span>
+                <span className="text-4xl font-extrabold text-[#FFB87A]">{price}</span>
+                <span className="text-[#FFFBF5]/40 text-sm self-end mb-1">/mo</span>
+              </div>
+              <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-red-500/15 border border-red-400/30">
+                <span className="text-red-300 text-xs font-bold">🔥 Save 60%</span>
+              </div>
+              <div className="text-[#FFFBF5]/40 text-xs mt-3">
+                {region === "LKR" ? "Only LKR 6.67 per day" : "Only $0.03 per day"} &bull; Cancel anytime
+              </div>
             </div>
 
             <div className="flex gap-2 mb-6">
