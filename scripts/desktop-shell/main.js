@@ -433,7 +433,9 @@ function createTray() {
   const iconPath = path.join(__dirname, "assets", "icon.ico");
   if (!fs.existsSync(iconPath)) return;
 
-  tray = new Tray(nativeImage.createFromPath(iconPath));
+  const iconBuf = fs.readFileSync(iconPath);
+  const trayIcon = nativeImage.createFromBuffer(iconBuf).resize({ width: 16, height: 16 });
+  tray = new Tray(trayIcon);
   tray.setToolTip("CHITHRA - CINEMA");
   tray.setContextMenu(
     Menu.buildFromTemplate([

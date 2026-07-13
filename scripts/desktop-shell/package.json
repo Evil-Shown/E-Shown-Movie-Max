@@ -1,7 +1,7 @@
 {
   "name": "chithra-cinema",
   "productName": "CHITHRA - CINEMA",
-  "version": "2.3.6",
+  "version": "2.3.7",
   "description": "CHITHRA - CINEMA desktop app",
   "main": "main.js",
   "author": "CHITHRA - CINEMA",
@@ -86,7 +86,7 @@
           ]
         }
       ],
-      "icon": "icon.ico",
+      "icon": "assets/icon.ico",
       "artifactName": "Chithra-Cinema-Setup-${version}.${ext}",
       "signAndEditExecutable": false
     },
@@ -98,9 +98,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "CHITHRA - CINEMA",
-      "installerIcon": "icon.ico",
-      "uninstallerIcon": "icon.ico",
-      "installerHeaderIcon": "icon.ico"
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico"
     }
   }
 }
