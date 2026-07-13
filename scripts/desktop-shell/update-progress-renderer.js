@@ -30,7 +30,7 @@ function setVersion(version) {
 
 if (window.updateProgress) {
   window.updateProgress.onInit((payload) => {
-    setVersion(payload.version);
+    if (payload.version) setVersion(payload.version);
     setProgress(payload.percent, payload.transferred, payload.total);
   });
 }
