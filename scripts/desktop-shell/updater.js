@@ -49,6 +49,7 @@ function showDownloadProgress(version) {
     width: 520,
     height: 380,
     frame: false,
+    transparent: true,
     resizable: false,
     minimizable: false,
     maximizable: false,
@@ -57,7 +58,7 @@ function showDownloadProgress(version) {
     skipTaskbar: true,
     center: true,
     show: false,
-    backgroundColor: "#040408",
+    backgroundColor: "#00000000",
     webPreferences: {
       preload: path.join(__dirname, "update-progress-preload.js"),
       contextIsolation: true,

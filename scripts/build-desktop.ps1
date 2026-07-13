@@ -145,6 +145,7 @@ function Sync-DesktopShell {
     "update-dialog-renderer.js",
     "update-progress.html",
     "update-progress-preload.js",
+    "update-progress-renderer.js",
     "release-notes.js",
     "block-ad-nav.js",
     "embed-headers.js",

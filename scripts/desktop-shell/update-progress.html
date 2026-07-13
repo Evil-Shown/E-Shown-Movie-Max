@@ -20,23 +20,15 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background: #040408;
+        background: transparent;
         font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-        -webkit-app-region: drag;
       }
 
-      .backdrop {
-        width: 100%;
-        height: 100%;
+      body {
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 32px;
-        position: relative;
-        background:
-          radial-gradient(ellipse at 20% 20%, rgba(245, 158, 11, 0.12) 0%, transparent 50%),
-          radial-gradient(ellipse at 80% 80%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
-          linear-gradient(180deg, #0a0a14 0%, #06060c 100%);
+        padding: 0;
       }
 
       .card {
@@ -56,25 +48,6 @@
         position: relative;
         overflow: hidden;
         -webkit-app-region: no-drag;
-      }
-
-      .card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg,
-          transparent 0%,
-          rgba(255, 255, 255, 0.04) 50%,
-          transparent 100%);
-        animation: shimmer 3s ease-in-out infinite;
-      }
-
-      @keyframes shimmer {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(200%); }
       }
 
       .spinner-ring {
@@ -200,53 +173,10 @@
         color: #f3f4f6;
       }
 
-      .particles {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        overflow: hidden;
-      }
-
-      .particle {
-        position: absolute;
-        width: 4px;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.25);
-        border-radius: 50%;
-        animation: float 12s infinite;
-        opacity: 0;
-      }
-
-      @keyframes float {
-        0% { transform: translateY(110%) translateX(0); opacity: 0; }
-        10% { opacity: 0.5; }
-        90% { opacity: 0.5; }
-        100% { transform: translateY(-20%) translateX(40px); opacity: 0; }
-      }
-
-      .particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 10s; }
-      .particle:nth-child(2) { left: 25%; animation-delay: 2s; animation-duration: 13s; }
-      .particle:nth-child(3) { left: 40%; animation-delay: 4s; animation-duration: 11s; }
-      .particle:nth-child(4) { left: 55%; animation-delay: 1s; animation-duration: 14s; }
-      .particle:nth-child(5) { left: 70%; animation-delay: 3s; animation-duration: 12s; }
-      .particle:nth-child(6) { left: 85%; animation-delay: 5s; animation-duration: 15s; }
     </style>
   </head>
   <body>
-    <div class="backdrop">
-      <div class="particles">
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-      </div>
-
-      <div class="card">
+    <div class="card">
         <div class="spinner-ring">
           <div class="spinner-glow"></div>
           <div class="rotating-ring"></div>
@@ -277,47 +207,9 @@
 
         <p class="message">
           Please keep the app open. The update will be installed automatically once the download finishes.
-        </p>
-      </div>
+      </p>
     </div>
 
-    <script>
-      const spinnerProgress = document.getElementById('spinnerProgress');
-      const progressFill = document.getElementById('progressFill');
-      const percentText = document.getElementById('percentText');
-      const bytesText = document.getElementById('bytesText');
-      const versionText = document.getElementById('versionText');
-
-      const circumference = 2 * Math.PI * 40;
-      spinnerProgress.style.strokeDasharray = circumference;
-      spinnerProgress.style.strokeDashoffset = circumference;
-
-      function formatBytes(bytes) {
-        if (bytes === 0 || isNaN(bytes)) return '0 MB';
-        const mb = bytes / (1024 * 1024);
-        if (mb < 1024) return mb.toFixed(1) + ' MB';
-        return (mb / 1024).toFixed(2) + ' GB';
-      }
-
-      function setProgress(percent, transferred, total) {
-        const p = Math.max(0, Math.min(100, percent || 0));
-        const offset = circumference - (p / 100) * circumference;
-        spinnerProgress.style.strokeDashoffset = offset;
-        progressFill.style.width = p + '%';
-        percentText.textContent = Math.round(p) + '%';
-        bytesText.textContent = formatBytes(transferred) + ' / ' + formatBytes(total);
-      }
-
-      function setVersion(version) {
-        versionText.textContent = version ? 'v' + version : 'Latest version';
-      }
-
-      if (window.updateProgress) {
-        window.updateProgress.onInit((payload) => {
-          setVersion(payload.version);
-          setProgress(payload.percent, payload.transferred, payload.total);
-        });
-      }
-    </script>
+    <script src="update-progress-renderer.js"></script>
   </body>
 </html>
