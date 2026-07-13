@@ -9,6 +9,9 @@ import { formatDisplayYear, posterUrl } from "@/lib/movies";
 import type { ContinueWatchingItem, WatchlistItem } from "@/lib/storage/types";
 import type { LiveTvChannel } from "@/lib/live-tv/types";
 import { getProfileIcon, setProfileIcon, PROFILE_ICONS } from "@/lib/storage/profile-icon";
+import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
+import PricingModal from "@/components/dashboard/PricingModal";
+import ProBadge from "@/components/dashboard/ProBadge";
 
 function formatDuration(seconds: number) {
   if (!seconds || seconds <= 0) return "0m";
@@ -412,6 +415,7 @@ export default function DashboardPage() {
   const [activityFilter, setActivityFilter] = useState<"all" | "watching" | "watchlist" | "completed">("all");
   const [profileIcon, setProfileIconState] = useState<string | null>(null);
   const [showProfileSelector, setShowProfileSelector] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
 
   useEffect(() => {
     setProfileIconState(getProfileIcon());
@@ -744,7 +748,7 @@ export default function DashboardPage() {
                   <svg className="w-2.5 h-2.5 text-[#FFB87A]" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
-                  <span className="text-[10px] text-[#D4A574]">Premium Member</span>
+                  <ProBadge />
                 </div>
               </div>
               <span className="text-[10px] text-[#D4A574]">Edit</span>
@@ -957,9 +961,14 @@ export default function DashboardPage() {
               />
             </section>
 
+            {/* Upgrade Banner */}
+            <div className="mb-12 fade-up delay-2">
+              <UpgradeBanner onUpgradeClick={() => setIsPricingOpen(true)} />
+            </div>
+
             {/* Resume Watching */}
             {resumeItems.length > 0 && (
-              <section className="mb-12 fade-up delay-2">
+              <section className="mb-12 fade-up delay-3">
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Resume Watching</h2>
                   <Link
@@ -982,7 +991,7 @@ export default function DashboardPage() {
             )}
 
             {/* Live Favorites */}
-            <section className="mb-12 fade-up delay-3">
+            <section className="mb-12 fade-up delay-4">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Live Favorites</h2>
@@ -1027,7 +1036,7 @@ export default function DashboardPage() {
             </section>
 
             {/* Recent Activity */}
-            <section className="mb-12 fade-up delay-4">
+            <section className="mb-12 fade-up delay-5">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Recent Activity</h2>
@@ -1084,6 +1093,9 @@ export default function DashboardPage() {
               </div>
             </footer>
           </div>
+
+          {/* Pricing Modal */}
+          <PricingModal isOpen={isPricingOpen} onClose={() => setIsPricingOpen(false)} />
 
           {/* Profile Icon Selector Modal */}
           {showProfileSelector && (

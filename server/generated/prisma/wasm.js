@@ -132,6 +132,9 @@ exports.Prisma.UserScalarFieldEnum = {
   role: 'role',
   isVerified: 'isVerified',
   authUserId: 'authUserId',
+  subscriptionTier: 'subscriptionTier',
+  subscriptionExpiry: 'subscriptionExpiry',
+  currencyPreference: 'currencyPreference',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -253,6 +256,11 @@ exports.Role = exports.$Enums.Role = {
   ADMIN: 'ADMIN',
   DEVELOPER: 'DEVELOPER',
   OWNER: 'OWNER'
+};
+
+exports.SubscriptionTier = exports.$Enums.SubscriptionTier = {
+  FREE: 'FREE',
+  PRO: 'PRO'
 };
 
 exports.Prisma.ModelName = {
