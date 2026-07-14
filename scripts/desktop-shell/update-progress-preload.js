@@ -4,6 +4,8 @@ const { contextBridge, ipcRenderer } = require("electron");
 let initCallback = null;
 /** @type {unknown} */
 let initPayload = null;
+/** @type {unknown} */
+let lastProgressPayload = null;
 
 ipcRenderer.on("update-progress:init", (_event, payload) => {
   initPayload = payload;
@@ -11,6 +13,7 @@ ipcRenderer.on("update-progress:init", (_event, payload) => {
 });
 
 ipcRenderer.on("update-progress:progress", (_event, payload) => {
+  lastProgressPayload = payload;
   if (initCallback) initCallback(payload);
 });
 
@@ -18,5 +21,6 @@ contextBridge.exposeInMainWorld("updateProgress", {
   onInit(callback) {
     initCallback = callback;
     if (initPayload) callback(initPayload);
+    if (lastProgressPayload) callback(lastProgressPayload);
   },
 });

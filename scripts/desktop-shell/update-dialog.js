@@ -48,10 +48,10 @@ function showUpdateDialog(options) {
       frame: false,
       transparent: true,
       resizable: false,
-      minimizable: false,
+      minimizable: true,
       maximizable: false,
       fullscreenable: false,
-      skipTaskbar: true,
+      skipTaskbar: false,
       autoHideMenuBar: true,
       webPreferences: {
         preload: getDialogPath("update-dialog-preload.js"),

@@ -67,11 +67,22 @@ export namespace $Enums {
   };
 
   export type Role = (typeof Role)[keyof typeof Role];
+
+  export const SubscriptionTier: {
+    FREE: "FREE";
+    PRO: "PRO";
+  };
+
+  export type SubscriptionTier = (typeof SubscriptionTier)[keyof typeof SubscriptionTier];
 }
 
 export type Role = $Enums.Role;
 
 export const Role: typeof $Enums.Role;
+
+export type SubscriptionTier = $Enums.SubscriptionTier;
+
+export const SubscriptionTier: typeof $Enums.SubscriptionTier;
 
 /**
  * ##  Prisma Client ʲˢ
@@ -1568,6 +1579,9 @@ export namespace Prisma {
     role: $Enums.Role | null;
     isVerified: boolean | null;
     authUserId: string | null;
+    subscriptionTier: $Enums.SubscriptionTier | null;
+    subscriptionExpiry: Date | null;
+    currencyPreference: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
   };
@@ -1582,6 +1596,9 @@ export namespace Prisma {
     role: $Enums.Role | null;
     isVerified: boolean | null;
     authUserId: string | null;
+    subscriptionTier: $Enums.SubscriptionTier | null;
+    subscriptionExpiry: Date | null;
+    currencyPreference: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
   };
@@ -1596,6 +1613,9 @@ export namespace Prisma {
     role: number;
     isVerified: number;
     authUserId: number;
+    subscriptionTier: number;
+    subscriptionExpiry: number;
+    currencyPreference: number;
     createdAt: number;
     updatedAt: number;
     _all: number;
@@ -1611,6 +1631,9 @@ export namespace Prisma {
     role?: true;
     isVerified?: true;
     authUserId?: true;
+    subscriptionTier?: true;
+    subscriptionExpiry?: true;
+    currencyPreference?: true;
     createdAt?: true;
     updatedAt?: true;
   };
@@ -1625,6 +1648,9 @@ export namespace Prisma {
     role?: true;
     isVerified?: true;
     authUserId?: true;
+    subscriptionTier?: true;
+    subscriptionExpiry?: true;
+    currencyPreference?: true;
     createdAt?: true;
     updatedAt?: true;
   };
@@ -1639,6 +1665,9 @@ export namespace Prisma {
     role?: true;
     isVerified?: true;
     authUserId?: true;
+    subscriptionTier?: true;
+    subscriptionExpiry?: true;
+    currencyPreference?: true;
     createdAt?: true;
     updatedAt?: true;
     _all?: true;
@@ -1723,6 +1752,9 @@ export namespace Prisma {
     role: $Enums.Role;
     isVerified: boolean;
     authUserId: string;
+    subscriptionTier: $Enums.SubscriptionTier;
+    subscriptionExpiry: Date | null;
+    currencyPreference: string;
     createdAt: Date;
     updatedAt: Date;
     _count: UserCountAggregateOutputType | null;
@@ -1753,6 +1785,9 @@ export namespace Prisma {
       role?: boolean;
       isVerified?: boolean;
       authUserId?: boolean;
+      subscriptionTier?: boolean;
+      subscriptionExpiry?: boolean;
+      currencyPreference?: boolean;
       createdAt?: boolean;
       updatedAt?: boolean;
       settings?: boolean | User$settingsArgs<ExtArgs>;
@@ -1779,6 +1814,9 @@ export namespace Prisma {
         role?: boolean;
         isVerified?: boolean;
         authUserId?: boolean;
+        subscriptionTier?: boolean;
+        subscriptionExpiry?: boolean;
+        currencyPreference?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
       },
@@ -1795,6 +1833,9 @@ export namespace Prisma {
     role?: boolean;
     isVerified?: boolean;
     authUserId?: boolean;
+    subscriptionTier?: boolean;
+    subscriptionExpiry?: boolean;
+    currencyPreference?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
   };
@@ -1833,6 +1874,9 @@ export namespace Prisma {
         role: $Enums.Role;
         isVerified: boolean;
         authUserId: string;
+        subscriptionTier: $Enums.SubscriptionTier;
+        subscriptionExpiry: Date | null;
+        currencyPreference: string;
         createdAt: Date;
         updatedAt: Date;
       },
@@ -2296,6 +2340,9 @@ export namespace Prisma {
     readonly role: FieldRef<"User", "Role">;
     readonly isVerified: FieldRef<"User", "Boolean">;
     readonly authUserId: FieldRef<"User", "String">;
+    readonly subscriptionTier: FieldRef<"User", "SubscriptionTier">;
+    readonly subscriptionExpiry: FieldRef<"User", "DateTime">;
+    readonly currencyPreference: FieldRef<"User", "String">;
     readonly createdAt: FieldRef<"User", "DateTime">;
     readonly updatedAt: FieldRef<"User", "DateTime">;
   }
@@ -10254,6 +10301,9 @@ export namespace Prisma {
     role: "role";
     isVerified: "isVerified";
     authUserId: "authUserId";
+    subscriptionTier: "subscriptionTier";
+    subscriptionExpiry: "subscriptionExpiry";
+    currencyPreference: "currencyPreference";
     createdAt: "createdAt";
     updatedAt: "updatedAt";
   };
@@ -10429,6 +10479,19 @@ export namespace Prisma {
   export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Boolean">;
 
   /**
+   * Reference to a field of type 'SubscriptionTier'
+   */
+  export type EnumSubscriptionTierFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "SubscriptionTier">;
+
+  /**
+   * Reference to a field of type 'SubscriptionTier[]'
+   */
+  export type ListEnumSubscriptionTierFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    "SubscriptionTier[]"
+  >;
+
+  /**
    * Reference to a field of type 'DateTime'
    */
   export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "DateTime">;
@@ -10480,6 +10543,9 @@ export namespace Prisma {
     role?: EnumRoleFilter<"User"> | $Enums.Role;
     isVerified?: BoolFilter<"User"> | boolean;
     authUserId?: StringFilter<"User"> | string;
+    subscriptionTier?: EnumSubscriptionTierFilter<"User"> | $Enums.SubscriptionTier;
+    subscriptionExpiry?: DateTimeNullableFilter<"User"> | Date | string | null;
+    currencyPreference?: StringFilter<"User"> | string;
     createdAt?: DateTimeFilter<"User"> | Date | string;
     updatedAt?: DateTimeFilter<"User"> | Date | string;
     settings?: XOR<UserSettingsNullableRelationFilter, UserSettingsWhereInput> | null;
@@ -10501,6 +10567,9 @@ export namespace Prisma {
     role?: SortOrder;
     isVerified?: SortOrder;
     authUserId?: SortOrder;
+    subscriptionTier?: SortOrder;
+    subscriptionExpiry?: SortOrderInput | SortOrder;
+    currencyPreference?: SortOrder;
     createdAt?: SortOrder;
     updatedAt?: SortOrder;
     settings?: UserSettingsOrderByWithRelationInput;
@@ -10526,6 +10595,9 @@ export namespace Prisma {
       avatarUrl?: StringNullableFilter<"User"> | string | null;
       role?: EnumRoleFilter<"User"> | $Enums.Role;
       isVerified?: BoolFilter<"User"> | boolean;
+      subscriptionTier?: EnumSubscriptionTierFilter<"User"> | $Enums.SubscriptionTier;
+      subscriptionExpiry?: DateTimeNullableFilter<"User"> | Date | string | null;
+      currencyPreference?: StringFilter<"User"> | string;
       createdAt?: DateTimeFilter<"User"> | Date | string;
       updatedAt?: DateTimeFilter<"User"> | Date | string;
       settings?: XOR<UserSettingsNullableRelationFilter, UserSettingsWhereInput> | null;
@@ -10549,6 +10621,9 @@ export namespace Prisma {
     role?: SortOrder;
     isVerified?: SortOrder;
     authUserId?: SortOrder;
+    subscriptionTier?: SortOrder;
+    subscriptionExpiry?: SortOrderInput | SortOrder;
+    currencyPreference?: SortOrder;
     createdAt?: SortOrder;
     updatedAt?: SortOrder;
     _count?: UserCountOrderByAggregateInput;
@@ -10569,6 +10644,9 @@ export namespace Prisma {
     role?: EnumRoleWithAggregatesFilter<"User"> | $Enums.Role;
     isVerified?: BoolWithAggregatesFilter<"User"> | boolean;
     authUserId?: StringWithAggregatesFilter<"User"> | string;
+    subscriptionTier?: EnumSubscriptionTierWithAggregatesFilter<"User"> | $Enums.SubscriptionTier;
+    subscriptionExpiry?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null;
+    currencyPreference?: StringWithAggregatesFilter<"User"> | string;
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string;
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string;
   };
@@ -11139,6 +11217,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsCreateNestedOneWithoutUserInput;
@@ -11160,6 +11241,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsUncheckedCreateNestedOneWithoutUserInput;
@@ -11181,6 +11265,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUpdateOneWithoutUserNestedInput;
@@ -11202,6 +11289,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUncheckedUpdateOneWithoutUserNestedInput;
@@ -11223,6 +11313,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
   };
@@ -11237,6 +11330,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
   };
@@ -11251,6 +11347,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
   };
@@ -11878,6 +11977,24 @@ export namespace Prisma {
     not?: NestedBoolFilter<$PrismaModel> | boolean;
   };
 
+  export type EnumSubscriptionTierFilter<$PrismaModel = never> = {
+    equals?: $Enums.SubscriptionTier | EnumSubscriptionTierFieldRefInput<$PrismaModel>;
+    in?: $Enums.SubscriptionTier[] | ListEnumSubscriptionTierFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.SubscriptionTier[] | ListEnumSubscriptionTierFieldRefInput<$PrismaModel>;
+    not?: NestedEnumSubscriptionTierFilter<$PrismaModel> | $Enums.SubscriptionTier;
+  };
+
+  export type DateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null;
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null;
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null;
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null;
+  };
+
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>;
@@ -11969,6 +12086,9 @@ export namespace Prisma {
     role?: SortOrder;
     isVerified?: SortOrder;
     authUserId?: SortOrder;
+    subscriptionTier?: SortOrder;
+    subscriptionExpiry?: SortOrder;
+    currencyPreference?: SortOrder;
     createdAt?: SortOrder;
     updatedAt?: SortOrder;
   };
@@ -11983,6 +12103,9 @@ export namespace Prisma {
     role?: SortOrder;
     isVerified?: SortOrder;
     authUserId?: SortOrder;
+    subscriptionTier?: SortOrder;
+    subscriptionExpiry?: SortOrder;
+    currencyPreference?: SortOrder;
     createdAt?: SortOrder;
     updatedAt?: SortOrder;
   };
@@ -11997,6 +12120,9 @@ export namespace Prisma {
     role?: SortOrder;
     isVerified?: SortOrder;
     authUserId?: SortOrder;
+    subscriptionTier?: SortOrder;
+    subscriptionExpiry?: SortOrder;
+    currencyPreference?: SortOrder;
     createdAt?: SortOrder;
     updatedAt?: SortOrder;
   };
@@ -12053,6 +12179,30 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>;
     _min?: NestedBoolFilter<$PrismaModel>;
     _max?: NestedBoolFilter<$PrismaModel>;
+  };
+
+  export type EnumSubscriptionTierWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.SubscriptionTier | EnumSubscriptionTierFieldRefInput<$PrismaModel>;
+    in?: $Enums.SubscriptionTier[] | ListEnumSubscriptionTierFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.SubscriptionTier[] | ListEnumSubscriptionTierFieldRefInput<$PrismaModel>;
+    not?: NestedEnumSubscriptionTierWithAggregatesFilter<$PrismaModel> | $Enums.SubscriptionTier;
+    _count?: NestedIntFilter<$PrismaModel>;
+    _min?: NestedEnumSubscriptionTierFilter<$PrismaModel>;
+    _max?: NestedEnumSubscriptionTierFilter<$PrismaModel>;
+  };
+
+  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null;
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null;
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null;
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null;
+    _count?: NestedIntNullableFilter<$PrismaModel>;
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>;
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>;
   };
 
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
@@ -12698,6 +12848,14 @@ export namespace Prisma {
     set?: boolean;
   };
 
+  export type EnumSubscriptionTierFieldUpdateOperationsInput = {
+    set?: $Enums.SubscriptionTier;
+  };
+
+  export type NullableDateTimeFieldUpdateOperationsInput = {
+    set?: Date | string | null;
+  };
+
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string;
   };
@@ -13145,6 +13303,24 @@ export namespace Prisma {
     not?: NestedBoolFilter<$PrismaModel> | boolean;
   };
 
+  export type NestedEnumSubscriptionTierFilter<$PrismaModel = never> = {
+    equals?: $Enums.SubscriptionTier | EnumSubscriptionTierFieldRefInput<$PrismaModel>;
+    in?: $Enums.SubscriptionTier[] | ListEnumSubscriptionTierFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.SubscriptionTier[] | ListEnumSubscriptionTierFieldRefInput<$PrismaModel>;
+    not?: NestedEnumSubscriptionTierFilter<$PrismaModel> | $Enums.SubscriptionTier;
+  };
+
+  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null;
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null;
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null;
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null;
+  };
+
   export type NestedDateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>;
@@ -13228,6 +13404,30 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>;
     _min?: NestedBoolFilter<$PrismaModel>;
     _max?: NestedBoolFilter<$PrismaModel>;
+  };
+
+  export type NestedEnumSubscriptionTierWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.SubscriptionTier | EnumSubscriptionTierFieldRefInput<$PrismaModel>;
+    in?: $Enums.SubscriptionTier[] | ListEnumSubscriptionTierFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.SubscriptionTier[] | ListEnumSubscriptionTierFieldRefInput<$PrismaModel>;
+    not?: NestedEnumSubscriptionTierWithAggregatesFilter<$PrismaModel> | $Enums.SubscriptionTier;
+    _count?: NestedIntFilter<$PrismaModel>;
+    _min?: NestedEnumSubscriptionTierFilter<$PrismaModel>;
+    _max?: NestedEnumSubscriptionTierFilter<$PrismaModel>;
+  };
+
+  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null;
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null;
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null;
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>;
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null;
+    _count?: NestedIntNullableFilter<$PrismaModel>;
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>;
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>;
   };
 
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
@@ -13804,6 +14004,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     devices?: DeviceCreateNestedManyWithoutUserInput;
@@ -13824,6 +14027,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     devices?: DeviceUncheckedCreateNestedManyWithoutUserInput;
@@ -13860,6 +14066,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     devices?: DeviceUpdateManyWithoutUserNestedInput;
@@ -13880,6 +14089,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     devices?: DeviceUncheckedUpdateManyWithoutUserNestedInput;
@@ -13900,6 +14112,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsCreateNestedOneWithoutUserInput;
@@ -13920,6 +14135,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsUncheckedCreateNestedOneWithoutUserInput;
@@ -13956,6 +14174,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUpdateOneWithoutUserNestedInput;
@@ -13976,6 +14197,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUncheckedUpdateOneWithoutUserNestedInput;
@@ -13996,6 +14220,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsCreateNestedOneWithoutUserInput;
@@ -14016,6 +14243,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsUncheckedCreateNestedOneWithoutUserInput;
@@ -14052,6 +14282,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUpdateOneWithoutUserNestedInput;
@@ -14072,6 +14305,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUncheckedUpdateOneWithoutUserNestedInput;
@@ -14092,6 +14328,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsCreateNestedOneWithoutUserInput;
@@ -14112,6 +14351,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsUncheckedCreateNestedOneWithoutUserInput;
@@ -14148,6 +14390,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUpdateOneWithoutUserNestedInput;
@@ -14168,6 +14413,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUncheckedUpdateOneWithoutUserNestedInput;
@@ -14188,6 +14436,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsCreateNestedOneWithoutUserInput;
@@ -14208,6 +14459,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsUncheckedCreateNestedOneWithoutUserInput;
@@ -14244,6 +14498,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUpdateOneWithoutUserNestedInput;
@@ -14264,6 +14521,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUncheckedUpdateOneWithoutUserNestedInput;
@@ -14284,6 +14544,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsCreateNestedOneWithoutUserInput;
@@ -14304,6 +14567,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsUncheckedCreateNestedOneWithoutUserInput;
@@ -14340,6 +14606,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUpdateOneWithoutUserNestedInput;
@@ -14360,6 +14629,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUncheckedUpdateOneWithoutUserNestedInput;
@@ -14380,6 +14652,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsCreateNestedOneWithoutUserInput;
@@ -14400,6 +14675,9 @@ export namespace Prisma {
     role?: $Enums.Role;
     isVerified?: boolean;
     authUserId: string;
+    subscriptionTier?: $Enums.SubscriptionTier;
+    subscriptionExpiry?: Date | string | null;
+    currencyPreference?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     settings?: UserSettingsUncheckedCreateNestedOneWithoutUserInput;
@@ -14436,6 +14714,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUpdateOneWithoutUserNestedInput;
@@ -14456,6 +14737,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role;
     isVerified?: BoolFieldUpdateOperationsInput | boolean;
     authUserId?: StringFieldUpdateOperationsInput | string;
+    subscriptionTier?: EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier;
+    subscriptionExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    currencyPreference?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     settings?: UserSettingsUncheckedUpdateOneWithoutUserNestedInput;

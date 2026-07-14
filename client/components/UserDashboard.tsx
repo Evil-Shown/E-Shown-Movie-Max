@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { useAuthModal } from "@/components/AuthModalProvider";
@@ -8,7 +9,17 @@ export default function UserDashboard() {
   const { user, isAuthenticated } = useAuth();
   const { openAuthModal } = useAuthModal();
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const avatarUrl = user?.avatarUrl;
+
+  if (!mounted) {
+    return <div className="h-11 w-11" />;
+  }
 
   if (!isAuthenticated) {
     return (

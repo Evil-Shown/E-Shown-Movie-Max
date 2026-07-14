@@ -1,7 +1,7 @@
 {
   "name": "chithra-cinema",
   "productName": "CHITHRA - CINEMA",
-  "version": "2.3.3",
+  "version": "2.3.7",
   "description": "CHITHRA - CINEMA desktop app",
   "main": "main.js",
   "author": "CHITHRA - CINEMA",
@@ -41,6 +41,7 @@
       "update-dialog-renderer.js",
       "update-progress.html",
       "update-progress-preload.js",
+      "update-progress-renderer.js",
       "release-notes.js",
       "block-ad-nav.js",
       "embed-headers.js",
@@ -85,7 +86,7 @@
           ]
         }
       ],
-      "icon": "icon.ico",
+      "icon": "assets/icon.ico",
       "artifactName": "Chithra-Cinema-Setup-${version}.${ext}",
       "signAndEditExecutable": false
     },

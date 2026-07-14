@@ -145,12 +145,12 @@ function Sync-DesktopShell {
     "update-dialog-renderer.js",
     "update-progress.html",
     "update-progress-preload.js",
+    "update-progress-renderer.js",
     "release-notes.js",
     "block-ad-nav.js",
     "embed-headers.js",
     "splash.html",
-    "telemetry.js",
-    "update-progress.html"
+    "telemetry.js"
   )
   if (-not (Test-Path $desktopShell)) {
     throw "Missing $desktopShell - Electron shell templates are required."

@@ -43,43 +43,47 @@ function sendProgress(payload) {
 }
 
 function showDownloadProgress(version) {
-  closeProgressWindow();
+  return new Promise((resolve) => {
+    closeProgressWindow();
 
-  progressWindow = new BrowserWindow({
-    width: 520,
-    height: 380,
-    frame: false,
-    resizable: false,
-    minimizable: false,
-    maximizable: false,
-    fullscreenable: false,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    center: true,
-    show: false,
-    backgroundColor: "#040408",
-    webPreferences: {
-      preload: path.join(__dirname, "update-progress-preload.js"),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: false,
-    },
-  });
-
-  progressWindow.loadFile(path.join(__dirname, "update-progress.html"));
-
-  progressWindow.webContents.once("did-finish-load", () => {
-    progressWindow?.show();
-    progressWindow?.webContents.send("update-progress:init", {
-      version,
-      percent: 0,
-      transferred: 0,
-      total: 0,
+    progressWindow = new BrowserWindow({
+      width: 520,
+      height: 380,
+      frame: false,
+      transparent: true,
+      resizable: false,
+      minimizable: true,
+      maximizable: false,
+      fullscreenable: false,
+      alwaysOnTop: true,
+      skipTaskbar: false,
+      center: true,
+      show: false,
+      backgroundColor: "#00000000",
+      webPreferences: {
+        preload: path.join(__dirname, "update-progress-preload.js"),
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: false,
+      },
     });
-  });
 
-  progressWindow.on("closed", () => {
-    progressWindow = null;
+    progressWindow.loadFile(path.join(__dirname, "update-progress.html"));
+
+    progressWindow.webContents.once("did-finish-load", () => {
+      progressWindow?.show();
+      progressWindow?.webContents.send("update-progress:init", {
+        version,
+        percent: 0,
+        transferred: 0,
+        total: 0,
+      });
+      resolve();
+    });
+
+    progressWindow.on("closed", () => {
+      progressWindow = null;
+    });
   });
 }
 
@@ -128,7 +132,6 @@ function setupAutoUpdater(options = {}) {
     const percent = progress.percent || 0;
     console.log(`[updater] Downloading update: ${Math.round(percent)}%`);
     sendProgress({
-      version: progress.version,
       percent,
       transferred: progress.transferred || 0,
       total: progress.total || 0,
@@ -154,6 +157,7 @@ function setupAutoUpdater(options = {}) {
     manualCheckActive = false;
     closeProgressWindow();
     console.error("[updater]", error?.message || error);
+    void showUpdateFailureDialog("Could not download the update.", error?.message || "Unknown error");
   });
 }
 

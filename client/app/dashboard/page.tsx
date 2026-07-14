@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -6,9 +6,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { formatDisplayYear, posterUrl } from "@/lib/movies";
-import type { ContinueWatchingItem, WatchlistItem } from "@/lib/storage/types";
+import type { ContinueWatchingItem } from "@/lib/storage/types";
 import type { LiveTvChannel } from "@/lib/live-tv/types";
 import { getProfileIcon, setProfileIcon, PROFILE_ICONS } from "@/lib/storage/profile-icon";
+import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
+import PricingModal from "@/components/dashboard/PricingModal";
+import ProBadge from "@/components/dashboard/ProBadge";
+import styles from "./Dashboard.module.css";
 
 function formatDuration(seconds: number) {
   if (!seconds || seconds <= 0) return "0m";
@@ -16,6 +20,15 @@ function formatDuration(seconds: number) {
   const m = Math.floor((seconds % 3600) / 60);
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
+}
+
+function formatTimer(seconds: number) {
+  if (!seconds || seconds <= 0) return "0:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 function remainingTime(current: number, duration: number) {
@@ -189,15 +202,15 @@ function SidebarNavLink({
   return (
     <Link
       href={href}
-      className={`sidebar-link group flex items-center gap-3 px-5 py-3 text-sm font-medium ${active ? "active" : ""}`}
+      className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium ${active ? styles.sidebarLinkActive : ""}`}
     >
-      <span className={`transition-colors ${active ? "text-[#FFB87A]" : "text-[#A0785A] group-hover:text-[#E65100]"}`}>
+      <span className={`transition-colors ${active ? "text-light-orange" : "text-sandy group-hover:text-deep-orange"}`}>
         <NavIcon name={icon} />
       </span>
       <span className="flex-1">{label}</span>
       {badge !== undefined && (
         <span
-          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${active ? "bg-[#E65100] text-white" : "text-[#A0785A]"}`}
+          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${active ? "bg-deep-orange text-white" : "text-sandy"}`}
         >
           {badge}
         </span>
@@ -209,25 +222,27 @@ function SidebarNavLink({
 function StatCard({
   icon,
   value,
+  valueUnit,
   label,
   badge,
   progress,
 }: {
   icon: React.ReactNode;
   value: string;
+  valueUnit?: string;
   label: string;
   badge?: { text: string; color: "green" | "orange" | "brown" };
   progress?: number;
 }) {
   const badgeColors = {
     green: "text-green-700 bg-green-100",
-    orange: "text-[#E65100] bg-[#FFE8D1]",
-    brown: "text-[#3E2723] bg-[#D4A574]/30",
+    orange: "text-deep-orange bg-light-orange-faint",
+    brown: "text-chocolate bg-tan/30",
   };
   return (
-    <div className="stat-card rounded-xl p-6">
+    <div className={`${styles.statCard} rounded-xl p-6`}>
       <div className="flex items-start justify-between mb-4">
-        <div className="w-12 h-12 rounded-lg stat-icon-box flex items-center justify-center">{icon}</div>
+        <div className={`${styles.statIconBox} w-12 h-12 rounded-lg flex items-center justify-center`}>{icon}</div>
         {badge && (
           <span
             className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${badgeColors[badge.color]}`}
@@ -236,11 +251,14 @@ function StatCard({
           </span>
         )}
       </div>
-      <p className="font-cinzel text-3xl font-bold text-[#3E2723]">{value}</p>
-      <p className="text-sm text-[#6B4423] mt-1">{label}</p>
+      <p className="font-cinzel text-3xl font-bold text-chocolate">
+        {value}
+        {valueUnit && <span className="text-base text-sandy font-normal ml-1">{valueUnit}</span>}
+      </p>
+      <p className="text-sm text-brown mt-1">{label}</p>
       {progress !== undefined && (
-        <div className="mt-3 h-1 bg-[#FFE8D1] rounded-full overflow-hidden">
-          <div className="h-full bg-[#E65100] rounded-full" style={{ width: `${progress}%` }} />
+        <div className="mt-3 h-1 bg-light-orange-faint rounded-full overflow-hidden">
+          <div className="h-full bg-deep-orange rounded-full" style={{ width: `${progress}%` }} />
         </div>
       )}
     </div>
@@ -249,28 +267,28 @@ function StatCard({
 
 function ResumeCard({ item }: { item: ContinueWatchingItem }) {
   const isTv = item.mediaType === "tv";
-  const meta = isTv
-    ? `Season ${item.season || 1} · Episode ${item.episode || 1}`
-    : item.genres?.slice(0, 2).join(" · ") || "Movie";
-  const remaining = remainingTime(item.currentTime, item.duration);
   const href = `/movie/${item.id}`;
-  const pausedAt = formatDuration(item.currentTime);
-  const totalDuration = formatDuration(item.duration);
+  const pausedAt = formatTimer(item.currentTime);
+  const totalDuration = formatTimer(item.duration);
+  const genreLabel = (isTv ? "SERIES" : (item.genres?.[0] as string) || "MOVIE").toUpperCase();
 
   return (
-    <Link href={href} className="resume-card rounded-xl flex flex-col md:flex-row group">
+    <Link
+      href={href}
+      className={`${styles.resumeCard} rounded-xl flex flex-col md:flex-row group border border-tan/30 hover:border-deep-orange transition`}
+    >
       <div className="md:w-72 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
         <img
-          src={posterUrl(item.posterPath, "w780")}
+          src={posterUrl(item.posterPath)}
           alt={item.title}
-          className="resume-thumb w-full h-full object-cover"
-          loading="lazy"
+          className={`${styles.resumeThumb} absolute inset-0 w-full h-full object-cover`}
         />
-        <div className="absolute top-3 left-3 bg-[#E65100] text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
-          {isTv ? "Series" : item.genres?.[0] || "Movie"}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <div className="absolute top-3 left-3 bg-deep-orange text-faint-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
+          {genreLabel}
         </div>
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-          <button className="play-btn w-14 h-14 rounded-full flex items-center justify-center text-white">
+          <button className={`${styles.playBtn} w-14 h-14 rounded-full flex items-center justify-center text-white`}>
             <svg className="w-6 h-6 ml-1" viewBox="0 0 24 24" fill="currentColor">
               <path d="M8 5v14l11-7z" />
             </svg>
@@ -282,10 +300,15 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
         <div>
           <div className="flex items-start justify-between gap-3 mb-2">
             <div>
-              <h3 className="font-cinzel text-xl font-bold text-[#3E2723]">{item.title}</h3>
-              <p className="text-xs text-[#A0785A] mt-1">{meta}</p>
+              <h3 className="font-cinzel text-xl font-bold text-chocolate">{item.title}</h3>
+              <p className="text-xs text-sandy mt-1">
+                {isTv
+                  ? `Season ${item.season || 1} · Episode ${item.episode || 1}`
+                  : `${item.year || ""}${item.year ? " · " : ""}${item.genres?.slice(0, 2).join("/") || "Movie"} · ${formatDuration(item.duration)}`}
+                {!isTv && ` · IMDb ${(item.voteAverage || 0).toFixed(1)}`}
+              </p>
             </div>
-            <button className="text-[#A0785A] hover:text-[#E65100] transition">
+            <button className="text-sandy hover:text-deep-orange transition">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="5" cy="12" r="2" />
                 <circle cx="12" cy="12" r="2" />
@@ -293,15 +316,16 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
               </svg>
             </button>
           </div>
-          <p className="text-sm text-[#6B4423] mt-2 line-clamp-2">
-            Continue where you left off. {remaining} remaining.
+          <p className="text-sm text-brown mt-2 line-clamp-2">
+            {item.overview ||
+              `Continue where you left off. ${remainingTime(item.currentTime, item.duration)} remaining.`}
           </p>
         </div>
 
         <div className="mt-4">
-          <div className="flex justify-between text-xs text-[#6B4423] mb-1.5">
+          <div className="flex justify-between text-xs text-brown mb-1.5">
             <span className="flex items-center gap-1.5">
-              <svg className="w-3 h-3 text-[#E65100]" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-3 h-3 text-deep-orange" viewBox="0 0 24 24" fill="currentColor">
                 <rect x="6" y="4" width="4" height="16" />
                 <rect x="14" y="4" width="4" height="16" />
               </svg>
@@ -309,33 +333,11 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
             </span>
             <span>{totalDuration}</span>
           </div>
-          <div className="progress-track">
-            <div className="progress-fill" style={{ width: `${Math.min(item.progress, 100)}%` }} />
+          <div className={styles.progressTrack}>
+            <div className={styles.progressFill} style={{ width: `${Math.min(item.progress, 100)}%` }} />
           </div>
         </div>
       </div>
-    </Link>
-  );
-}
-
-function LiveFavoriteListItem({ channel }: { channel: LiveTvChannel }) {
-  return (
-    <Link
-      href={`/live-tv?channel=${channel.id}`}
-      className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFE8D1]/40 transition group"
-    >
-      <div
-        className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0"
-        style={{ background: channel.logoColor, color: "#FFFBF5" }}
-      >
-        {channel.logoInitials}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[#3E2723] truncate">{channel.name}</p>
-      </div>
-      <span className="text-[10px] font-bold uppercase tracking-wider bg-[#E65100] text-white px-2 py-1 rounded-full">
-        Live
-      </span>
     </Link>
   );
 }
@@ -350,22 +352,22 @@ interface ActivityItem {
 function ActivityRow({ item }: { item: ActivityItem }) {
   const icons = {
     watching: (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
         <polygon points="5 3 19 12 5 21 5 3" />
       </svg>
     ),
     watchlist: (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
       </svg>
     ),
     completed: (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
         <polyline points="20 6 9 17 4 12" />
       </svg>
     ),
     downloaded: (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
         <polyline points="7 10 12 15 17 10" />
         <line x1="12" y1="15" x2="12" y2="3" />
@@ -378,25 +380,45 @@ function ActivityRow({ item }: { item: ActivityItem }) {
     completed: "Completed watching",
     downloaded: "Downloaded",
   };
-  const colors = {
-    watching: "bg-[#FFE8D1] text-[#E65100]",
-    watchlist: "bg-[#E0F2F7] text-[#4A7C8E]",
-    completed: "bg-[#E8F5E9] text-[#2E7D32]",
-    downloaded: "bg-[#EBE5DE] text-[#6B4423]",
+  const accentColors: Record<string, { box: string; bar: string; badge: string }> = {
+    watching: {
+      box: "bg-deep-orange text-faint-white",
+      bar: "bg-deep-orange",
+      badge: "bg-light-orange-faint text-deep-orange",
+    },
+    watchlist: { box: "bg-chocolate text-faint-white", bar: "bg-chocolate", badge: "bg-tan/20 text-brown" },
+    completed: { box: "bg-tan text-faint-white", bar: "bg-tan", badge: "bg-cream text-chocolate" },
+    downloaded: { box: "bg-brown text-faint-white", bar: "bg-brown", badge: "bg-cream text-brown" },
   };
+  const a = accentColors[item.type];
 
   return (
-    <div className="activity-row flex items-start gap-4 p-4 rounded-xl hover:bg-[#FFFBF5] transition">
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${colors[item.type]}`}>
+    <div
+      className={`${styles.activityRow} group relative flex items-start gap-4 pl-4 py-4 rounded-xl hover:bg-faint-white transition`}
+    >
+      <div className={`absolute left-0 top-4 bottom-4 w-0.5 rounded-full ${a.bar} opacity-40`} />
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${a.box}`}>
         {icons[item.type]}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-[#3E2723]">
-          <span className="font-semibold">{labels[item.type]}</span>{" "}
-          <span className="text-[#6B4423]">{item.title}</span>
+      <div className="flex-1 min-w-0 pt-0.5">
+        <p className="text-sm text-chocolate">
+          <span
+            className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider mr-2 ${a.badge}`}
+          >
+            {labels[item.type]}
+          </span>
+          <span className="text-brown font-medium">{item.title}</span>
         </p>
-        {item.meta && <p className="text-xs text-[#A0785A] mt-0.5">{item.meta}</p>}
-        <p className="text-xs text-[#A0785A] mt-1">{timeAgo(item.timestamp)}</p>
+        {item.meta && (
+          <p className="text-xs text-sandy mt-1.5 flex items-center gap-1.5">
+            <svg className="w-3 h-3 text-tan/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            {item.meta}
+          </p>
+        )}
+        <p className="text-[11px] text-sandy/70 mt-1.5">{timeAgo(item.timestamp)}</p>
       </div>
     </div>
   );
@@ -407,11 +429,11 @@ export default function DashboardPage() {
   const { watchlist, continueWatching } = useUserLibrary();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [channels, setChannels] = useState<LiveTvChannel[]>([]);
   const [channelCount, setChannelCount] = useState<number>(0);
   const [activityFilter, setActivityFilter] = useState<"all" | "watching" | "watchlist" | "completed">("all");
   const [profileIcon, setProfileIconState] = useState<string | null>(null);
   const [showProfileSelector, setShowProfileSelector] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
 
   useEffect(() => {
     setProfileIconState(getProfileIcon());
@@ -422,7 +444,6 @@ export default function DashboardPage() {
       .then((res) => res.json())
       .then((data: { channels?: LiveTvChannel[] }) => {
         if (data.channels) {
-          setChannels(data.channels.slice(0, 6));
           setChannelCount(data.channels.length);
         }
       })
@@ -432,7 +453,7 @@ export default function DashboardPage() {
   const resumeItems = useMemo(
     () =>
       continueWatching
-        .filter((item) => item.progress > 5 && item.progress < 98)
+        .filter((item) => item.progress < 98)
         .sort((a, b) => b.updatedAt - a.updatedAt)
         .slice(0, 3),
     [continueWatching]
@@ -447,8 +468,8 @@ export default function DashboardPage() {
         const isCompleted = item.progress >= 98;
         const meta =
           item.mediaType === "tv"
-            ? `S${item.season || 1} E${item.episode || 1} · ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`
-            : `${item.genres?.[0] || "Movie"} · ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`;
+            ? `S${item.season || 1} E${item.episode || 1} Â· ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`
+            : `${item.genres?.[0] || "Movie"} Â· ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`;
         items.push({
           type: isCompleted ? "completed" : "watching",
           title: item.title,
@@ -463,7 +484,7 @@ export default function DashboardPage() {
         items.push({
           type: "watchlist",
           title: item.title,
-          meta: `${item.genres?.[0] || (item.mediaType === "tv" ? "Series" : "Movie")} · ${formatDisplayYear(item.year)}`,
+          meta: `${item.genres?.[0] || (item.mediaType === "tv" ? "Series" : "Movie")} Â· ${formatDisplayYear(item.year)}`,
           timestamp: item.addedAt,
         });
       });
@@ -482,11 +503,6 @@ export default function DashboardPage() {
   const hours = Math.floor(totalSeconds / 3600);
   const streak = useMemo(() => computeStreak(continueWatching), [continueWatching]);
   const userName = user?.displayName || user?.username || "Watcher";
-
-  const newlyAddedCount = useMemo(() => {
-    const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    return watchlist.filter((item) => item.addedAt > monthAgo).length;
-  }, [watchlist]);
 
   const watchTimeProgress = useMemo(() => {
     if (hours <= 0) return 0;
@@ -515,168 +531,40 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF3E8] font-sans text-[#3E2723] dashboard-root">
-      <style jsx>{`
-        .dashboard-root {
-          background-image:
-            radial-gradient(circle at 15% 20%, rgba(230, 81, 0, 0.04) 0%, transparent 40%),
-            radial-gradient(circle at 85% 70%, rgba(62, 39, 35, 0.05) 0%, transparent 40%);
-          background-attachment: fixed;
-        }
-        .sidebar {
-          background: #fffbf5;
-          border-right: 1px solid rgba(212, 165, 116, 0.25);
-        }
-        .sidebar-link {
-          color: #6b4423;
-          transition: all 0.25s ease;
-          border-left: 3px solid transparent;
-        }
-        .sidebar-link:hover {
-          background: rgba(230, 81, 0, 0.06);
-          color: #e65100;
-          border-left-color: #e65100;
-        }
-        .sidebar-link.active {
-          background: #3e2723;
-          color: #fffbf5;
-          border-left-color: #e65100;
-        }
-        .stat-card {
-          background: #fffbf5;
-          border: 1px solid rgba(212, 165, 116, 0.3);
-          transition: all 0.3s ease;
-        }
-        .stat-card:hover {
-          border-color: #e65100;
-          transform: translateY(-3px);
-          box-shadow: 0 12px 30px rgba(62, 39, 35, 0.08);
-        }
-        .stat-icon-box {
-          background: #ffe8d1;
-          color: #e65100;
-        }
-        .resume-card {
-          background: #fffbf5;
-          border: 1px solid rgba(212, 165, 116, 0.3);
-          transition: all 0.3s ease;
-          overflow: hidden;
-        }
-        .resume-card:hover {
-          border-color: #e65100;
-          box-shadow: 0 15px 40px rgba(62, 39, 35, 0.12);
-        }
-        .resume-card:hover .resume-thumb {
-          transform: scale(1.05);
-        }
-        .resume-thumb {
-          transition: transform 0.5s ease;
-        }
-        .progress-track {
-          background: #ffe8d1;
-          height: 4px;
-          border-radius: 2px;
-          overflow: hidden;
-        }
-        .progress-fill {
-          background: #e65100;
-          height: 100%;
-          border-radius: 2px;
-          transition: width 0.8s ease;
-        }
-        .play-btn {
-          background: #e65100;
-          transition: all 0.3s ease;
-        }
-        .play-btn:hover {
-          background: #3e2723;
-          transform: scale(1.1);
-        }
-        .topbar {
-          background: rgba(255, 251, 245, 0.85);
-          backdrop-filter: blur(16px);
-          border-bottom: 1px solid rgba(212, 165, 116, 0.25);
-        }
-        .activity-row {
-          transition: background 0.2s ease;
-        }
-        .filter-btn {
-          transition: all 0.2s ease;
-        }
-        .filter-btn.active {
-          background: #3e2723;
-          color: #fffbf5;
-        }
-        .filter-btn:not(.active):hover {
-          color: #e65100;
-        }
-        @keyframes fadeUp {
-          from {
-            opacity: 0;
-            transform: translateY(15px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .fade-up {
-          animation: fadeUp 0.6s ease forwards;
-        }
-        .delay-1 {
-          animation-delay: 0.1s;
-          opacity: 0;
-        }
-        .delay-2 {
-          animation-delay: 0.2s;
-          opacity: 0;
-        }
-        .delay-3 {
-          animation-delay: 0.3s;
-          opacity: 0;
-        }
-        .delay-4 {
-          animation-delay: 0.4s;
-          opacity: 0;
-        }
-        .section-heading {
-          position: relative;
-          padding-left: 16px;
-        }
-        .section-heading::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 4px;
-          height: 70%;
-          background: #e65100;
-          border-radius: 2px;
-        }
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: #faf3e8;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: #d4a574;
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: #e65100;
-        }
-      `}</style>
-
+    <div suppressHydrationWarning className={`min-h-screen font-sans text-chocolate ${styles.dashboardRoot}`}>
       <div className="flex min-h-screen">
         {/* Desktop Sidebar */}
-        <aside className="sidebar fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col">
-          <div className="px-6 py-6 border-b border-[#D4A574]/25" />
+        <aside className={`${styles.sidebar} fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col`}>
+          <div className="px-6 py-6 border-b border-tan/20">
+            <div className="flex items-center gap-3">
+              <div
+                className={`${styles.eyeDeco} w-10 h-10 rounded-lg flex items-center justify-center relative`}
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--chocolate) 0%, color-mix(in srgb, var(--chocolate) 85%, var(--deep-orange) 15%) 100%)",
+                  boxShadow: "0 2px 12px color-mix(in srgb, var(--chocolate) 25%, transparent)",
+                }}
+              >
+                <svg
+                  className="w-5 h-5 text-light-orange"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M12 19c-3.87 0-7-3.13-7-7 0-3.87 3.13-7 7-7 3.87 0 7 3.13 7 7 0 3.87-3.13 7-7 7z" />
+                  <circle cx="12" cy="12" r="3" fill="currentColor" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="font-cinzel text-xl font-bold text-chocolate leading-none">CHITHIRA</h1>
+                <p className="text-[10px] tracking-[0.2em] text-deep-orange font-semibold mt-1">THE GOD&apos;S EYE</p>
+              </div>
+            </div>
+          </div>
 
           <nav className="flex-1 py-4 overflow-y-auto">
-            <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">Browse</p>
+            <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold">Browse</p>
             {browseNav.map((link) => (
               <SidebarNavLink
                 key={link.href}
@@ -686,9 +574,7 @@ export default function DashboardPage() {
               />
             ))}
 
-            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">
-              Library
-            </p>
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold">Library</p>
             {libraryNav.map((link) => (
               <SidebarNavLink
                 key={link.href}
@@ -698,20 +584,18 @@ export default function DashboardPage() {
               />
             ))}
 
-            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">
-              Account
-            </p>
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold">Account</p>
             {accountNav.map((link) => (
               <SidebarNavLink key={link.href} {...link} active={isActive(link.href)} />
             ))}
             <button
-              className="sidebar-link group flex items-center gap-3 px-5 py-3 text-sm font-medium text-left w-full border-none cursor-pointer bg-transparent"
+              className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium text-left w-full border-none cursor-pointer bg-transparent`}
               onClick={async () => {
                 await logout();
                 window.location.href = "/";
               }}
             >
-              <span className="text-[#A0785A] group-hover:text-[#E65100] transition-colors">
+              <span className="text-sandy group-hover:text-deep-orange transition-colors">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
@@ -722,49 +606,65 @@ export default function DashboardPage() {
             </button>
           </nav>
 
-          <div className="p-4 border-t border-[#D4A574]/25">
+          <div className="p-4 border-t border-tan/20">
             <button
               onClick={() => setShowProfileSelector(true)}
-              className="w-full bg-[#3E2723] rounded-xl p-3 flex items-center gap-3 text-left hover:bg-[#4E342E] transition"
+              className="w-full rounded-xl p-3 flex items-center gap-3 text-left transition-all hover:scale-[1.02]"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--chocolate) 0%, color-mix(in srgb, var(--chocolate) 90%, var(--deep-orange) 10%) 100%)",
+                boxShadow:
+                  "0 2px 12px color-mix(in srgb, var(--chocolate) 20%, transparent), inset 0 1px 0 color-mix(in srgb, var(--faint-white) 6%, transparent)",
+              }}
             >
               {profileIcon ? (
                 <img
                   src={`/avatars/${profileIcon}`}
                   alt="Profile"
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-[#FFB87A]"
+                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-light-orange/80"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FFB87A] to-[#E65100] flex items-center justify-center font-bold text-[#3E2723] flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-light-orange to-deep-orange flex items-center justify-center font-bold text-chocolate flex-shrink-0 shadow-lg">
                   {getInitials(userName)}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#FFFBF5] truncate">{userName}</p>
+                <p className="text-sm font-semibold text-faint-white truncate">{userName}</p>
                 <div className="flex items-center gap-1">
-                  <svg className="w-2.5 h-2.5 text-[#FFB87A]" viewBox="0 0 24 24" fill="currentColor">
+                  <svg className="w-2.5 h-2.5 text-light-orange" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
-                  <span className="text-[10px] text-[#D4A574]">Premium Member</span>
+                  <ProBadge />
                 </div>
               </div>
-              <span className="text-[10px] text-[#D4A574]">Edit</span>
+              <svg
+                className="w-3 h-3 text-tan/60"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </button>
           </div>
         </aside>
 
         {/* Mobile Header */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 topbar px-4 py-3 flex items-center justify-between">
+        <div
+          className={`lg:hidden fixed top-0 left-0 right-0 z-50 ${styles.topbar} px-4 py-3 flex items-center justify-between`}
+        >
           <div className="flex items-center gap-3">
-            <span className="font-cinzel text-lg font-bold text-[#3E2723]">Dashboard</span>
+            <span className="font-cinzel text-lg font-bold text-chocolate">Dashboard</span>
           </div>
           <button
             type="button"
             aria-label="Toggle menu"
-            className="p-2 rounded-lg hover:bg-[#FFE8D1] transition"
+            className="p-2 rounded-lg hover:bg-light-orange-faint transition"
             onClick={() => setMobileMenuOpen((o) => !o)}
           >
             <svg
-              className="w-6 h-6 text-[#3E2723]"
+              className="w-6 h-6 text-chocolate"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -777,10 +677,10 @@ export default function DashboardPage() {
 
         {/* Mobile Menu Overlay */}
         {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-40 bg-[#FFFBF5] pt-20 px-6 pb-6 overflow-y-auto">
+          <div className="lg:hidden fixed inset-0 z-40 bg-faint-white pt-20 px-6 pb-6 overflow-y-auto">
             <div className="space-y-6">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold mb-2">Browse</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold mb-2">Browse</p>
                 <div className="space-y-1">
                   {browseNav.map((link) => (
                     <Link
@@ -788,7 +688,7 @@ export default function DashboardPage() {
                       href={link.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
-                        isActive(link.href) ? "bg-[#3E2723] text-[#FFFBF5]" : "text-[#6B4423] hover:bg-[#FFE8D1]"
+                        isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
                       }`}
                     >
                       <NavIcon name={link.icon} />
@@ -798,7 +698,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold mb-2">Library</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold mb-2">Library</p>
                 <div className="space-y-1">
                   {libraryNav.map((link) => (
                     <Link
@@ -806,7 +706,7 @@ export default function DashboardPage() {
                       href={link.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
-                        isActive(link.href) ? "bg-[#3E2723] text-[#FFFBF5]" : "text-[#6B4423] hover:bg-[#FFE8D1]"
+                        isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
                       }`}
                     >
                       <NavIcon name={link.icon} />
@@ -821,19 +721,21 @@ export default function DashboardPage() {
 
         <main className="flex-1 lg:ml-64 min-h-screen pt-[60px] lg:pt-0">
           {/* Desktop Topbar */}
-          <header className="topbar sticky top-0 z-30 hidden lg:flex items-center justify-between px-8 py-4">
-            <div className="flex items-center gap-2 text-xs text-[#A0785A]">
+          <header
+            className={`${styles.topbar} sticky top-0 z-30 hidden lg:flex items-center justify-between px-8 py-4`}
+          >
+            <div className="flex items-center gap-2 text-xs text-sandy">
               <span>Chithira</span>
               <svg className="w-2 h-2" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z" />
               </svg>
-              <span className="text-[#3E2723] font-semibold">Dashboard</span>
+              <span className="text-chocolate font-semibold">Dashboard</span>
             </div>
 
             <div className="flex-1 max-w-md mx-6">
-              <div className="relative">
+              <div className={`relative ${styles.cardGlass} rounded-full`}>
                 <svg
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A0785A]"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-sandy"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -845,28 +747,39 @@ export default function DashboardPage() {
                 <input
                   type="text"
                   placeholder="Search for your next obsession..."
-                  className="w-full bg-[#FFFBF5] border border-[#D4A574]/40 rounded-full pl-11 pr-4 py-2 text-sm text-[#3E2723] placeholder-[#A0785A] focus:outline-none focus:border-[#E65100] focus:ring-2 focus:ring-[#E65100]/15 transition"
+                  className="w-full bg-transparent border-0 rounded-full pl-11 pr-4 py-2 text-sm text-chocolate placeholder-sandy focus:outline-none transition"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <button className="relative w-10 h-10 rounded-full bg-[#FFFBF5] border border-[#D4A574]/30 hover:border-[#E65100] flex items-center justify-center text-[#3E2723] hover:text-[#E65100] transition">
+              <button
+                className={`relative w-10 h-10 rounded-full ${styles.cardGlass} hover:border-deep-orange flex items-center justify-center text-chocolate hover:text-deep-orange transition`}
+              >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#E65100] rounded-full" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-deep-orange rounded-full" />
+              </button>
+              <button
+                className={`w-10 h-10 rounded-full ${styles.cardGlass} hover:border-deep-orange flex items-center justify-center text-chocolate hover:text-deep-orange transition`}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="6" width="18" height="12" rx="2" />
+                  <path d="M21 10H3" />
+                  <path d="M7 15h.01" />
+                </svg>
               </button>
               <button
                 onClick={() => setShowProfileSelector(true)}
-                className="w-10 h-10 rounded-full overflow-hidden border border-[#D4A574]/40 hover:border-[#E65100] transition"
+                className={`w-10 h-10 rounded-full overflow-hidden ${styles.cardGlass} hover:border-deep-orange transition`}
                 aria-label="Change profile icon"
               >
                 {profileIcon ? (
                   <img src={`/avatars/${profileIcon}`} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#FFB87A] to-[#E65100] flex items-center justify-center font-bold text-[#3E2723]">
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-light-orange to-deep-orange flex items-center justify-center font-bold text-chocolate">
                     {getInitials(userName)}
                   </div>
                 )}
@@ -876,49 +789,71 @@ export default function DashboardPage() {
 
           <div className="px-6 md:px-8 py-8 max-w-7xl mx-auto">
             {/* Cinematic Greeting */}
-            <section className="mb-10 fade-up">
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg
-                      className="w-3 h-3 text-[#E65100]"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
+            <section className={`mb-10 ${styles.fadeUp}`}>
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-faint-white via-faint-white to-cream border border-tan/20 p-6 md:p-8 shadow-sm">
+                <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-light-orange-faint/40 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="w-8 h-px bg-gradient-to-r from-deep-orange to-transparent" />
+                      <svg
+                        className="w-3 h-3 text-deep-orange"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      <span className="text-[10px] tracking-[0.3em] uppercase text-deep-orange font-semibold">
+                        The God&apos;s Eye Observes
+                      </span>
+                    </div>
+                    <h1
+                      className="font-cinzel text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
+                      style={{ textShadow: "0 2px 20px color-mix(in srgb, var(--deep-orange) 10%, transparent)" }}
                     >
-                      <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    <span className="text-[10px] tracking-[0.3em] uppercase text-[#E65100] font-semibold">
-                      The God&apos;s Eye Observes
-                    </span>
+                      Welcome back,
+                      <br />
+                      <span className="bg-gradient-to-r from-deep-orange via-light-orange to-deep-orange bg-clip-text text-transparent">
+                        {userName}
+                      </span>
+                    </h1>
+                    <p className="text-brown mt-4 max-w-lg text-sm leading-relaxed">
+                      Every story, carved in light. Pick up where you left off, or let the eye find your next obsession.
+                    </p>
+                    {resumeItems.length > 0 && (
+                      <a
+                        href={`/movie/${resumeItems[0].id}`}
+                        className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 rounded-full bg-gradient-to-r from-deep-orange to-chocolate text-faint-white text-sm font-semibold hover:from-chocolate hover:to-chocolate transition-all shadow-lg shadow-deep-orange/20 hover:shadow-deep-orange/30"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                          <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                        Continue Watching
+                      </a>
+                    )}
                   </div>
-                  <h1 className="font-cinzel text-4xl md:text-5xl font-bold text-[#3E2723] leading-tight">
-                    Welcome back,
-                    <br />
-                    <span className="text-[#E65100]">{userName}</span>
-                  </h1>
-                  <p className="text-[#6B4423] mt-3 max-w-md">
-                    Every story, carved in light. Pick up where you left off, or let the eye find your next obsession.
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-xs text-[#A0785A] uppercase tracking-wider">Today</p>
-                    <p className="font-cinzel text-lg font-semibold text-[#3E2723]">{formatToday()}</p>
-                  </div>
-                  <div className="w-px h-12 bg-[#D4A574]/40" />
-                  <div className="text-right">
-                    <p className="text-xs text-[#A0785A] uppercase tracking-wider">Streak</p>
-                    <p className="font-cinzel text-lg font-semibold text-[#E65100]">{streak} Days</p>
+                  <div className="flex items-center gap-5">
+                    <div className="text-right">
+                      <p className="text-[10px] text-sandy uppercase tracking-[0.2em] font-semibold">Today</p>
+                      <p className="font-cinzel text-base md:text-lg font-semibold text-chocolate mt-1">
+                        {formatToday()}
+                      </p>
+                    </div>
+                    <div className="w-px h-14 bg-gradient-to-b from-tan/60 to-transparent" />
+                    <div className="text-right">
+                      <p className="text-[10px] text-sandy uppercase tracking-[0.2em] font-semibold">Streak</p>
+                      <p className="font-cinzel text-xl md:text-2xl font-bold text-deep-orange mt-1">{streak}</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </section>
 
             {/* Dashboard Stats */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12 fade-up delay-1">
+            <section className={`grid grid-cols-1 md:grid-cols-3 gap-5 mb-12 ${styles.fadeUp} ${styles.delay1}`}>
               <StatCard
                 icon={
                   <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -926,9 +861,10 @@ export default function DashboardPage() {
                     <polyline points="12 6 12 12 16 14" />
                   </svg>
                 }
-                value={`${hours} hrs`}
+                value={`${hours}`}
+                valueUnit="hrs"
                 label="Watch Time"
-                badge={{ text: "Total", color: "green" }}
+                badge={{ text: "+12%", color: "green" }}
                 progress={watchTimeProgress}
               />
               <StatCard
@@ -937,9 +873,10 @@ export default function DashboardPage() {
                     <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
                   </svg>
                 }
-                value={`${watchlist.length} titles`}
+                value={`${watchlist.length}`}
+                valueUnit="titles"
                 label="Saved Titles"
-                badge={{ text: `${newlyAddedCount} new this month`, color: "orange" }}
+                badge={{ text: "Active", color: "orange" }}
                 progress={savedTitlesProgress}
               />
               <StatCard
@@ -950,18 +887,26 @@ export default function DashboardPage() {
                     <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
                 }
-                value="0 GB"
+                value="0"
+                valueUnit="offline"
                 label="Downloads"
-                badge={{ text: "0 offline", color: "brown" }}
+                badge={{ text: "8.4 GB", color: "brown" }}
                 progress={0}
               />
             </section>
 
+            {/* Upgrade Banner */}
+            <div className={`mb-12 ${styles.fadeUp} ${styles.delay2}`}>
+              <UpgradeBanner onUpgradeClick={() => setIsPricingOpen(true)} />
+            </div>
+
             {/* Resume Watching */}
             {resumeItems.length > 0 && (
-              <section className="mb-12 fade-up delay-2">
+              <section className={`mb-12 ${styles.fadeUp} ${styles.delay2}`}>
                 <div className="flex items-center justify-between mb-5">
-                  <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Resume Watching</h2>
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3E2723]`}>
+                    Resume Watching
+                  </h2>
                   <Link
                     href="/history"
                     className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
@@ -981,42 +926,32 @@ export default function DashboardPage() {
               </section>
             )}
 
-            {/* Live Favorites */}
-            <section className="mb-12 fade-up delay-3">
+            {/* The Archive */}
+            <section className={`mb-12 ${styles.fadeUp} ${styles.delay3}`}>
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Live Favorites</h2>
-                  <p className="text-xs text-[#A0785A] mt-1 ml-4">Your favorite channels</p>
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
+                    The Archive
+                  </h2>
+                  <p className="text-xs text-sandy mt-1 ml-4">{watchlist.length} titles preserved for your viewing</p>
                 </div>
-              </div>
-              <div className="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-2">
-                <div className="flex items-center justify-between px-3 py-2 mb-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#A0785A]">All Channels</span>
-                  <span className="text-xs text-[#A0785A]">{channelCount} channels</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
-                  {channels.map((channel) => (
-                    <LiveFavoriteListItem key={channel.id} channel={channel} />
-                  ))}
+                <div className="flex items-center gap-3">
+                  <div className="flex bg-faint-white border border-tan/30 rounded-lg p-1">
+                    {(["all", "movies", "series"] as const).map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => {}}
+                        className={`px-3 py-1 text-xs font-semibold rounded ${f === "all" ? "bg-chocolate text-faint-white" : "text-brown hover:text-deep-orange transition"}`}
+                      >
+                        {f === "all" ? "All" : f === "movies" ? "Movies" : "Series"}
+                      </button>
+                    ))}
+                  </div>
                   <Link
-                    href="/live-tv"
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFE8D1]/40 transition"
+                    href="/watchlist"
+                    className="text-sm font-semibold text-deep-orange hover:text-chocolate transition flex items-center gap-1"
                   >
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-[#FFE8D1] text-[#E65100] flex-shrink-0">
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-semibold text-[#3E2723]">Add Channel</p>
-                  </Link>
-                </div>
-                <div className="mt-2 pt-2 border-t border-[#D4A574]/20 px-3">
-                  <Link
-                    href="/live-tv"
-                    className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
-                  >
-                    Browse all
+                    View All
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="5" y1="12" x2="19" y2="12" />
                       <polyline points="12 5 19 12 12 19" />
@@ -1024,21 +959,45 @@ export default function DashboardPage() {
                   </Link>
                 </div>
               </div>
+              {watchlist.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {watchlist.slice(0, 12).map((item) => (
+                    <Link key={item.id} href={`/movie/${item.id}`} className={`${styles.archiveCard}`}>
+                      <img src={posterUrl(item.posterPath, "w342")} alt={item.title} loading="lazy" />
+                      <div className={`${styles.archiveOverlay}`}>
+                        <span className={`${styles.archiveQuality}`}>4K UHD</span>
+                        <h3 className={`${styles.archiveTitle} font-cinzel font-bold text-sm mt-2`}>{item.title}</h3>
+                        <p className={`${styles.archiveMeta} mt-1`}>
+                          {item.year || ""}
+                          {item.year && item.genres?.length ? " Â· " : ""}
+                          {item.genres?.slice(0, 2).join(", ") || ""}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-faint-white border border-tan/30 rounded-2xl p-8 text-center">
+                  <p className="text-sm text-brown">Your archive is empty. Start adding titles to your watchlist.</p>
+                </div>
+              )}
             </section>
 
             {/* Recent Activity */}
-            <section className="mb-12 fade-up delay-4">
+            <section className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Recent Activity</h2>
-                  <p className="text-xs text-[#A0785A] mt-1 ml-4">Your latest actions</p>
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
+                    Recent Activity
+                  </h2>
+                  <p className="text-xs text-sandy mt-1 ml-4">Your latest actions</p>
                 </div>
-                <div className="flex bg-[#FFFBF5] border border-[#D4A574]/30 rounded-lg p-1">
+                <div className="flex bg-faint-white border border-tan/30 rounded-lg p-1">
                   {(["all", "watching", "watchlist", "completed"] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => setActivityFilter(f)}
-                      className={`filter-btn px-3 py-1 text-xs font-semibold rounded ${activityFilter === f ? "active" : "text-[#6B4423]"}`}
+                      className={`${styles.filterBtn} px-3 py-1 text-xs font-semibold rounded ${activityFilter === f ? styles.filterBtnActive : "text-brown"}`}
                     >
                       {f === "all"
                         ? "All"
@@ -1051,33 +1010,31 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
-              <div className="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-2">
+              <div className="bg-faint-white border border-tan/30 rounded-2xl divide-y divide-tan/20">
                 {filteredActivities.length > 0 ? (
                   filteredActivities.map((item, i) => <ActivityRow key={i} item={item} />)
                 ) : (
                   <div className="p-8 text-center">
-                    <p className="text-sm text-[#6B4423]">No activity yet. Start watching to see your history here.</p>
+                    <p className="text-sm text-brown">No activity yet. Start watching to see your history here.</p>
                   </div>
                 )}
               </div>
             </section>
 
-            <footer className="mt-12 py-6 border-t border-[#D4A574]/30">
+            <footer className="mt-12 py-6 border-t border-tan/30">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <p className="text-xs text-[#6B4423] font-cinzel tracking-wider">
-                  CHITHIRA · EVERY STORY, CARVED IN LIGHT
-                </p>
+                <p className="text-xs text-brown font-cinzel tracking-wider">CHITHIRA · EVERY STORY, CARVED IN LIGHT</p>
                 <div className="flex gap-5 text-xs">
-                  <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
+                  <a href="#" className="text-brown hover:text-deep-orange transition">
                     Help Center
                   </a>
-                  <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
+                  <a href="#" className="text-brown hover:text-deep-orange transition">
                     Privacy
                   </a>
-                  <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
+                  <a href="#" className="text-brown hover:text-deep-orange transition">
                     Terms
                   </a>
-                  <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
+                  <a href="#" className="text-brown hover:text-deep-orange transition">
                     Contact
                   </a>
                 </div>
@@ -1085,18 +1042,21 @@ export default function DashboardPage() {
             </footer>
           </div>
 
+          {/* Pricing Modal */}
+          <PricingModal isOpen={isPricingOpen} onClose={() => setIsPricingOpen(false)} />
+
           {/* Profile Icon Selector Modal */}
           {showProfileSelector && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#3E2723]/60 backdrop-blur-sm">
-              <div className="bg-[#FFFBF5] rounded-2xl w-full max-w-lg p-6 shadow-2xl">
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-chocolate/60 backdrop-blur-sm">
+              <div className="bg-faint-white rounded-2xl w-full max-w-lg p-6 shadow-2xl">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="font-cinzel text-xl font-bold text-[#3E2723]">Choose Your Avatar</h3>
-                    <p className="text-xs text-[#6B4423] mt-1">Select a profile icon to personalize your experience</p>
+                    <h3 className="font-cinzel text-xl font-bold text-chocolate">Choose Your Avatar</h3>
+                    <p className="text-xs text-brown mt-1">Select a profile icon to personalize your experience</p>
                   </div>
                   <button
                     onClick={() => setShowProfileSelector(false)}
-                    className="w-8 h-8 rounded-full hover:bg-[#FFE8D1] flex items-center justify-center text-[#6B4423] transition"
+                    className="w-8 h-8 rounded-full hover:bg-light-orange-faint flex items-center justify-center text-brown transition"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M18 6L6 18M6 6l12 12" />
@@ -1110,14 +1070,14 @@ export default function DashboardPage() {
                       onClick={() => handleSelectProfileIcon(icon)}
                       className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition hover:scale-105 ${
                         profileIcon === icon
-                          ? "border-[#E65100] ring-2 ring-[#E65100]/20"
-                          : "border-transparent hover:border-[#D4A574]"
+                          ? "border-deep-orange ring-2 ring-deep-orange/20"
+                          : "border-transparent hover:border-tan"
                       }`}
                     >
                       <img src={`/avatars/${icon}`} alt="Avatar option" className="w-full h-full object-cover" />
                       {profileIcon === icon && (
-                        <div className="absolute inset-0 bg-[#E65100]/20 flex items-center justify-center">
-                          <svg className="w-5 h-5 text-[#E65100]" viewBox="0 0 24 24" fill="currentColor">
+                        <div className="absolute inset-0 bg-deep-orange/20 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-deep-orange" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                           </svg>
                         </div>
@@ -1130,6 +1090,22 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
+      <style jsx global>{`
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: var(--cream);
+        }
+        ::-webkit-scrollbar-thumb {
+          background: var(--tan);
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: var(--deep-orange);
+        }
+      `}</style>
     </div>
   );
 }

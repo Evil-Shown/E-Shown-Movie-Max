@@ -20,20 +20,8 @@ import {
 import { getPreferredProvider, setPreferredProvider } from "@/lib/storage/provider-pref";
 import { syncDesktopSession } from "@/lib/storage/desktop-session";
 import type { ContinueWatchingItem, WatchlistItem } from "@/lib/storage/types";
-import {
-  getWatchlist,
-  removeFromWatchlist,
-  toggleWatchlistItem,
-} from "@/lib/storage/watchlist";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { getWatchlist, removeFromWatchlist, toggleWatchlistItem } from "@/lib/storage/watchlist";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 interface Toast {
   id: number;
@@ -159,6 +147,9 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
         mediaType: movie.mediaType ?? "movie",
         tmdbId,
         genres: movie.genres.length ? movie.genres : undefined,
+        year: movie.year,
+        voteAverage: movie.rating,
+        overview: movie.overview,
         progress,
         currentTime,
         duration,
@@ -179,13 +170,10 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
     []
   );
 
-  const removeContinueItem = useCallback(
-    (id: string) => {
-      removeFromContinueWatching(id);
-      setContinueWatching(getContinueWatching());
-    },
-    []
-  );
+  const removeContinueItem = useCallback((id: string) => {
+    removeFromContinueWatching(id);
+    setContinueWatching(getContinueWatching());
+  }, []);
 
   const clearContinueItems = useCallback(() => {
     clearContinueWatching();

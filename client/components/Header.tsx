@@ -78,7 +78,7 @@ function NavLink({
 
 export default function Header() {
   const pathname = usePathname();
-  const isDashboard = pathname === "/dashboard";
+  const isDashboard = pathname === "/dashboard" || pathname === "/settings";
   const { watchlistCount } = useUserLibrary();
   const afterHydration = useAfterHydration();
   const [scrolled, setScrolled] = useState(false);

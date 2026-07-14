@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard | Chithira — The God's Eye</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --faint-white: #FFFBF5;
+    --chocolate: #3E2723;
+    --deep-orange: #E65100;
+    --light-orange-faint: #FFE8D1;
+    --light-orange: #FFB87A;
+    --tan: #D4A574;
+    --brown: #6B4423;
+    --cream: #F5E6D3;
+  }
+  
+  * { box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #FAF3E8;
+    color: #3E2723;
+    margin: 0;
+    min-height: 100vh;
+  }
+  
+  .font-cinzel {
+    font-family: 'Cinzel', serif;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    background: #FFFBF5;
+    border-right: 1px solid rgba(212, 165, 116, 0.25);
+  }
+  
+  .nav-link {
+    color: #6B4423;
+    transition: all 0.25s ease;
+    border-left: 3px solid transparent;
+  }
+  
+  .nav-link:hover {
+    background: rgba(230, 81, 0, 0.06);
+    color: #E65100;
+    border-left-color: #E65100;
+  }
+  
+  .nav-link.active {
+    background: #3E2723;
+    color: #FFFBF5;
+    border-left-color: #E65100;
+  }
+  
+  .nav-link.active i {
+    color: #FFB87A;
+  }
+  
+  /* Stats Cards */
+  .stat-card {
+    background: #FFFBF5;
+    border: 1px solid rgba(212, 165, 116, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .stat-card:hover {
+    border-color: #E65100;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(62, 39, 35, 0.08);
+  }
+  
+  .stat-icon-box {
+    background: #FFE8D1;
+    color: #E65100;
+  }
+  
+  /* Resume Watching Cards */
+  .resume-card {
+    background: #FFFBF5;
+    border: 1px solid rgba(212, 165, 116, 0.3);
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+  
+  .resume-card:hover {
+    border-color: #E65100;
+    box-shadow: 0 15px 40px rgba(62, 39, 35, 0.12);
+  }
+  
+  .resume-card:hover .resume-thumb {
+    transform: scale(1.05);
+  }
+  
+  .resume-thumb {
+    transition: transform 0.5s ease;
+  }
+  
+  .progress-track {
+    background: #FFE8D1;
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    background: #E65100;
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.8s ease;
+  }
+  
+  /* Archive Poster Cards */
+  .archive-card {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    aspect-ratio: 2/3;
+    transition: all 0.4s ease;
+  }
+  
+  .archive-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+  
+  .archive-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(62, 39, 35, 0.4) 50%, rgba(62, 39, 35, 0.98) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 16px;
+    transition: all 0.4s ease;
+  }
+  
+  .archive-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(62, 39, 35, 0.3);
+  }
+  
+  .archive-card:hover img {
+    transform: scale(1.08);
+  }
+  
+  .archive-card:hover .archive-overlay {
+    background: linear-gradient(180deg, rgba(62, 39, 35, 0.6) 0%, rgba(62, 39, 35, 0.98) 60%);
+  }
+  
+  .archive-quality {
+    display: inline-block;
+    background: #E65100;
+    color: #FFFBF5;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.4s ease;
+  }
+  
+  .archive-card:hover .archive-quality {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .archive-title {
+    color: #FFB87A;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.4s ease 0.05s;
+  }
+  
+  .archive-card:hover .archive-title {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .archive-meta {
+    color: #D4A574;
+    font-size: 11px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.4s ease 0.1s;
+  }
+  
+  .archive-card:hover .archive-meta {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  /* Play Button */
+  .play-btn {
+    background: #E65100;
+    transition: all 0.3s ease;
+  }
+  
+  .play-btn:hover {
+    background: #3E2723;
+    transform: scale(1.1);
+  }
+  
+  /* Texture overlay */
+  .texture-bg {
+    background-image: 
+      radial-gradient(circle at 15% 20%, rgba(230, 81, 0, 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 85% 70%, rgba(62, 39, 35, 0.05) 0%, transparent 40%);
+    background-attachment: fixed;
+  }
+  
+  /* Top bar */
+  .topbar {
+    background: rgba(255, 251, 245, 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(212, 165, 116, 0.25);
+  }
+  
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #FAF3E8; }
+  ::-webkit-scrollbar-thumb { background: #D4A574; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #E65100; }
+  
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .fade-up { animation: fadeUp 0.6s ease forwards; }
+  .delay-1 { animation-delay: 0.1s; opacity: 0; }
+  .delay-2 { animation-delay: 0.2s; opacity: 0; }
+  .delay-3 { animation-delay: 0.3s; opacity: 0; }
+  .delay-4 { animation-delay: 0.4s; opacity: 0; }
+  
+  /* Section heading */
+  .section-heading {
+    position: relative;
+    padding-left: 16px;
+  }
+  
+  .section-heading::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 70%;
+    background: #E65100;
+    border-radius: 2px;
+  }
+  
+  /* Eye decoration */
+  .eye-deco {
+    position: relative;
+  }
+  
+  .eye-deco::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 6px;
+    height: 6px;
+    background: #E65100;
+    border-radius: 50%;
+    box-shadow: 0 0 12px #E65100;
+  }
+</style>
+</head>
+<body class="texture-bg">
+
+<div class="flex min-h-screen">
+  
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar fixed left-0 top-0 h-full w-64 z-40 flex flex-col">
+    
+    <!-- Logo -->
+    <div class="px-6 py-6 border-b border-[#D4A574]/25">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-[#3E2723] rounded-lg flex items-center justify-center eye-deco">
+          <i class="fas fa-eye text-[#E65100] text-lg"></i>
+        </div>
+        <div>
+          <h1 class="font-cinzel text-xl font-bold text-[#3E2723] leading-none">CHITHIRA</h1>
+          <p class="text-[10px] tracking-[0.2em] text-[#E65100] font-semibold mt-1">THE GOD'S EYE</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Navigation -->
+    <nav class="flex-1 py-4 overflow-y-auto">
+      <p class="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">Browse</p>
+      <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium">
+        <i class="fas fa-home w-5 text-center"></i>
+        <span>Home</span>
+      </a>
+      <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium">
+        <i class="fas fa-film w-5 text-center"></i>
+        <span>Movies</span>
+      </a>
+      <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium">
+        <i class="fas fa-tv w-5 text-center"></i>
+        <span>Live TV</span>
+        <span class="ml-auto text-[10px] bg-[#E65100] text-white px-1.5 py-0.5 rounded font-bold">87+</span>
+      </a>
+      <a href="#" class="nav-link active flex items-center gap-3 px-6 py-3 text-sm font-medium">
+        <i class="fas fa-th-large w-5 text-center"></i>
+        <span>Dashboard</span>
+      </a>
+      
+      <p class="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">Library</p>
+      <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium">
+        <i class="fas fa-bookmark w-5 text-center"></i>
+        <span>Watchlist</span>
+        <span class="ml-auto text-xs text-[#A0785A]">24</span>
+      </a>
+      <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium">
+        <i class="fas fa-history w-5 text-center"></i>
+        <span>History</span>
+      </a>
+      <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium">
+        <i class="fas fa-download w-5 text-center"></i>
+        <span>Downloads</span>
+        <span class="ml-auto text-xs text-[#A0785A]">7</span>
+      </a>
+      <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium">
+        <i class="fas fa-heart w-5 text-center"></i>
+        <span>Favorites</span>
+      </a>
+      
+      <p class="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">Account</p>
+      <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium">
+        <i class="fas fa-cog w-5 text-center"></i>
+        <span>Settings</span>
+      </a>
+      <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium">
+        <i class="fas fa-sign-out-alt w-5 text-center"></i>
+        <span>Logout</span>
+      </a>
+    </nav>
+    
+    <!-- Mini User Profile Card -->
+    <div class="p-4 border-t border-[#D4A574]/25">
+      <div class="bg-[#3E2723] rounded-xl p-3 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#FFB87A] to-[#E65100] flex items-center justify-center font-bold text-[#3E2723] flex-shrink-0">
+          ND
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-[#FFFBF5] truncate">Nimal De Silva</p>
+          <div class="flex items-center gap-1">
+            <i class="fas fa-crown text-[#FFB87A] text-[10px]"></i>
+            <span class="text-[10px] text-[#D4A574]">Premium Member</span>
+          </div>
+        </div>
+        <button class="text-[#D4A574] hover:text-[#E65100] transition">
+          <i class="fas fa-ellipsis-v text-xs"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+  
+  <!-- ============ MAIN CONTENT ============ -->
+  <main class="flex-1 ml-64">
+    
+    <!-- Top Bar -->
+    <header class="topbar sticky top-0 z-30">
+      <div class="flex items-center justify-between px-8 py-4">
+        <div class="flex items-center gap-3">
+          <button class="lg:hidden text-[#3E2723]">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+          <div class="hidden md:flex items-center gap-2 text-xs text-[#A0785A]">
+            <span>Chithira</span>
+            <i class="fas fa-chevron-right text-[8px]"></i>
+            <span class="text-[#3E2723] font-semibold">Dashboard</span>
+          </div>
+        </div>
+        
+        <div class="flex-1 max-w-md mx-6">
+          <div class="relative">
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-[#A0785A] text-sm"></i>
+            <input type="text" placeholder="Search for your next obsession..." 
+                   class="w-full bg-[#FFFBF5] border border-[#D4A574]/40 rounded-full pl-11 pr-4 py-2 text-sm text-[#3E2723] placeholder-[#A0785A] focus:outline-none focus:border-[#E65100] focus:ring-2 focus:ring-[#E65100]/15 transition">
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <button class="relative w-10 h-10 rounded-full bg-[#FFFBF5] border border-[#D4A574]/30 hover:border-[#E65100] flex items-center justify-center text-[#3E2723] hover:text-[#E65100] transition">
+            <i class="fas fa-bell text-sm"></i>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-[#E65100] rounded-full"></span>
+          </button>
+          <button class="w-10 h-10 rounded-full bg-[#FFFBF5] border border-[#D4A574]/30 hover:border-[#E65100] flex items-center justify-center text-[#3E2723] hover:text-[#E65100] transition">
+            <i class="fas fa-gift text-sm"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+    
+    <!-- Dashboard Content -->
+    <div class="px-8 py-8 max-w-7xl mx-auto">
+      
+      <!-- ============ CINEMATIC GREETING ============ -->
+      <section class="mb-10 fade-up">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <i class="fas fa-eye text-[#E65100] text-xs"></i>
+              <span class="text-[10px] tracking-[0.3em] uppercase text-[#E65100] font-semibold">The God's Eye Observes</span>
+            </div>
+            <h1 class="font-cinzel text-4xl md:text-5xl font-bold text-[#3E2723] leading-tight">
+              Welcome back,<br>
+              <span class="text-[#E65100]">Watcher</span>
+            </h1>
+            <p class="text-[#6B4423] mt-3 max-w-md">Every story, carved in light. Pick up where you left off, or let the eye find your next obsession.</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="text-right">
+              <p class="text-xs text-[#A0785A] uppercase tracking-wider">Today</p>
+              <p class="font-cinzel text-lg font-semibold text-[#3E2723]">July 12, 2026</p>
+            </div>
+            <div class="w-px h-12 bg-[#D4A574]/40"></div>
+            <div class="text-right">
+              <p class="text-xs text-[#A0785A] uppercase tracking-wider">Streak</p>
+              <p class="font-cinzel text-lg font-semibold text-[#E65100]">23 Days</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- ============ DASHBOARD STATS ============ -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12 fade-up delay-1">
+        
+        <!-- Watch Time -->
+        <div class="stat-card rounded-xl p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-12 h-12 rounded-lg stat-icon-box flex items-center justify-center">
+              <i class="fas fa-clock text-xl"></i>
+            </div>
+            <div class="text-right">
+              <span class="text-[10px] text-green-700 font-bold bg-green-100 px-2 py-1 rounded-full uppercase tracking-wider">+12%</span>
+            </div>
+          </div>
+          <p class="font-cinzel text-3xl font-bold text-[#3E2723]">847<span class="text-base text-[#A0785A] font-normal ml-1">hrs</span></p>
+          <p class="text-sm text-[#6B4423] mt-1">Watch Time</p>
+          <div class="mt-3 h-1 bg-[#FFE8D1] rounded-full overflow-hidden">
+            <div class="h-full bg-[#E65100] rounded-full" style="width: 72%"></div>
+          </div>
+        </div>
+        
+        <!-- Saved Titles -->
+        <div class="stat-card rounded-xl p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-12 h-12 rounded-lg stat-icon-box flex items-center justify-center">
+              <i class="fas fa-bookmark text-xl"></i>
+            </div>
+            <div class="text-right">
+              <span class="text-[10px] text-[#E65100] font-bold bg-[#FFE8D1] px-2 py-1 rounded-full uppercase tracking-wider">Active</span>
+            </div>
+          </div>
+          <p class="font-cinzel text-3xl font-bold text-[#3E2723]">24<span class="text-base text-[#A0785A] font-normal ml-1">titles</span></p>
+          <p class="text-sm text-[#6B4423] mt-1">Saved Titles</p>
+          <div class="mt-3 h-1 bg-[#FFE8D1] rounded-full overflow-hidden">
+            <div class="h-full bg-[#E65100] rounded-full" style="width: 48%"></div>
+          </div>
+        </div>
+        
+        <!-- Downloads -->
+        <div class="stat-card rounded-xl p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-12 h-12 rounded-lg stat-icon-box flex items-center justify-center">
+              <i class="fas fa-download text-xl"></i>
+            </div>
+            <div class="text-right">
+              <span class="text-[10px] text-[#3E2723] font-bold bg-[#D4A574]/30 px-2 py-1 rounded-full uppercase tracking-wider">8.4 GB</span>
+            </div>
+          </div>
+          <p class="font-cinzel text-3xl font-bold text-[#3E2723]">7<span class="text-base text-[#A0785A] font-normal ml-1">offline</span></p>
+          <p class="text-sm text-[#6B4423] mt-1">Downloads</p>
+          <div class="mt-3 h-1 bg-[#FFE8D1] rounded-full overflow-hidden">
+            <div class="h-full bg-[#E65100] rounded-full" style="width: 65%"></div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- ============ RESUME WATCHING ============ -->
+      <section class="mb-12 fade-up delay-2">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Resume Watching</h2>
+          <a href="#" class="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1">
+            View All <i class="fas fa-arrow-right text-xs"></i>
+          </a>
+        </div>
+        
+        <div class="space-y-4">
+          
+          <!-- Resume Item 1 - Passenger -->
+          <div class="resume-card rounded-xl flex flex-col md:flex-row group">
+            <div class="md:w-72 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
+              <div class="resume-thumb absolute inset-0 bg-gradient-to-br from-[#1a0e08] to-[#3E2723] flex items-center justify-center">
+                <h3 class="font-cinzel text-4xl font-black text-[#CC0000] tracking-widest">PASSENGER</h3>
+              </div>
+              <div class="absolute top-3 left-3 bg-[#E65100] text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Horror</div>
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <button class="play-btn w-14 h-14 rounded-full flex items-center justify-center text-white">
+                  <i class="fas fa-play ml-1"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="flex-1 p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <h3 class="font-cinzel text-xl font-bold text-[#3E2723]">Passenger</h3>
+                    <p class="text-xs text-[#A0785A] mt-1">2026 · Horror/Thriller · 2h 10m · IMDb 6.7</p>
+                  </div>
+                  <button class="text-[#A0785A] hover:text-[#E65100] transition">
+                    <i class="fas fa-ellipsis-h"></i>
+                  </button>
+                </div>
+                <p class="text-sm text-[#6B4423] mt-2 line-clamp-2">A young couple witnesses a horrific car accident on a remote road, only to realize they're being stalked by a demonic entity known as the Passenger.</p>
+              </div>
+              
+              <div class="mt-4">
+                <div class="flex justify-between text-xs text-[#6B4423] mb-1.5">
+                  <span class="flex items-center gap-1.5">
+                    <i class="fas fa-pause text-[#E65100]"></i>
+                    <span class="font-semibold">Paused at 1:24:30</span>
+                  </span>
+                  <span>2:10:00</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" style="width: 65%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Resume Item 2 - Obsession -->
+          <div class="resume-card rounded-xl flex flex-col md:flex-row group">
+            <div class="md:w-72 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
+              <div class="resume-thumb absolute inset-0 bg-gradient-to-br from-[#3E2723] to-[#6B4423] flex items-center justify-center">
+                <h3 class="font-cinzel text-3xl font-black text-[#FFB87A] tracking-widest">OBSESSION</h3>
+              </div>
+              <div class="absolute top-3 left-3 bg-[#E65100] text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Thriller</div>
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <button class="play-btn w-14 h-14 rounded-full flex items-center justify-center text-white">
+                  <i class="fas fa-play ml-1"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="flex-1 p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <h3 class="font-cinzel text-xl font-bold text-[#3E2723]">Obsession</h3>
+                    <p class="text-xs text-[#A0785A] mt-1">2026 · Psychological Thriller · 2h 28m · IMDb 8.0</p>
+                  </div>
+                  <button class="text-[#A0785A] hover:text-[#E65100] transition">
+                    <i class="fas fa-ellipsis-h"></i>
+                  </button>
+                </div>
+                <p class="text-sm text-[#6B4423] mt-2 line-clamp-2">A renowned psychiatrist becomes dangerously entangled in the life of a patient whose fixation blurs the line between healer and prey.</p>
+              </div>
+              
+              <div class="mt-4">
+                <div class="flex justify-between text-xs text-[#6B4423] mb-1.5">
+                  <span class="flex items-center gap-1.5">
+                    <i class="fas fa-pause text-[#E65100]"></i>
+                    <span class="font-semibold">Paused at 0:48:15</span>
+                  </span>
+                  <span>2:28:00</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" style="width: 32%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Resume Item 3 - Toy Story 5 -->
+          <div class="resume-card rounded-xl flex flex-col md:flex-row group">
+            <div class="md:w-72 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
+              <div class="resume-thumb absolute inset-0 bg-gradient-to-br from-[#E65100] to-[#6B4423] flex items-center justify-center">
+                <h3 class="font-cinzel text-2xl font-black text-white tracking-widest">TOY STORY 5</h3>
+              </div>
+              <div class="absolute top-3 left-3 bg-[#E65100] text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Animation</div>
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <button class="play-btn w-14 h-14 rounded-full flex items-center justify-center text-white">
+                  <i class="fas fa-play ml-1"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="flex-1 p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <h3 class="font-cinzel text-xl font-bold text-[#3E2723]">Toy Story 5</h3>
+                    <p class="text-xs text-[#A0785A] mt-1">2026 · Animation/Family · 1h 45m · IMDb 7.8</p>
+                  </div>
+                  <button class="text-[#A0785A] hover:text-[#E65100] transition">
+                    <i class="fas fa-ellipsis-h"></i>
+                  </button>
+                </div>
+                <p class="text-sm text-[#6B4423] mt-2 line-clamp-2">Woody and the gang embark on a new adventure when Bonnie's imagination brings a forgotten toy back to life in unexpected ways.</p>
+              </div>
+              
+              <div class="mt-4">
+                <div class="flex justify-between text-xs text-[#6B4423] mb-1.5">
+                  <span class="flex items-center gap-1.5">
+                    <i class="fas fa-pause text-[#E65100]"></i>
+                    <span class="font-semibold">Paused at 1:32:40</span>
+                  </span>
+                  <span>1:45:00</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" style="width: 88%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+      
+      <!-- ============ THE ARCHIVE (WATCHLIST) ============ -->
+      <section class="mb-12 fade-up delay-3">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">The Archive</h2>
+            <p class="text-xs text-[#A0785A] mt-1 ml-4">24 titles preserved for your viewing</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="flex bg-[#FFFBF5] border border-[#D4A574]/30 rounded-lg p-1">
+              <button class="px-3 py-1 text-xs font-semibold bg-[#3E2723] text-[#FFFBF5] rounded">All</button>
+              <button class="px-3 py-1 text-xs font-semibold text-[#6B4423] hover:text-[#E65100] transition">Movies</button>
+              <button class="px-3 py-1 text-xs font-semibold text-[#6B4423] hover:text-[#E65100] transition">Series</button>
+            </div>
+            <a href="#" class="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1">
+              View All <i class="fas fa-arrow-right text-xs"></i>
+            </a>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          
+          <!-- Archive Card 1 -->
+          <div class="archive-card">
+            <img src="https://picsum.photos/seed/dune3poster/300/450.jpg" alt="Dune Part Three">
+            <div class="archive-overlay">
+              <span class="archive-quality">4K UHD</span>
+              <h3 class="archive-title font-cinzel font-bold text-sm mt-2">Dune: Part Three</h3>
+              <p class="archive-meta mt-1">2026 · Sci-Fi · 2h 45m</p>
+            </div>
+          </div>
+          
+          <!-- Archive Card 2 -->
+          <div class="archive-card">
+            <img src="https://picsum.photos/seed/avatar3fire/300/450.jpg" alt="Avatar 3">
+            <div class="archive-overlay">
+              <span class="archive-quality">4K HDR</span>
+              <h3 class="archive-title font-cinzel font-bold text-sm mt-2">Avatar: Fire & Ash</h3>
+              <p class="archive-meta mt-1">2026 · Sci-Fi · 3h 10m</p>
+            </div>
+          </div>
+          
+          <!-- Archive Card 3 -->
+          <div class="archive-card">
+            <img src="https://picsum.photos/seed/gladiator3/300/450.jpg" alt="Gladiator III">
+            <div class="archive-overlay">
+              <span class="archive-quality">4K UHD</span>
+              <h3 class="archive-title font-cinzel font-bold text-sm mt-2">Gladiator III</h3>
+              <p class="archive-meta mt-1">2026 · Epic · 2h 38m</p>
+            </div>
+          </div>
+          
+          <!-- Archive Card 4 -->
+          <div class="archive-card">
+            <img src="https://picsum.photos/seed/missionimp8/300/450.jpg" alt="Mission Impossible 8">
+            <div class="archive-overlay">
+              <span class="archive-quality">4K HDR</span>
+              <h3 class="archive-title font-cinzel font-bold text-sm mt-2">MI: Final Reckoning</h3>
+              <p class="archive-meta mt-1">2026 · Action · 2h 49m</p>
+            </div>
+          </div>
+          
+          <!-- Archive Card 5 -->
+          <div class="archive-card">
+            <img src="https://picsum.photos/seed/darkknight/300/450.jpg" alt="The Dark Knight">
+            <div class="archive-overlay">
+              <span class="archive-quality">4K UHD</span>
+              <h3 class="archive-title font-cinzel font-bold text-sm mt-2">The Dark Knight</h3>
+              <p class="archive-meta mt-1">2008 · Action · 2h 32m</p>
+            </div>
+          </div>
+          
+          <!-- Archive Card 6 -->
+          <div class="archive-card">
+            <img src="https://picsum.photos/seed/interstellarmovie/300/450.jpg" alt="Interstellar">
+            <div class="archive-overlay">
+              <span class="archive-quality">4K HDR</span>
+              <h3 class="archive-title font-cinzel font-bold text-sm mt-2">Interstellar</h3>
+              <p class="archive-meta mt-1">2014 · Sci-Fi · 2h 49m</p>
+            </div>
+          </div>
+          
+          <!-- Archive Card 7 -->
+          <div class="archive-card">
+            <img src="https://picsum.photos/seed/jokermovie2/300/450.jpg" alt="Joker">
+            <div class="archive-overlay">
+              <span class="archive-quality">4K UHD</span>
+              <h3 class="archive-title font-cinzel font-bold text-sm mt-2">Joker</h3>
+              <p class="archive-meta mt-1">2019 · Drama · 2h 02m</p>
+            </div>
+          </div>
+          
+          <!-- Archive Card 8 -->
+          <div class="archive-card">
+            <img src="https://picsum.photos/seed/oppenheimer2023/300/450.jpg" alt="Oppenheimer">
+            <div class="archive-overlay">
+              <span class="archive-quality">4K HDR</span>
+              <h3 class="archive-title font-cinzel font-bold text-sm mt-2">Oppenheimer</h3>
+              <p class="archive-meta mt-1">2023 · Drama · 3h 00m</p>
+            </div>
+          </div>
+          
+          <!-- Archive Card 9 -->
+          <div class="archive-card">
+            <img src="https://picsum.photos/seed/spiderman4/300/450.jpg" alt="Spider-Man 4">
+            <div class="archive-overlay">
+              <span class="archive-quality">4K UHD</span>
+              <h3 class="archive-title font-cinzel font-bold text-sm mt-2">Spider-Man 4</h3>
+              <p class="archive-meta mt-1">2026 · Action · 2h 25m</p>
+            </div>
+          </div>
+          
+          <!-- Archive Card 10 -->
+          <div class="archive-card">
+            <img src="https://picsum.photos/seed/inceptionmovie/300/450.jpg" alt="Inception">
+            <div class="archive-overlay">
+              <span class="archive-quality">4K HDR</span>
+              <h3 class="archive-title font-cinzel font-bold text-sm mt-2">Inception</h3>
+              <p class="archive-meta mt-1">2010 · Sci-Fi · 2h 28m</p>
+            </div>
+          </div>
+          
+          <!-- Archive Card 11 -->
+          <div class="archive-card">
+            <img src="https://picsum.photos/seed/blade.runner/300/450.jpg" alt="Blade Runner 2049">
+            <div class="archive-overlay">
+              <span class="archive-quality">4K UHD</span>
+              <h3 class="archive-title font-cinzel font-bold text-sm mt-2">Blade Runner 2049</h3>
+              <p class="archive-meta mt-1">2017 · Sci-Fi · 2h 44m</p>
+            </div>
+          </div>
+          
+          <!-- Archive Card 12 -->
+          <div class="archive-card">
+            <img src="https://picsum.photos/seed/thecrow2026/300/450.jpg" alt="The Crow">
+            <div class="archive-overlay">
+              <span class="archive-quality">4K HDR</span>
+              <h3 class="archive-title font-cinzel font-bold text-sm mt-2">The Crow</h3>
+              <p class="archive-meta mt-1">2026 · Action · 1h 58m</p>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+      
+      <!-- ============ FOOTER ============ -->
+      <footer class="mt-12 py-6 border-t border-[#D4A574]/30">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-eye text-[#E65100] text-xs"></i>
+            <p class="text-xs text-[#6B4423] font-cinzel tracking-wider">CHITHIRA · EVERY STORY, CARVED IN LIGHT</p>
+          </div>
+          <div class="flex gap-5 text-xs">
+            <a href="#" class="text-[#6B4423] hover:text-[#E65100] transition">Help Center</a>
+            <a href="#" class="text-[#6B4423] hover:text-[#E65100] transition">Privacy</a>
+            <a href="#" class="text-[#6B4423] hover:text-[#E65100] transition">Terms</a>
+            <a href="#" class="text-[#6B4423] hover:text-[#E65100] transition">Contact</a>
+          </div>
+        </div>
+      </footer>
+      
+    </div>
+  </main>
+</div>
+
+<script>
+  // Nav active state
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+  
+  // Animate progress bars on load
+  window.addEventListener('load', () => {
+    document.querySelectorAll('.progress-fill').forEach(bar => {
+      const width = bar.style.width;
+      bar.style.width = '0%';
+      setTimeout(() => {
+        bar.style.width = width;
+      }, 400);
+    });
+  });
+  
+  // Filter buttons
+  document.querySelectorAll('[class*="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-lg p-1"] button').forEach(btn => {
+    btn.addEventListener('click', function() {
+      this.parentElement.querySelectorAll('button').forEach(b => {
+        b.classList.remove('bg-[#3E2723]', 'text-[#FFFBF5]');
+        b.classList.add('text-[#6B4423]');
+      });
+      this.classList.add('bg-[#3E2723]', 'text-[#FFFBF5]');
+      this.classList.remove('text-[#6B4423]');
+    });
+  });
+</script>
+
+</body>
+</html>

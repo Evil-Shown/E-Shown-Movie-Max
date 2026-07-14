@@ -1,11 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
 import { env } from "../config/env";
+import WebSocket from "ws";
 
 // Public/anon client — used for auth operations like signInWithPassword
 export const supabaseAnon = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
+  },
+  realtime: {
+    transport: WebSocket as unknown as { new (url: string | URL, protocols?: string | string[]): WebSocket },
   },
 });
 
@@ -14,5 +18,8 @@ export const supabaseAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE
   auth: {
     autoRefreshToken: false,
     persistSession: false,
+  },
+  realtime: {
+    transport: WebSocket as unknown as { new (url: string | URL, protocols?: string | string[]): WebSocket },
   },
 });
