@@ -20,6 +20,9 @@ export interface ContinueWatchingItem {
   mediaType: MediaType;
   tmdbId: string;
   genres?: Genre[];
+  year?: number;
+  voteAverage?: number;
+  overview?: string;
   progress: number;
   currentTime: number;
   duration: number;

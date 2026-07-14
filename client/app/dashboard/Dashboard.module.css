@@ -1,60 +1,60 @@
 .dashboardRoot {
   background-image:
-    radial-gradient(circle at 15% 20%, rgba(230, 81, 0, 0.04) 0%, transparent 40%),
-    radial-gradient(circle at 85% 70%, rgba(62, 39, 35, 0.05) 0%, transparent 40%);
+    radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--deep-orange) 4%, transparent) 0%, transparent 40%),
+    radial-gradient(circle at 85% 70%, color-mix(in srgb, var(--chocolate) 5%, transparent) 0%, transparent 40%);
   background-attachment: fixed;
 }
 
 .sidebar {
-  background: #fffbf5;
-  border-right: 1px solid rgba(212, 165, 116, 0.25);
+  background: var(--faint-white);
+  border-right: 1px solid color-mix(in srgb, var(--tan) 25%, transparent);
 }
 
 .sidebarLink {
-  color: #6b4423;
+  color: var(--brown);
   transition: all 0.25s ease;
   border-left: 3px solid transparent;
 }
 
 .sidebarLink:hover {
-  background: rgba(230, 81, 0, 0.06);
-  color: #e65100;
-  border-left-color: #e65100;
+  background: color-mix(in srgb, var(--deep-orange) 6%, transparent);
+  color: var(--deep-orange);
+  border-left-color: var(--deep-orange);
 }
 
 .sidebarLinkActive {
-  background: #3e2723;
-  color: #fffbf5;
-  border-left-color: #e65100;
+  background: var(--chocolate);
+  color: var(--faint-white);
+  border-left-color: var(--deep-orange);
 }
 
 .statCard {
-  background: #fffbf5;
-  border: 1px solid rgba(212, 165, 116, 0.3);
+  background: var(--faint-white);
+  border: 1px solid color-mix(in srgb, var(--tan) 30%, transparent);
   transition: all 0.3s ease;
 }
 
 .statCard:hover {
-  border-color: #e65100;
+  border-color: var(--deep-orange);
   transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(62, 39, 35, 0.08);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--chocolate) 8%, transparent);
 }
 
 .statIconBox {
-  background: #ffe8d1;
-  color: #e65100;
+  background: var(--light-orange-faint);
+  color: var(--deep-orange);
 }
 
 .resumeCard {
-  background: #fffbf5;
-  border: 1px solid rgba(212, 165, 116, 0.3);
+  background: var(--faint-white);
+  border: 1px solid color-mix(in srgb, var(--tan) 30%, transparent);
   transition: all 0.3s ease;
   overflow: hidden;
 }
 
 .resumeCard:hover {
-  border-color: #e65100;
-  box-shadow: 0 15px 40px rgba(62, 39, 35, 0.12);
+  border-color: var(--deep-orange);
+  box-shadow: 0 15px 40px color-mix(in srgb, var(--chocolate) 12%, transparent);
 }
 
 .resumeCard:hover .resumeThumb {
@@ -66,33 +66,33 @@
 }
 
 .progressTrack {
-  background: #ffe8d1;
+  background: var(--light-orange-faint);
   height: 4px;
   border-radius: 2px;
   overflow: hidden;
 }
 
 .progressFill {
-  background: #e65100;
+  background: var(--deep-orange);
   height: 100%;
   border-radius: 2px;
   transition: width 0.8s ease;
 }
 
 .playBtn {
-  background: #e65100;
+  background: var(--deep-orange);
   transition: all 0.3s ease;
 }
 
 .playBtn:hover {
-  background: #3e2723;
+  background: var(--chocolate);
   transform: scale(1.1);
 }
 
 .topbar {
-  background: rgba(255, 251, 245, 0.85);
+  background: color-mix(in srgb, var(--faint-white) 85%, transparent);
   backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(212, 165, 116, 0.25);
+  border-bottom: 1px solid color-mix(in srgb, var(--tan) 25%, transparent);
 }
 
 .activityRow {
@@ -104,12 +104,12 @@
 }
 
 .filterBtnActive {
-  background: #3e2723;
-  color: #fffbf5;
+  background: var(--chocolate);
+  color: var(--faint-white);
 }
 
 .filterBtn:not(.filterBtnActive):hover {
-  color: #e65100;
+  color: var(--deep-orange);
 }
 
 @keyframes fadeUp {
@@ -160,7 +160,7 @@
   transform: translateY(-50%);
   width: 4px;
   height: 70%;
-  background: #e65100;
+  background: var(--deep-orange);
   border-radius: 2px;
 }
 
@@ -175,9 +175,9 @@
   right: -8px;
   width: 6px;
   height: 6px;
-  background: #e65100;
+  background: var(--deep-orange);
   border-radius: 50%;
-  box-shadow: 0 0 12px #e65100;
+  box-shadow: 0 0 12px var(--deep-orange);
 }
 
 .archiveCard {
@@ -199,7 +199,12 @@
 .archiveOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(62, 39, 35, 0.4) 50%, rgba(62, 39, 35, 0.98) 100%);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--chocolate) 40%, transparent) 50%,
+    color-mix(in srgb, var(--chocolate) 98%, transparent) 100%
+  );
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -209,7 +214,7 @@
 
 .archiveCard:hover {
   transform: translateY(-6px);
-  box-shadow: 0 20px 40px rgba(62, 39, 35, 0.3);
+  box-shadow: 0 20px 40px color-mix(in srgb, var(--chocolate) 30%, transparent);
 }
 
 .archiveCard:hover img {
@@ -217,13 +222,17 @@
 }
 
 .archiveCard:hover .archiveOverlay {
-  background: linear-gradient(180deg, rgba(62, 39, 35, 0.6) 0%, rgba(62, 39, 35, 0.98) 60%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--chocolate) 60%, transparent) 0%,
+    color-mix(in srgb, var(--chocolate) 98%, transparent) 60%
+  );
 }
 
 .archiveQuality {
   display: inline-block;
-  background: #e65100;
-  color: #fffbf5;
+  background: var(--deep-orange);
+  color: var(--faint-white);
   font-size: 10px;
   font-weight: 700;
   padding: 2px 8px;
@@ -240,7 +249,7 @@
 }
 
 .archiveTitle {
-  color: #ffb87a;
+  color: var(--light-orange);
   opacity: 0;
   transform: translateY(8px);
   transition: all 0.4s ease 0.05s;
@@ -252,7 +261,7 @@
 }
 
 .archiveMeta {
-  color: #d4a574;
+  color: var(--tan);
   font-size: 11px;
   opacity: 0;
   transform: translateY(8px);
