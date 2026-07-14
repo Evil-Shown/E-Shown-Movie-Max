@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { formatDisplayYear, posterUrl } from "@/lib/movies";
+import type { Genre } from "@/lib/types";
 import type { ContinueWatchingItem } from "@/lib/storage/types";
 import type { LiveTvChannel } from "@/lib/live-tv/types";
 import { getProfileIcon, setProfileIcon, PROFILE_ICONS } from "@/lib/storage/profile-icon";
@@ -19,6 +20,15 @@ function formatDuration(seconds: number) {
   const m = Math.floor((seconds % 3600) / 60);
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
+}
+
+function formatTimer(seconds: number) {
+  if (!seconds || seconds <= 0) return "0:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 function remainingTime(current: number, duration: number) {
@@ -194,13 +204,13 @@ function SidebarNavLink({
       href={href}
       className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium ${active ? styles.sidebarLinkActive : ""}`}
     >
-      <span className={`transition-colors ${active ? "text-[#FFB87A]" : "text-[#A0785A] group-hover:text-[#E65100]"}`}>
+      <span className={`transition-colors ${active ? "text-light-orange" : "text-sandy group-hover:text-deep-orange"}`}>
         <NavIcon name={icon} />
       </span>
       <span className="flex-1">{label}</span>
       {badge !== undefined && (
         <span
-          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${active ? "bg-[#E65100] text-white" : "text-[#A0785A]"}`}
+          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${active ? "bg-deep-orange text-white" : "text-sandy"}`}
         >
           {badge}
         </span>
@@ -226,8 +236,8 @@ function StatCard({
 }) {
   const badgeColors = {
     green: "text-green-700 bg-green-100",
-    orange: "text-[#E65100] bg-[#FFE8D1]",
-    brown: "text-[#3E2723] bg-[#D4A574]/30",
+    orange: "text-deep-orange bg-light-orange-faint",
+    brown: "text-chocolate bg-tan/30",
   };
   return (
     <div className={`${styles.statCard} rounded-xl p-6`}>
@@ -241,38 +251,65 @@ function StatCard({
           </span>
         )}
       </div>
-      <p className="font-cinzel text-3xl font-bold text-[#3E2723]">
+      <p className="font-cinzel text-3xl font-bold text-chocolate">
         {value}
-        {valueUnit && <span className="text-base text-[#A0785A] font-normal ml-1">{valueUnit}</span>}
+        {valueUnit && <span className="text-base text-sandy font-normal ml-1">{valueUnit}</span>}
       </p>
-      <p className="text-sm text-[#6B4423] mt-1">{label}</p>
+      <p className="text-sm text-brown mt-1">{label}</p>
       {progress !== undefined && (
-        <div className="mt-3 h-1 bg-[#FFE8D1] rounded-full overflow-hidden">
-          <div className="h-full bg-[#E65100] rounded-full" style={{ width: `${progress}%` }} />
+        <div className="mt-3 h-1 bg-light-orange-faint rounded-full overflow-hidden">
+          <div className="h-full bg-deep-orange rounded-full" style={{ width: `${progress}%` }} />
         </div>
       )}
     </div>
   );
 }
 
+const RESUME_THEMES: Record<string, { from: string; to: string; text: string }> = {
+  Horror: { from: "#1a0e08", to: "#3E2723", text: "#CC0000" },
+  Thriller: { from: "#3E2723", to: "#6B4423", text: "#FFB87A" },
+  Animation: { from: "#E65100", to: "#6B4423", text: "#ffffff" },
+  Action: { from: "#1a1a2e", to: "#3E2723", text: "#E65100" },
+  SciFi: { from: "#0d1b2a", to: "#1b2838", text: "#4fc3f7" },
+  Comedy: { from: "#3E2723", to: "#6B4423", text: "#FFB87A" },
+  Drama: { from: "#2d1b14", to: "#3E2723", text: "#D4A574" },
+  Crime: { from: "#1a1a1a", to: "#2d2d2d", text: "#E65100" },
+};
+
+function pickTheme(genres?: Genre[]): { from: string; to: string; text: string } {
+  if (!genres?.length) return RESUME_THEMES.Drama;
+  const g = genres[0];
+  if (g === "Sci-Fi") return RESUME_THEMES.SciFi;
+  return RESUME_THEMES[g] ?? RESUME_THEMES.Drama;
+}
+
 function ResumeCard({ item }: { item: ContinueWatchingItem }) {
   const isTv = item.mediaType === "tv";
-  const description = `Continue where you left off. ${remainingTime(item.currentTime, item.duration)} remaining.`;
   const href = `/movie/${item.id}`;
-  const pausedAt = formatDuration(item.currentTime);
-  const totalDuration = formatDuration(item.duration);
-  const genreLabel = isTv ? "Series" : (item.genres?.[0] as string) || "Movie";
+  const pausedAt = formatTimer(item.currentTime);
+  const totalDuration = formatTimer(item.duration);
+  const genreLabel = (isTv ? "SERIES" : (item.genres?.[0] as string) || "MOVIE").toUpperCase();
+  const theme = pickTheme(item.genres);
+  const titleFontSize = item.title.length > 12 ? "text-2xl" : item.title.length > 8 ? "text-3xl" : "text-4xl";
 
   return (
-    <Link href={href} className={`${styles.resumeCard} rounded-xl flex flex-col md:flex-row group`}>
+    <Link
+      href={href}
+      className={`${styles.resumeCard} rounded-xl flex flex-col md:flex-row group border border-tan/30 hover:border-deep-orange transition`}
+    >
       <div className="md:w-72 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
-        <img
-          src={posterUrl(item.posterPath, "w780")}
-          alt={item.title}
-          className={`${styles.resumeThumb} w-full h-full object-cover`}
-          loading="lazy"
-        />
-        <div className="absolute top-3 left-3 bg-[#E65100] text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
+        <div
+          className={`${styles.resumeThumb} absolute inset-0 flex items-center justify-center`}
+          style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}
+        >
+          <h3
+            className={`font-cinzel ${titleFontSize} font-black tracking-widest text-center px-4 leading-tight`}
+            style={{ color: theme.text }}
+          >
+            {item.title.toUpperCase()}
+          </h3>
+        </div>
+        <div className="absolute top-3 left-3 bg-deep-orange text-faint-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
           {genreLabel}
         </div>
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
@@ -288,16 +325,15 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
         <div>
           <div className="flex items-start justify-between gap-3 mb-2">
             <div>
-              <h3 className="font-cinzel text-xl font-bold text-[#3E2723]">{item.title}</h3>
-              <p className="text-xs text-[#A0785A] mt-1">
+              <h3 className="font-cinzel text-xl font-bold text-chocolate">{item.title}</h3>
+              <p className="text-xs text-sandy mt-1">
                 {isTv
-                  ? `Season ${item.season || 1} Â· Episode ${item.episode || 1}`
-                  : item.genres?.slice(0, 3).join(" Â· ") || "Movie"}
-                {" Â· "}
-                {totalDuration}
+                  ? `Season ${item.season || 1} · Episode ${item.episode || 1}`
+                  : `${item.year || ""}${item.year ? " · " : ""}${item.genres?.slice(0, 2).join("/") || "Movie"} · ${formatDuration(item.duration)}`}
+                {!isTv && ` · IMDb ${(item.voteAverage || 0).toFixed(1)}`}
               </p>
             </div>
-            <button className="text-[#A0785A] hover:text-[#E65100] transition">
+            <button className="text-sandy hover:text-deep-orange transition">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="5" cy="12" r="2" />
                 <circle cx="12" cy="12" r="2" />
@@ -305,13 +341,16 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
               </svg>
             </button>
           </div>
-          <p className="text-sm text-[#6B4423] mt-2 line-clamp-2">{description}</p>
+          <p className="text-sm text-brown mt-2 line-clamp-2">
+            {item.overview ||
+              `Continue where you left off. ${remainingTime(item.currentTime, item.duration)} remaining.`}
+          </p>
         </div>
 
         <div className="mt-4">
-          <div className="flex justify-between text-xs text-[#6B4423] mb-1.5">
+          <div className="flex justify-between text-xs text-brown mb-1.5">
             <span className="flex items-center gap-1.5">
-              <svg className="w-3 h-3 text-[#E65100]" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-3 h-3 text-deep-orange" viewBox="0 0 24 24" fill="currentColor">
                 <rect x="6" y="4" width="4" height="16" />
                 <rect x="14" y="4" width="4" height="16" />
               </svg>
@@ -338,22 +377,22 @@ interface ActivityItem {
 function ActivityRow({ item }: { item: ActivityItem }) {
   const icons = {
     watching: (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
         <polygon points="5 3 19 12 5 21 5 3" />
       </svg>
     ),
     watchlist: (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
       </svg>
     ),
     completed: (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
         <polyline points="20 6 9 17 4 12" />
       </svg>
     ),
     downloaded: (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
         <polyline points="7 10 12 15 17 10" />
         <line x1="12" y1="15" x2="12" y2="3" />
@@ -366,25 +405,45 @@ function ActivityRow({ item }: { item: ActivityItem }) {
     completed: "Completed watching",
     downloaded: "Downloaded",
   };
-  const colors = {
-    watching: "bg-[#FFE8D1] text-[#E65100]",
-    watchlist: "bg-[#E0F2F7] text-[#4A7C8E]",
-    completed: "bg-[#E8F5E9] text-[#2E7D32]",
-    downloaded: "bg-[#EBE5DE] text-[#6B4423]",
+  const accentColors: Record<string, { box: string; bar: string; badge: string }> = {
+    watching: {
+      box: "bg-deep-orange text-faint-white",
+      bar: "bg-deep-orange",
+      badge: "bg-light-orange-faint text-deep-orange",
+    },
+    watchlist: { box: "bg-chocolate text-faint-white", bar: "bg-chocolate", badge: "bg-tan/20 text-brown" },
+    completed: { box: "bg-tan text-faint-white", bar: "bg-tan", badge: "bg-cream text-chocolate" },
+    downloaded: { box: "bg-brown text-faint-white", bar: "bg-brown", badge: "bg-cream text-brown" },
   };
+  const a = accentColors[item.type];
 
   return (
-    <div className={`${styles.activityRow} flex items-start gap-4 p-4 rounded-xl hover:bg-[#FFFBF5] transition`}>
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${colors[item.type]}`}>
+    <div
+      className={`${styles.activityRow} group relative flex items-start gap-4 pl-4 py-4 rounded-xl hover:bg-faint-white transition`}
+    >
+      <div className={`absolute left-0 top-4 bottom-4 w-0.5 rounded-full ${a.bar} opacity-40`} />
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${a.box}`}>
         {icons[item.type]}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-[#3E2723]">
-          <span className="font-semibold">{labels[item.type]}</span>{" "}
-          <span className="text-[#6B4423]">{item.title}</span>
+      <div className="flex-1 min-w-0 pt-0.5">
+        <p className="text-sm text-chocolate">
+          <span
+            className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider mr-2 ${a.badge}`}
+          >
+            {labels[item.type]}
+          </span>
+          <span className="text-brown font-medium">{item.title}</span>
         </p>
-        {item.meta && <p className="text-xs text-[#A0785A] mt-0.5">{item.meta}</p>}
-        <p className="text-xs text-[#A0785A] mt-1">{timeAgo(item.timestamp)}</p>
+        {item.meta && (
+          <p className="text-xs text-sandy mt-1.5 flex items-center gap-1.5">
+            <svg className="w-3 h-3 text-tan/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            {item.meta}
+          </p>
+        )}
+        <p className="text-[11px] text-sandy/70 mt-1.5">{timeAgo(item.timestamp)}</p>
       </div>
     </div>
   );
@@ -419,7 +478,7 @@ export default function DashboardPage() {
   const resumeItems = useMemo(
     () =>
       continueWatching
-        .filter((item) => item.progress > 5 && item.progress < 98)
+        .filter((item) => item.progress < 98)
         .sort((a, b) => b.updatedAt - a.updatedAt)
         .slice(0, 3),
     [continueWatching]
@@ -497,17 +556,17 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF3E8] font-sans text-[#3E2723]">
+    <div suppressHydrationWarning className="min-h-screen bg-cream font-sans text-chocolate">
       <div className="flex min-h-screen">
         {/* Desktop Sidebar */}
         <aside className={`${styles.sidebar} fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col`}>
-          <div className="px-6 py-6 border-b border-[#D4A574]/25">
+          <div className="px-6 py-6 border-b border-tan/25">
             <div className="flex items-center gap-3">
               <div
-                className={`${styles.eyeDeco} w-10 h-10 bg-[#3E2723] rounded-lg flex items-center justify-center relative`}
+                className={`${styles.eyeDeco} w-10 h-10 bg-chocolate rounded-lg flex items-center justify-center relative`}
               >
                 <svg
-                  className="w-5 h-5 text-[#E65100]"
+                  className="w-5 h-5 text-deep-orange"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -518,14 +577,14 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <h1 className="font-cinzel text-xl font-bold text-[#3E2723] leading-none">CHITHIRA</h1>
-                <p className="text-[10px] tracking-[0.2em] text-[#E65100] font-semibold mt-1">THE GOD&apos;S EYE</p>
+                <h1 className="font-cinzel text-xl font-bold text-chocolate leading-none">CHITHIRA</h1>
+                <p className="text-[10px] tracking-[0.2em] text-deep-orange font-semibold mt-1">THE GOD&apos;S EYE</p>
               </div>
             </div>
           </div>
 
           <nav className="flex-1 py-4 overflow-y-auto">
-            <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">Browse</p>
+            <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold">Browse</p>
             {browseNav.map((link) => (
               <SidebarNavLink
                 key={link.href}
@@ -535,9 +594,7 @@ export default function DashboardPage() {
               />
             ))}
 
-            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">
-              Library
-            </p>
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold">Library</p>
             {libraryNav.map((link) => (
               <SidebarNavLink
                 key={link.href}
@@ -547,9 +604,7 @@ export default function DashboardPage() {
               />
             ))}
 
-            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">
-              Account
-            </p>
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold">Account</p>
             {accountNav.map((link) => (
               <SidebarNavLink key={link.href} {...link} active={isActive(link.href)} />
             ))}
@@ -560,7 +615,7 @@ export default function DashboardPage() {
                 window.location.href = "/";
               }}
             >
-              <span className="text-[#A0785A] group-hover:text-[#E65100] transition-colors">
+              <span className="text-sandy group-hover:text-deep-orange transition-colors">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
@@ -571,32 +626,32 @@ export default function DashboardPage() {
             </button>
           </nav>
 
-          <div className="p-4 border-t border-[#D4A574]/25">
+          <div className="p-4 border-t border-tan/25">
             <button
               onClick={() => setShowProfileSelector(true)}
-              className="w-full bg-[#3E2723] rounded-xl p-3 flex items-center gap-3 text-left hover:bg-[#4E342E] transition"
+              className="w-full bg-chocolate rounded-xl p-3 flex items-center gap-3 text-left hover:bg-chocolate transition"
             >
               {profileIcon ? (
                 <img
                   src={`/avatars/${profileIcon}`}
                   alt="Profile"
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-[#FFB87A]"
+                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-light-orange"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FFB87A] to-[#E65100] flex items-center justify-center font-bold text-[#3E2723] flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-light-orange to-deep-orange flex items-center justify-center font-bold text-chocolate flex-shrink-0">
                   {getInitials(userName)}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#FFFBF5] truncate">{userName}</p>
+                <p className="text-sm font-semibold text-faint-white truncate">{userName}</p>
                 <div className="flex items-center gap-1">
-                  <svg className="w-2.5 h-2.5 text-[#FFB87A]" viewBox="0 0 24 24" fill="currentColor">
+                  <svg className="w-2.5 h-2.5 text-light-orange" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
                   <ProBadge />
                 </div>
               </div>
-              <span className="text-[10px] text-[#D4A574]">Edit</span>
+              <span className="text-[10px] text-tan">Edit</span>
             </button>
           </div>
         </aside>
@@ -604,16 +659,16 @@ export default function DashboardPage() {
         {/* Mobile Header */}
         <div className="lg:hidden fixed top-0 left-0 right-0 z-50 topbar px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="font-cinzel text-lg font-bold text-[#3E2723]">Dashboard</span>
+            <span className="font-cinzel text-lg font-bold text-chocolate">Dashboard</span>
           </div>
           <button
             type="button"
             aria-label="Toggle menu"
-            className="p-2 rounded-lg hover:bg-[#FFE8D1] transition"
+            className="p-2 rounded-lg hover:bg-light-orange-faint transition"
             onClick={() => setMobileMenuOpen((o) => !o)}
           >
             <svg
-              className="w-6 h-6 text-[#3E2723]"
+              className="w-6 h-6 text-chocolate"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -626,10 +681,10 @@ export default function DashboardPage() {
 
         {/* Mobile Menu Overlay */}
         {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-40 bg-[#FFFBF5] pt-20 px-6 pb-6 overflow-y-auto">
+          <div className="lg:hidden fixed inset-0 z-40 bg-faint-white pt-20 px-6 pb-6 overflow-y-auto">
             <div className="space-y-6">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold mb-2">Browse</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold mb-2">Browse</p>
                 <div className="space-y-1">
                   {browseNav.map((link) => (
                     <Link
@@ -637,7 +692,7 @@ export default function DashboardPage() {
                       href={link.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
-                        isActive(link.href) ? "bg-[#3E2723] text-[#FFFBF5]" : "text-[#6B4423] hover:bg-[#FFE8D1]"
+                        isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
                       }`}
                     >
                       <NavIcon name={link.icon} />
@@ -647,7 +702,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold mb-2">Library</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold mb-2">Library</p>
                 <div className="space-y-1">
                   {libraryNav.map((link) => (
                     <Link
@@ -655,7 +710,7 @@ export default function DashboardPage() {
                       href={link.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
-                        isActive(link.href) ? "bg-[#3E2723] text-[#FFFBF5]" : "text-[#6B4423] hover:bg-[#FFE8D1]"
+                        isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
                       }`}
                     >
                       <NavIcon name={link.icon} />
@@ -673,18 +728,18 @@ export default function DashboardPage() {
           <header
             className={`${styles.topbar} sticky top-0 z-30 hidden lg:flex items-center justify-between px-8 py-4`}
           >
-            <div className="flex items-center gap-2 text-xs text-[#A0785A]">
+            <div className="flex items-center gap-2 text-xs text-sandy">
               <span>Chithira</span>
               <svg className="w-2 h-2" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z" />
               </svg>
-              <span className="text-[#3E2723] font-semibold">Dashboard</span>
+              <span className="text-chocolate font-semibold">Dashboard</span>
             </div>
 
             <div className="flex-1 max-w-md mx-6">
               <div className="relative">
                 <svg
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A0785A]"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-sandy"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -696,20 +751,20 @@ export default function DashboardPage() {
                 <input
                   type="text"
                   placeholder="Search for your next obsession..."
-                  className="w-full bg-[#FFFBF5] border border-[#D4A574]/40 rounded-full pl-11 pr-4 py-2 text-sm text-[#3E2723] placeholder-[#A0785A] focus:outline-none focus:border-[#E65100] focus:ring-2 focus:ring-[#E65100]/15 transition"
+                  className="w-full bg-faint-white border border-tan/40 rounded-full pl-11 pr-4 py-2 text-sm text-chocolate placeholder-sandy focus:outline-none focus:border-deep-orange focus:ring-2 focus:ring-deep-orange/15 transition"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <button className="relative w-10 h-10 rounded-full bg-[#FFFBF5] border border-[#D4A574]/30 hover:border-[#E65100] flex items-center justify-center text-[#3E2723] hover:text-[#E65100] transition">
+              <button className="relative w-10 h-10 rounded-full bg-faint-white border border-tan/30 hover:border-deep-orange flex items-center justify-center text-chocolate hover:text-deep-orange transition">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#E65100] rounded-full" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-deep-orange rounded-full" />
               </button>
-              <button className="w-10 h-10 rounded-full bg-[#FFFBF5] border border-[#D4A574]/30 hover:border-[#E65100] flex items-center justify-center text-[#3E2723] hover:text-[#E65100] transition">
+              <button className="w-10 h-10 rounded-full bg-faint-white border border-tan/30 hover:border-deep-orange flex items-center justify-center text-chocolate hover:text-deep-orange transition">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="6" width="18" height="12" rx="2" />
                   <path d="M21 10H3" />
@@ -718,13 +773,13 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setShowProfileSelector(true)}
-                className="w-10 h-10 rounded-full overflow-hidden border border-[#D4A574]/40 hover:border-[#E65100] transition"
+                className="w-10 h-10 rounded-full overflow-hidden border border-tan/40 hover:border-deep-orange transition"
                 aria-label="Change profile icon"
               >
                 {profileIcon ? (
                   <img src={`/avatars/${profileIcon}`} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#FFB87A] to-[#E65100] flex items-center justify-center font-bold text-[#3E2723]">
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-light-orange to-deep-orange flex items-center justify-center font-bold text-chocolate">
                     {getInitials(userName)}
                   </div>
                 )}
@@ -739,7 +794,7 @@ export default function DashboardPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <svg
-                      className="w-3 h-3 text-[#E65100]"
+                      className="w-3 h-3 text-deep-orange"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -748,28 +803,28 @@ export default function DashboardPage() {
                       <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    <span className="text-[10px] tracking-[0.3em] uppercase text-[#E65100] font-semibold">
+                    <span className="text-[10px] tracking-[0.3em] uppercase text-deep-orange font-semibold">
                       The God&apos;s Eye Observes
                     </span>
                   </div>
-                  <h1 className="font-cinzel text-4xl md:text-5xl font-bold text-[#3E2723] leading-tight">
+                  <h1 className="font-cinzel text-4xl md:text-5xl font-bold text-chocolate leading-tight">
                     Welcome back,
                     <br />
-                    <span className="text-[#E65100]">{userName}</span>
+                    <span className="text-deep-orange">{userName}</span>
                   </h1>
-                  <p className="text-[#6B4423] mt-3 max-w-md">
+                  <p className="text-brown mt-3 max-w-md">
                     Every story, carved in light. Pick up where you left off, or let the eye find your next obsession.
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="text-xs text-[#A0785A] uppercase tracking-wider">Today</p>
-                    <p className="font-cinzel text-lg font-semibold text-[#3E2723]">{formatToday()}</p>
+                    <p className="text-xs text-sandy uppercase tracking-wider">Today</p>
+                    <p className="font-cinzel text-lg font-semibold text-chocolate">{formatToday()}</p>
                   </div>
-                  <div className="w-px h-12 bg-[#D4A574]/40" />
+                  <div className="w-px h-12 bg-tan/40" />
                   <div className="text-right">
-                    <p className="text-xs text-[#A0785A] uppercase tracking-wider">Streak</p>
-                    <p className="font-cinzel text-lg font-semibold text-[#E65100]">{streak} Days</p>
+                    <p className="text-xs text-sandy uppercase tracking-wider">Streak</p>
+                    <p className="font-cinzel text-lg font-semibold text-deep-orange">{streak} Days</p>
                   </div>
                 </div>
               </div>
@@ -853,20 +908,18 @@ export default function DashboardPage() {
             <section className={`mb-12 ${styles.fadeUp} ${styles.delay3}`}>
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3E2723]`}>
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
                     The Archive
                   </h2>
-                  <p className="text-xs text-[#A0785A] mt-1 ml-4">
-                    {watchlist.length} titles preserved for your viewing
-                  </p>
+                  <p className="text-xs text-sandy mt-1 ml-4">{watchlist.length} titles preserved for your viewing</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex bg-[#FFFBF5] border border-[#D4A574]/30 rounded-lg p-1">
+                  <div className="flex bg-faint-white border border-tan/30 rounded-lg p-1">
                     {(["all", "movies", "series"] as const).map((f) => (
                       <button
                         key={f}
                         onClick={() => {}}
-                        className={`px-3 py-1 text-xs font-semibold rounded ${f === "all" ? "bg-[#3E2723] text-[#FFFBF5]" : "text-[#6B4423] hover:text-[#E65100] transition"}`}
+                        className={`px-3 py-1 text-xs font-semibold rounded ${f === "all" ? "bg-chocolate text-faint-white" : "text-brown hover:text-deep-orange transition"}`}
                       >
                         {f === "all" ? "All" : f === "movies" ? "Movies" : "Series"}
                       </button>
@@ -874,7 +927,7 @@ export default function DashboardPage() {
                   </div>
                   <Link
                     href="/watchlist"
-                    className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
+                    className="text-sm font-semibold text-deep-orange hover:text-chocolate transition flex items-center gap-1"
                   >
                     View All
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -902,29 +955,53 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-8 text-center">
-                  <p className="text-sm text-[#6B4423]">
-                    Your archive is empty. Start adding titles to your watchlist.
-                  </p>
+                <div className="bg-faint-white border border-tan/30 rounded-2xl p-8 text-center">
+                  <p className="text-sm text-brown">Your archive is empty. Start adding titles to your watchlist.</p>
                 </div>
               )}
             </section>
+
+            {/* Resume Watching */}
+            {resumeItems.length > 0 && (
+              <section className={`mb-12 ${styles.fadeUp} ${styles.delay2}`}>
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
+                    Resume Watching
+                  </h2>
+                  <Link
+                    href="/history"
+                    className="text-sm font-semibold text-deep-orange hover:text-chocolate transition flex items-center gap-1"
+                  >
+                    View All
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                  </Link>
+                </div>
+                <div className="space-y-4">
+                  {resumeItems.map((item) => (
+                    <ResumeCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Recent Activity */}
             <section className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3E2723]`}>
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
                     Recent Activity
                   </h2>
-                  <p className="text-xs text-[#A0785A] mt-1 ml-4">Your latest actions</p>
+                  <p className="text-xs text-sandy mt-1 ml-4">Your latest actions</p>
                 </div>
-                <div className="flex bg-[#FFFBF5] border border-[#D4A574]/30 rounded-lg p-1">
+                <div className="flex bg-faint-white border border-tan/30 rounded-lg p-1">
                   {(["all", "watching", "watchlist", "completed"] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => setActivityFilter(f)}
-                      className={`${styles.filterBtn} px-3 py-1 text-xs font-semibold rounded ${activityFilter === f ? styles.filterBtnActive : "text-[#6B4423]"}`}
+                      className={`${styles.filterBtn} px-3 py-1 text-xs font-semibold rounded ${activityFilter === f ? styles.filterBtnActive : "text-brown"}`}
                     >
                       {f === "all"
                         ? "All"
@@ -937,33 +1014,31 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
-              <div className="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-2">
+              <div className="bg-faint-white border border-tan/30 rounded-2xl divide-y divide-tan/20">
                 {filteredActivities.length > 0 ? (
                   filteredActivities.map((item, i) => <ActivityRow key={i} item={item} />)
                 ) : (
                   <div className="p-8 text-center">
-                    <p className="text-sm text-[#6B4423]">No activity yet. Start watching to see your history here.</p>
+                    <p className="text-sm text-brown">No activity yet. Start watching to see your history here.</p>
                   </div>
                 )}
               </div>
             </section>
 
-            <footer className="mt-12 py-6 border-t border-[#D4A574]/30">
+            <footer className="mt-12 py-6 border-t border-tan/30">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <p className="text-xs text-[#6B4423] font-cinzel tracking-wider">
-                  CHITHIRA Â· EVERY STORY, CARVED IN LIGHT
-                </p>
+                <p className="text-xs text-brown font-cinzel tracking-wider">CHITHIRA · EVERY STORY, CARVED IN LIGHT</p>
                 <div className="flex gap-5 text-xs">
-                  <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
+                  <a href="#" className="text-brown hover:text-deep-orange transition">
                     Help Center
                   </a>
-                  <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
+                  <a href="#" className="text-brown hover:text-deep-orange transition">
                     Privacy
                   </a>
-                  <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
+                  <a href="#" className="text-brown hover:text-deep-orange transition">
                     Terms
                   </a>
-                  <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
+                  <a href="#" className="text-brown hover:text-deep-orange transition">
                     Contact
                   </a>
                 </div>
@@ -976,16 +1051,16 @@ export default function DashboardPage() {
 
           {/* Profile Icon Selector Modal */}
           {showProfileSelector && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#3E2723]/60 backdrop-blur-sm">
-              <div className="bg-[#FFFBF5] rounded-2xl w-full max-w-lg p-6 shadow-2xl">
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-chocolate/60 backdrop-blur-sm">
+              <div className="bg-faint-white rounded-2xl w-full max-w-lg p-6 shadow-2xl">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="font-cinzel text-xl font-bold text-[#3E2723]">Choose Your Avatar</h3>
-                    <p className="text-xs text-[#6B4423] mt-1">Select a profile icon to personalize your experience</p>
+                    <h3 className="font-cinzel text-xl font-bold text-chocolate">Choose Your Avatar</h3>
+                    <p className="text-xs text-brown mt-1">Select a profile icon to personalize your experience</p>
                   </div>
                   <button
                     onClick={() => setShowProfileSelector(false)}
-                    className="w-8 h-8 rounded-full hover:bg-[#FFE8D1] flex items-center justify-center text-[#6B4423] transition"
+                    className="w-8 h-8 rounded-full hover:bg-light-orange-faint flex items-center justify-center text-brown transition"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M18 6L6 18M6 6l12 12" />
@@ -999,14 +1074,14 @@ export default function DashboardPage() {
                       onClick={() => handleSelectProfileIcon(icon)}
                       className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition hover:scale-105 ${
                         profileIcon === icon
-                          ? "border-[#E65100] ring-2 ring-[#E65100]/20"
-                          : "border-transparent hover:border-[#D4A574]"
+                          ? "border-deep-orange ring-2 ring-deep-orange/20"
+                          : "border-transparent hover:border-tan"
                       }`}
                     >
                       <img src={`/avatars/${icon}`} alt="Avatar option" className="w-full h-full object-cover" />
                       {profileIcon === icon && (
-                        <div className="absolute inset-0 bg-[#E65100]/20 flex items-center justify-center">
-                          <svg className="w-5 h-5 text-[#E65100]" viewBox="0 0 24 24" fill="currentColor">
+                        <div className="absolute inset-0 bg-deep-orange/20 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-deep-orange" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                           </svg>
                         </div>
@@ -1025,14 +1100,14 @@ export default function DashboardPage() {
           height: 8px;
         }
         ::-webkit-scrollbar-track {
-          background: #faf3e8;
+          background: var(--cream);
         }
         ::-webkit-scrollbar-thumb {
-          background: #d4a574;
+          background: var(--tan);
           border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-          background: #e65100;
+          background: var(--deep-orange);
         }
       `}</style>
     </div>
