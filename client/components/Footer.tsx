@@ -24,7 +24,7 @@ export default function Footer() {
     }
   }, []);
 
-  if (pathname === "/dashboard") return null;
+  if (pathname === "/dashboard" || pathname === "/settings") return null;
 
   return (
     <footer className="mt-auto border-t border-[var(--border-strong)] bg-[var(--bg-secondary)]">

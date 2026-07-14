@@ -28,9 +28,15 @@ export default function PricingModal({ isOpen, onClose }: { isOpen: boolean; onC
       <div className="relative w-full max-w-4xl bg-[#FFFBF5] rounded-2xl overflow-hidden shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#3E2723]/10 transition-colors z-10"
+          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FFFBF5]/10 backdrop-blur-sm border border-[#FFFBF5]/20 flex items-center justify-center hover:bg-[#FFFBF5]/20 hover:scale-110 transition-all z-10"
         >
-          <svg className="w-5 h-5 text-[#3E2723]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            className="w-4 h-4 text-[#FFFBF5]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
