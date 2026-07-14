@@ -12,7 +12,6 @@ import { getProfileIcon, setProfileIcon, PROFILE_ICONS } from "@/lib/storage/pro
 import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
 import PricingModal from "@/components/dashboard/PricingModal";
 import ProBadge from "@/components/dashboard/ProBadge";
-import FlipClock from "@/components/dashboard/FlipClock";
 import styles from "./Dashboard.module.css";
 
 function formatDuration(seconds: number) {
@@ -35,6 +34,15 @@ function formatTimer(seconds: number) {
 function remainingTime(current: number, duration: number) {
   const left = Math.max(0, (duration || 0) - (current || 0));
   return formatDuration(left);
+}
+
+function formatToday() {
+  return new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 function computeStreak(items: ContinueWatchingItem[]) {
@@ -828,7 +836,12 @@ export default function DashboardPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-5">
-                    <FlipClock mode="12h" showDate={false} showTimezone />
+                    <div className="text-right">
+                      <p className="text-[10px] text-sandy uppercase tracking-[0.2em] font-semibold">Today</p>
+                      <p className="font-cinzel text-base md:text-lg font-semibold text-chocolate mt-1">
+                        {formatToday()}
+                      </p>
+                    </div>
                     <div className="w-px h-14 bg-gradient-to-b from-tan/60 to-transparent" />
                     <div className="text-right">
                       <p className="text-[10px] text-sandy uppercase tracking-[0.2em] font-semibold">Streak</p>
