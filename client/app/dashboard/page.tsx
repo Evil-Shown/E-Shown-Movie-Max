@@ -6,13 +6,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { formatDisplayYear, posterUrl } from "@/lib/movies";
-import type { Genre } from "@/lib/types";
 import type { ContinueWatchingItem } from "@/lib/storage/types";
 import type { LiveTvChannel } from "@/lib/live-tv/types";
 import { getProfileIcon, setProfileIcon, PROFILE_ICONS } from "@/lib/storage/profile-icon";
 import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
 import PricingModal from "@/components/dashboard/PricingModal";
 import ProBadge from "@/components/dashboard/ProBadge";
+import FlipClock from "@/components/dashboard/FlipClock";
+import styles from "./Dashboard.module.css";
 
 function formatDuration(seconds: number) {
   if (!seconds || seconds <= 0) return "0m";
@@ -34,15 +35,6 @@ function formatTimer(seconds: number) {
 function remainingTime(current: number, duration: number) {
   const left = Math.max(0, (duration || 0) - (current || 0));
   return formatDuration(left);
-}
-
-function formatToday() {
-  return new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 }
 
 function computeStreak(items: ContinueWatchingItem[]) {
@@ -265,32 +257,12 @@ function StatCard({
   );
 }
 
-const RESUME_THEMES: Record<string, { from: string; to: string; text: string }> = {
-  Horror: { from: "#1a0e08", to: "#3E2723", text: "#CC0000" },
-  Thriller: { from: "#3E2723", to: "#6B4423", text: "#FFB87A" },
-  Animation: { from: "#E65100", to: "#6B4423", text: "#ffffff" },
-  Action: { from: "#1a1a2e", to: "#3E2723", text: "#E65100" },
-  SciFi: { from: "#0d1b2a", to: "#1b2838", text: "#4fc3f7" },
-  Comedy: { from: "#3E2723", to: "#6B4423", text: "#FFB87A" },
-  Drama: { from: "#2d1b14", to: "#3E2723", text: "#D4A574" },
-  Crime: { from: "#1a1a1a", to: "#2d2d2d", text: "#E65100" },
-};
-
-function pickTheme(genres?: Genre[]): { from: string; to: string; text: string } {
-  if (!genres?.length) return RESUME_THEMES.Drama;
-  const g = genres[0];
-  if (g === "Sci-Fi") return RESUME_THEMES.SciFi;
-  return RESUME_THEMES[g] ?? RESUME_THEMES.Drama;
-}
-
 function ResumeCard({ item }: { item: ContinueWatchingItem }) {
   const isTv = item.mediaType === "tv";
   const href = `/movie/${item.id}`;
   const pausedAt = formatTimer(item.currentTime);
   const totalDuration = formatTimer(item.duration);
   const genreLabel = (isTv ? "SERIES" : (item.genres?.[0] as string) || "MOVIE").toUpperCase();
-  const theme = pickTheme(item.genres);
-  const titleFontSize = item.title.length > 12 ? "text-2xl" : item.title.length > 8 ? "text-3xl" : "text-4xl";
 
   return (
     <Link
@@ -298,17 +270,12 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
       className={`${styles.resumeCard} rounded-xl flex flex-col md:flex-row group border border-tan/30 hover:border-deep-orange transition`}
     >
       <div className="md:w-72 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
-        <div
-          className={`${styles.resumeThumb} absolute inset-0 flex items-center justify-center`}
-          style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}
-        >
-          <h3
-            className={`font-cinzel ${titleFontSize} font-black tracking-widest text-center px-4 leading-tight`}
-            style={{ color: theme.text }}
-          >
-            {item.title.toUpperCase()}
-          </h3>
-        </div>
+        <img
+          src={posterUrl(item.posterPath)}
+          alt={item.title}
+          className={`${styles.resumeThumb} absolute inset-0 w-full h-full object-cover`}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         <div className="absolute top-3 left-3 bg-deep-orange text-faint-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
           {genreLabel}
         </div>
@@ -861,12 +828,7 @@ export default function DashboardPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-5">
-                    <div className="text-right">
-                      <p className="text-[10px] text-sandy uppercase tracking-[0.2em] font-semibold">Today</p>
-                      <p className="font-cinzel text-base md:text-lg font-semibold text-chocolate mt-1">
-                        {formatToday()}
-                      </p>
-                    </div>
+                    <FlipClock mode="12h" showDate={false} showTimezone />
                     <div className="w-px h-14 bg-gradient-to-b from-tan/60 to-transparent" />
                     <div className="text-right">
                       <p className="text-[10px] text-sandy uppercase tracking-[0.2em] font-semibold">Streak</p>
@@ -921,7 +883,7 @@ export default function DashboardPage() {
             </section>
 
             {/* Upgrade Banner */}
-            <div className="mb-12 fade-up delay-2">
+            <div className={`mb-12 ${styles.fadeUp} ${styles.delay2}`}>
               <UpgradeBanner onUpgradeClick={() => setIsPricingOpen(true)} />
             </div>
 
@@ -1007,32 +969,6 @@ export default function DashboardPage() {
                 </div>
               )}
             </section>
-
-            {/* Resume Watching */}
-            {resumeItems.length > 0 && (
-              <section className={`mb-12 ${styles.fadeUp} ${styles.delay2}`}>
-                <div className="flex items-center justify-between mb-5">
-                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
-                    Resume Watching
-                  </h2>
-                  <Link
-                    href="/history"
-                    className="text-sm font-semibold text-deep-orange hover:text-chocolate transition flex items-center gap-1"
-                  >
-                    View All
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                      <polyline points="12 5 19 12 12 19" />
-                    </svg>
-                  </Link>
-                </div>
-                <div className="space-y-4">
-                  {resumeItems.map((item) => (
-                    <ResumeCard key={item.id} item={item} />
-                  ))}
-                </div>
-              </section>
-            )}
 
             {/* Recent Activity */}
             <section className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>

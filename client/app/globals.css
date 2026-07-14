@@ -383,7 +383,7 @@ body::after {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--deep-orange) var(--tan);
+  scrollbar-color: rgba(28, 25, 23, 0.24) var(--bg-primary);
 }
 
 *::-webkit-scrollbar {
@@ -392,16 +392,16 @@ body::after {
 }
 
 *::-webkit-scrollbar-track {
-  background: var(--tan);
+  background: var(--bg-primary);
 }
 
 *::-webkit-scrollbar-thumb {
-  background: var(--deep-orange);
+  background: rgba(28, 25, 23, 0.24);
   border-radius: 4px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: var(--light-orange);
+  background: rgba(28, 25, 23, 0.36);
 }
 
 a,
@@ -827,4 +827,34 @@ input,
   backdrop-filter: blur(12px) saturate(1.05);
   -webkit-backdrop-filter: blur(12px) saturate(1.05);
   border-bottom: 0.5px solid var(--border);
+}
+
+@keyframes flip-top {
+  0% {
+    transform: rotateX(0deg);
+  }
+  100% {
+    transform: rotateX(-90deg);
+  }
+}
+
+@keyframes flip-bottom {
+  0% {
+    transform: rotateX(90deg);
+  }
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+.animate-flip-top {
+  animation: flip-top 0.3s ease-in forwards;
+}
+
+.animate-flip-bottom {
+  animation: flip-bottom 0.3s ease-out 0.3s forwards;
+}
+
+.perspective-500 {
+  perspective: 500px;
 }
