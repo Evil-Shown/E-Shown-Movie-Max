@@ -22,6 +22,7 @@ import analyticsRoutes from "./domains/analytics/analytics.routes";
 import telemetryRoutes from "./domains/telemetry/telemetry.routes";
 import securityRoutes from "./domains/security/security.routes";
 import mobileRoutes from "./domains/mobile/mobile.routes";
+import subscriptionRoutes from "./domains/subscription/subscription.routes";
 
 import { prisma } from "./infrastructure/prisma";
 
@@ -52,6 +53,7 @@ app.use(
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "50kb" }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Public health checks (no rate limiting)
@@ -72,6 +74,7 @@ app.use("/api/v1/analytics", analyticsRoutes);
 app.use("/api/v1/telemetry", telemetryRoutes);
 app.use("/api/v1/security", securityRoutes);
 app.use("/api/v1/mobile", mobileRoutes);
+app.use("/api/v1/subscription", subscriptionRoutes);
 
 // Legacy route compatibility (redirect /api/* to /api/v1/*)
 app.use("/api/auth", authRoutes);
@@ -85,6 +88,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/telemetry", telemetryRoutes);
 app.use("/api/security", securityRoutes);
 app.use("/api/mobile", mobileRoutes);
+app.use("/api/subscription", subscriptionRoutes);
 app.get("/api/health", (_req, res) => {
   res.json({ success: true, data: { status: "ok" } });
 });

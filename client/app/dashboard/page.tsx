@@ -430,6 +430,7 @@ export default function DashboardPage() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [channelCount, setChannelCount] = useState<number>(0);
+  const [channels, setChannels] = useState<LiveTvChannel[]>([]);
   const [activityFilter, setActivityFilter] = useState<"all" | "watching" | "watchlist" | "completed">("all");
   const [profileIcon, setProfileIconState] = useState<string | null>(null);
   const [showProfileSelector, setShowProfileSelector] = useState(false);
@@ -444,6 +445,7 @@ export default function DashboardPage() {
       .then((res) => res.json())
       .then((data: { channels?: LiveTvChannel[] }) => {
         if (data.channels) {
+          setChannels(data.channels);
           setChannelCount(data.channels.length);
         }
       })
@@ -503,6 +505,8 @@ export default function DashboardPage() {
   const hours = Math.floor(totalSeconds / 3600);
   const streak = useMemo(() => computeStreak(continueWatching), [continueWatching]);
   const userName = user?.displayName || user?.username || "Watcher";
+
+  const isPro = user?.subscriptionTier === "PRO";
 
   const watchTimeProgress = useMemo(() => {
     if (hours <= 0) return 0;
@@ -631,10 +635,13 @@ export default function DashboardPage() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-faint-white truncate">{userName}</p>
                 <div className="flex items-center gap-1">
-                  <svg className="w-2.5 h-2.5 text-light-orange" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                  <ProBadge />
+                  {isPro ? (
+                    <ProBadge />
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#A0785A]/20 text-[#A0785A]">
+                      Free
+                    </span>
+                  )}
                 </div>
               </div>
               <svg
@@ -935,18 +942,50 @@ export default function DashboardPage() {
                   </h2>
                   <p className="text-xs text-sandy mt-1 ml-4">{watchlist.length} titles preserved for your viewing</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex bg-faint-white border border-tan/30 rounded-lg p-1">
-                    {(["all", "movies", "series"] as const).map((f) => (
-                      <button
-                        key={f}
-                        onClick={() => {}}
-                        className={`px-3 py-1 text-xs font-semibold rounded ${f === "all" ? "bg-chocolate text-faint-white" : "text-brown hover:text-deep-orange transition"}`}
+              </div>
+              <div className="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-2">
+                <div className="flex items-center justify-between px-3 py-2 mb-1">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#A0785A]">All Channels</span>
+                  <span className="text-xs text-[#A0785A]">{channelCount} channels</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
+                  {channels.map((channel) => (
+                    <Link
+                      key={channel.id}
+                      href={`/live-tv?channel=${channel.id}`}
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFE8D1]/40 transition"
+                    >
+                      <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold text-white"
+                        style={{ background: channel.logoColor }}
                       >
-                        {f === "all" ? "All" : f === "movies" ? "Movies" : "Series"}
-                      </button>
-                    ))}
-                  </div>
+                        {channel.logoInitials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#3E2723] truncate">{channel.name}</p>
+                        <p className="text-[10px] text-[#A0785A]">{channel.region}</p>
+                      </div>
+                      {channel.isHd && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#E65100]/10 text-[#E65100]">
+                          HD
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                  <Link
+                    href="/live-tv"
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFE8D1]/40 transition"
+                  >
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-[#FFE8D1] text-[#E65100] flex-shrink-0">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-semibold text-[#3E2723]">Add Channel</p>
+                  </Link>
+                </div>
+                <div className="mt-2 pt-2 border-t border-[#D4A574]/20 px-3">
                   <Link
                     href="/watchlist"
                     className="text-sm font-semibold text-deep-orange hover:text-chocolate transition flex items-center gap-1"

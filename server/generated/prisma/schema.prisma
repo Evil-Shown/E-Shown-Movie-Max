@@ -39,6 +39,7 @@ model User {
   subscriptionTier   SubscriptionTier @default(FREE)
   subscriptionExpiry DateTime?
   currencyPreference String           @default("LKR")
+  trialStartDate     DateTime?
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
@@ -49,9 +50,27 @@ model User {
   watchedEpisodes  WatchedEpisode[]
   auditLogs        AuditLog[]
   analyticsEvents  AnalyticsEvent[]
+  payments         Payment[]
 
   @@index([authUserId])
   @@map("users")
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId   String   @unique
+  amount    Float
+  currency  String
+  status    String   @default("PENDING")
+  paymentId String?
+  method    String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([status])
+  @@map("payments")
 }
 
 model UserSettings {

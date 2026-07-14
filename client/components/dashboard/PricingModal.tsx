@@ -18,10 +18,20 @@ const proFeatures = [
 
 export default function PricingModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [region, setRegion] = useState<"LKR" | "USD">("LKR");
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
 
   if (!isOpen) return null;
 
-  const price = region === "LKR" ? "LKR 200.00" : "$0.99";
+  const isMonthly = billingPeriod === "monthly";
+  const price = isMonthly ? (region === "LKR" ? "LKR 200.00" : "$0.99") : region === "LKR" ? "LKR 2,000" : "$9.99";
+
+  const savings = isMonthly
+    ? region === "LKR"
+      ? "Save 60%"
+      : "Save 60%"
+    : region === "LKR"
+      ? "Save LKR 400/yr"
+      : "Save ~$2/yr";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
@@ -101,18 +111,52 @@ export default function PricingModal({ isOpen, onClose }: { isOpen: boolean; onC
             <div className="text-center">
               <div className="flex items-center justify-center gap-3">
                 <span className="text-lg text-[#FFFBF5]/40 line-through decoration-2">
-                  {region === "LKR" ? "LKR 500" : "$2.49"}
+                  {isMonthly ? (region === "LKR" ? "LKR 500" : "$2.49") : region === "LKR" ? "LKR 2,400" : "$11.88"}
                 </span>
                 <span className="text-4xl font-extrabold text-[#FFB87A]">{price}</span>
-                <span className="text-[#FFFBF5]/40 text-sm self-end mb-1">/mo</span>
+                <span className="text-[#FFFBF5]/40 text-sm self-end mb-1">{isMonthly ? "/mo" : "/yr"}</span>
               </div>
               <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-red-500/15 border border-red-400/30">
-                <span className="text-red-300 text-xs font-bold">🔥 Save 60%</span>
+                <span className="text-red-300 text-xs font-bold">🔥 {savings}</span>
               </div>
               <div className="text-[#FFFBF5]/40 text-xs mt-3">
-                {region === "LKR" ? "Only LKR 6.67 per day" : "Only $0.03 per day"} &bull; Cancel anytime
+                {isMonthly
+                  ? region === "LKR"
+                    ? "Only LKR 6.67 per day"
+                    : "Only $0.03 per day"
+                  : region === "LKR"
+                    ? "Only LKR 166 per month"
+                    : "Only $0.83 per month"}{" "}
+                &bull; Cancel anytime
               </div>
             </div>
+
+            {/* Billing Period Toggle */}
+            <div className="flex gap-2 mb-2 mt-4">
+              <button
+                onClick={() => setBillingPeriod("monthly")}
+                className={`flex-1 px-3 py-1.5 text-xs rounded-lg font-semibold transition-colors ${
+                  billingPeriod === "monthly" ? "bg-[#FFB87A] text-[#3E2723]" : "bg-[#FFFBF5]/10 text-[#FFFBF5]/60"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingPeriod("yearly")}
+                className={`flex-1 px-3 py-1.5 text-xs rounded-lg font-semibold transition-colors ${
+                  billingPeriod === "yearly" ? "bg-[#FFB87A] text-[#3E2723]" : "bg-[#FFFBF5]/10 text-[#FFFBF5]/60"
+                }`}
+              >
+                Yearly
+              </button>
+            </div>
+            {billingPeriod === "yearly" && (
+              <div className="mb-2 text-center">
+                <span className="text-[#FFB87A] text-[10px] font-bold uppercase tracking-wider">
+                  Save {region === "LKR" ? "LKR 400" : "~$2"} with annual billing
+                </span>
+              </div>
+            )}
 
             <div className="flex gap-2 mb-6">
               <button

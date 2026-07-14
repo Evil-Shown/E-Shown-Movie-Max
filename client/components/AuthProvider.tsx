@@ -12,6 +12,9 @@ export interface AuthUser {
   avatarUrl: string | null;
   role: string;
   isVerified: boolean;
+  subscriptionTier: string;
+  subscriptionExpiry: string | null;
+  trialStartDate: string | null;
   settings: {
     language: string;
     autoplay: boolean;
@@ -115,7 +118,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
     // Poll for OAuth sessions relayed from system browser (Electron desktop)
     let pollTimer: ReturnType<typeof setInterval> | null = null;
-    const isElectron = typeof window !== "undefined" && (window as any).chithraDesktop?.isDesktopApp;
+    const isElectron = typeof window !== "undefined" && window.chithraDesktop?.isDesktopApp;
     if (isElectron && !getStoredToken()) {
       pollTimer = setInterval(async () => {
         try {
