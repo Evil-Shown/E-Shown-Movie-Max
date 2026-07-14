@@ -556,17 +556,22 @@ export default function DashboardPage() {
   };
 
   return (
-    <div suppressHydrationWarning className="min-h-screen bg-cream font-sans text-chocolate">
+    <div suppressHydrationWarning className={`min-h-screen font-sans text-chocolate ${styles.dashboardRoot}`}>
       <div className="flex min-h-screen">
         {/* Desktop Sidebar */}
         <aside className={`${styles.sidebar} fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col`}>
-          <div className="px-6 py-6 border-b border-tan/25">
+          <div className="px-6 py-6 border-b border-tan/20">
             <div className="flex items-center gap-3">
               <div
-                className={`${styles.eyeDeco} w-10 h-10 bg-chocolate rounded-lg flex items-center justify-center relative`}
+                className={`${styles.eyeDeco} w-10 h-10 rounded-lg flex items-center justify-center relative`}
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--chocolate) 0%, color-mix(in srgb, var(--chocolate) 85%, var(--deep-orange) 15%) 100%)",
+                  boxShadow: "0 2px 12px color-mix(in srgb, var(--chocolate) 25%, transparent)",
+                }}
               >
                 <svg
-                  className="w-5 h-5 text-deep-orange"
+                  className="w-5 h-5 text-light-orange"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -626,19 +631,25 @@ export default function DashboardPage() {
             </button>
           </nav>
 
-          <div className="p-4 border-t border-tan/25">
+          <div className="p-4 border-t border-tan/20">
             <button
               onClick={() => setShowProfileSelector(true)}
-              className="w-full bg-chocolate rounded-xl p-3 flex items-center gap-3 text-left hover:bg-chocolate transition"
+              className="w-full rounded-xl p-3 flex items-center gap-3 text-left transition-all hover:scale-[1.02]"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--chocolate) 0%, color-mix(in srgb, var(--chocolate) 90%, var(--deep-orange) 10%) 100%)",
+                boxShadow:
+                  "0 2px 12px color-mix(in srgb, var(--chocolate) 20%, transparent), inset 0 1px 0 color-mix(in srgb, var(--faint-white) 6%, transparent)",
+              }}
             >
               {profileIcon ? (
                 <img
                   src={`/avatars/${profileIcon}`}
                   alt="Profile"
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-light-orange"
+                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-light-orange/80"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-light-orange to-deep-orange flex items-center justify-center font-bold text-chocolate flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-light-orange to-deep-orange flex items-center justify-center font-bold text-chocolate flex-shrink-0 shadow-lg">
                   {getInitials(userName)}
                 </div>
               )}
@@ -651,13 +662,23 @@ export default function DashboardPage() {
                   <ProBadge />
                 </div>
               </div>
-              <span className="text-[10px] text-tan">Edit</span>
+              <svg
+                className="w-3 h-3 text-tan/60"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </button>
           </div>
         </aside>
 
         {/* Mobile Header */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 topbar px-4 py-3 flex items-center justify-between">
+        <div
+          className={`lg:hidden fixed top-0 left-0 right-0 z-50 ${styles.topbar} px-4 py-3 flex items-center justify-between`}
+        >
           <div className="flex items-center gap-3">
             <span className="font-cinzel text-lg font-bold text-chocolate">Dashboard</span>
           </div>
@@ -737,7 +758,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex-1 max-w-md mx-6">
-              <div className="relative">
+              <div className={`relative ${styles.cardGlass} rounded-full`}>
                 <svg
                   className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-sandy"
                   viewBox="0 0 24 24"
@@ -751,20 +772,24 @@ export default function DashboardPage() {
                 <input
                   type="text"
                   placeholder="Search for your next obsession..."
-                  className="w-full bg-faint-white border border-tan/40 rounded-full pl-11 pr-4 py-2 text-sm text-chocolate placeholder-sandy focus:outline-none focus:border-deep-orange focus:ring-2 focus:ring-deep-orange/15 transition"
+                  className="w-full bg-transparent border-0 rounded-full pl-11 pr-4 py-2 text-sm text-chocolate placeholder-sandy focus:outline-none transition"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <button className="relative w-10 h-10 rounded-full bg-faint-white border border-tan/30 hover:border-deep-orange flex items-center justify-center text-chocolate hover:text-deep-orange transition">
+              <button
+                className={`relative w-10 h-10 rounded-full ${styles.cardGlass} hover:border-deep-orange flex items-center justify-center text-chocolate hover:text-deep-orange transition`}
+              >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-deep-orange rounded-full" />
               </button>
-              <button className="w-10 h-10 rounded-full bg-faint-white border border-tan/30 hover:border-deep-orange flex items-center justify-center text-chocolate hover:text-deep-orange transition">
+              <button
+                className={`w-10 h-10 rounded-full ${styles.cardGlass} hover:border-deep-orange flex items-center justify-center text-chocolate hover:text-deep-orange transition`}
+              >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="6" width="18" height="12" rx="2" />
                   <path d="M21 10H3" />
@@ -773,7 +798,7 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setShowProfileSelector(true)}
-                className="w-10 h-10 rounded-full overflow-hidden border border-tan/40 hover:border-deep-orange transition"
+                className={`w-10 h-10 rounded-full overflow-hidden ${styles.cardGlass} hover:border-deep-orange transition`}
                 aria-label="Change profile icon"
               >
                 {profileIcon ? (
@@ -790,41 +815,63 @@ export default function DashboardPage() {
           <div className="px-6 md:px-8 py-8 max-w-7xl mx-auto">
             {/* Cinematic Greeting */}
             <section className={`mb-10 ${styles.fadeUp}`}>
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg
-                      className="w-3 h-3 text-deep-orange"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-faint-white via-faint-white to-cream border border-tan/20 p-6 md:p-8 shadow-sm">
+                <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-light-orange-faint/40 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="w-8 h-px bg-gradient-to-r from-deep-orange to-transparent" />
+                      <svg
+                        className="w-3 h-3 text-deep-orange"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      <span className="text-[10px] tracking-[0.3em] uppercase text-deep-orange font-semibold">
+                        The God&apos;s Eye Observes
+                      </span>
+                    </div>
+                    <h1
+                      className="font-cinzel text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
+                      style={{ textShadow: "0 2px 20px color-mix(in srgb, var(--deep-orange) 10%, transparent)" }}
                     >
-                      <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    <span className="text-[10px] tracking-[0.3em] uppercase text-deep-orange font-semibold">
-                      The God&apos;s Eye Observes
-                    </span>
+                      Welcome back,
+                      <br />
+                      <span className="bg-gradient-to-r from-deep-orange via-light-orange to-deep-orange bg-clip-text text-transparent">
+                        {userName}
+                      </span>
+                    </h1>
+                    <p className="text-brown mt-4 max-w-lg text-sm leading-relaxed">
+                      Every story, carved in light. Pick up where you left off, or let the eye find your next obsession.
+                    </p>
+                    {resumeItems.length > 0 && (
+                      <a
+                        href={`/movie/${resumeItems[0].id}`}
+                        className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 rounded-full bg-gradient-to-r from-deep-orange to-chocolate text-faint-white text-sm font-semibold hover:from-chocolate hover:to-chocolate transition-all shadow-lg shadow-deep-orange/20 hover:shadow-deep-orange/30"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                          <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                        Continue Watching
+                      </a>
+                    )}
                   </div>
-                  <h1 className="font-cinzel text-4xl md:text-5xl font-bold text-chocolate leading-tight">
-                    Welcome back,
-                    <br />
-                    <span className="text-deep-orange">{userName}</span>
-                  </h1>
-                  <p className="text-brown mt-3 max-w-md">
-                    Every story, carved in light. Pick up where you left off, or let the eye find your next obsession.
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-xs text-sandy uppercase tracking-wider">Today</p>
-                    <p className="font-cinzel text-lg font-semibold text-chocolate">{formatToday()}</p>
-                  </div>
-                  <div className="w-px h-12 bg-tan/40" />
-                  <div className="text-right">
-                    <p className="text-xs text-sandy uppercase tracking-wider">Streak</p>
-                    <p className="font-cinzel text-lg font-semibold text-deep-orange">{streak} Days</p>
+                  <div className="flex items-center gap-5">
+                    <div className="text-right">
+                      <p className="text-[10px] text-sandy uppercase tracking-[0.2em] font-semibold">Today</p>
+                      <p className="font-cinzel text-base md:text-lg font-semibold text-chocolate mt-1">
+                        {formatToday()}
+                      </p>
+                    </div>
+                    <div className="w-px h-14 bg-gradient-to-b from-tan/60 to-transparent" />
+                    <div className="text-right">
+                      <p className="text-[10px] text-sandy uppercase tracking-[0.2em] font-semibold">Streak</p>
+                      <p className="font-cinzel text-xl md:text-2xl font-bold text-deep-orange mt-1">{streak}</p>
+                    </div>
                   </div>
                 </div>
               </div>
