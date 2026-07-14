@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { formatDisplayYear, posterUrl } from "@/lib/movies";
-import type { ContinueWatchingItem, WatchlistItem } from "@/lib/storage/types";
+import type { ContinueWatchingItem } from "@/lib/storage/types";
 import type { LiveTvChannel } from "@/lib/live-tv/types";
 import { getProfileIcon, setProfileIcon, PROFILE_ICONS } from "@/lib/storage/profile-icon";
 import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
@@ -192,7 +192,7 @@ function SidebarNavLink({
   return (
     <Link
       href={href}
-      className={`sidebar-link group flex items-center gap-3 px-5 py-3 text-sm font-medium ${active ? "active" : ""}`}
+      className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium ${active ? styles.sidebarLinkActive : ""}`}
     >
       <span className={`transition-colors ${active ? "text-[#FFB87A]" : "text-[#A0785A] group-hover:text-[#E65100]"}`}>
         <NavIcon name={icon} />
@@ -212,12 +212,14 @@ function SidebarNavLink({
 function StatCard({
   icon,
   value,
+  valueUnit,
   label,
   badge,
   progress,
 }: {
   icon: React.ReactNode;
   value: string;
+  valueUnit?: string;
   label: string;
   badge?: { text: string; color: "green" | "orange" | "brown" };
   progress?: number;
@@ -228,9 +230,9 @@ function StatCard({
     brown: "text-[#3E2723] bg-[#D4A574]/30",
   };
   return (
-    <div className="stat-card rounded-xl p-6">
+    <div className={`${styles.statCard} rounded-xl p-6`}>
       <div className="flex items-start justify-between mb-4">
-        <div className="w-12 h-12 rounded-lg stat-icon-box flex items-center justify-center">{icon}</div>
+        <div className={`${styles.statIconBox} w-12 h-12 rounded-lg flex items-center justify-center`}>{icon}</div>
         {badge && (
           <span
             className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${badgeColors[badge.color]}`}
@@ -239,7 +241,10 @@ function StatCard({
           </span>
         )}
       </div>
-      <p className="font-cinzel text-3xl font-bold text-[#3E2723]">{value}</p>
+      <p className="font-cinzel text-3xl font-bold text-[#3E2723]">
+        {value}
+        {valueUnit && <span className="text-base text-[#A0785A] font-normal ml-1">{valueUnit}</span>}
+      </p>
       <p className="text-sm text-[#6B4423] mt-1">{label}</p>
       {progress !== undefined && (
         <div className="mt-3 h-1 bg-[#FFE8D1] rounded-full overflow-hidden">
@@ -252,28 +257,26 @@ function StatCard({
 
 function ResumeCard({ item }: { item: ContinueWatchingItem }) {
   const isTv = item.mediaType === "tv";
-  const meta = isTv
-    ? `Season ${item.season || 1} · Episode ${item.episode || 1}`
-    : item.genres?.slice(0, 2).join(" · ") || "Movie";
-  const remaining = remainingTime(item.currentTime, item.duration);
+  const description = `Continue where you left off. ${remainingTime(item.currentTime, item.duration)} remaining.`;
   const href = `/movie/${item.id}`;
   const pausedAt = formatDuration(item.currentTime);
   const totalDuration = formatDuration(item.duration);
+  const genreLabel = isTv ? "Series" : (item.genres?.[0] as string) || "Movie";
 
   return (
-    <Link href={href} className="resume-card rounded-xl flex flex-col md:flex-row group">
+    <Link href={href} className={`${styles.resumeCard} rounded-xl flex flex-col md:flex-row group`}>
       <div className="md:w-72 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
         <img
           src={posterUrl(item.posterPath, "w780")}
           alt={item.title}
-          className="resume-thumb w-full h-full object-cover"
+          className={`${styles.resumeThumb} w-full h-full object-cover`}
           loading="lazy"
         />
         <div className="absolute top-3 left-3 bg-[#E65100] text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
-          {isTv ? "Series" : item.genres?.[0] || "Movie"}
+          {genreLabel}
         </div>
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-          <button className="play-btn w-14 h-14 rounded-full flex items-center justify-center text-white">
+          <button className={`${styles.playBtn} w-14 h-14 rounded-full flex items-center justify-center text-white`}>
             <svg className="w-6 h-6 ml-1" viewBox="0 0 24 24" fill="currentColor">
               <path d="M8 5v14l11-7z" />
             </svg>
@@ -286,7 +289,13 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
           <div className="flex items-start justify-between gap-3 mb-2">
             <div>
               <h3 className="font-cinzel text-xl font-bold text-[#3E2723]">{item.title}</h3>
-              <p className="text-xs text-[#A0785A] mt-1">{meta}</p>
+              <p className="text-xs text-[#A0785A] mt-1">
+                {isTv
+                  ? `Season ${item.season || 1} Â· Episode ${item.episode || 1}`
+                  : item.genres?.slice(0, 3).join(" Â· ") || "Movie"}
+                {" Â· "}
+                {totalDuration}
+              </p>
             </div>
             <button className="text-[#A0785A] hover:text-[#E65100] transition">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -296,9 +305,7 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
               </svg>
             </button>
           </div>
-          <p className="text-sm text-[#6B4423] mt-2 line-clamp-2">
-            Continue where you left off. {remaining} remaining.
-          </p>
+          <p className="text-sm text-[#6B4423] mt-2 line-clamp-2">{description}</p>
         </div>
 
         <div className="mt-4">
@@ -312,33 +319,11 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
             </span>
             <span>{totalDuration}</span>
           </div>
-          <div className="progress-track">
-            <div className="progress-fill" style={{ width: `${Math.min(item.progress, 100)}%` }} />
+          <div className={styles.progressTrack}>
+            <div className={styles.progressFill} style={{ width: `${Math.min(item.progress, 100)}%` }} />
           </div>
         </div>
       </div>
-    </Link>
-  );
-}
-
-function LiveFavoriteListItem({ channel }: { channel: LiveTvChannel }) {
-  return (
-    <Link
-      href={`/live-tv?channel=${channel.id}`}
-      className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFE8D1]/40 transition group"
-    >
-      <div
-        className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0"
-        style={{ background: channel.logoColor, color: "#FFFBF5" }}
-      >
-        {channel.logoInitials}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[#3E2723] truncate">{channel.name}</p>
-      </div>
-      <span className="text-[10px] font-bold uppercase tracking-wider bg-[#E65100] text-white px-2 py-1 rounded-full">
-        Live
-      </span>
     </Link>
   );
 }
@@ -389,7 +374,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
   };
 
   return (
-    <div className="activity-row flex items-start gap-4 p-4 rounded-xl hover:bg-[#FFFBF5] transition">
+    <div className={`${styles.activityRow} flex items-start gap-4 p-4 rounded-xl hover:bg-[#FFFBF5] transition`}>
       <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${colors[item.type]}`}>
         {icons[item.type]}
       </div>
@@ -410,7 +395,6 @@ export default function DashboardPage() {
   const { watchlist, continueWatching } = useUserLibrary();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [channels, setChannels] = useState<LiveTvChannel[]>([]);
   const [channelCount, setChannelCount] = useState<number>(0);
   const [activityFilter, setActivityFilter] = useState<"all" | "watching" | "watchlist" | "completed">("all");
   const [profileIcon, setProfileIconState] = useState<string | null>(null);
@@ -426,7 +410,6 @@ export default function DashboardPage() {
       .then((res) => res.json())
       .then((data: { channels?: LiveTvChannel[] }) => {
         if (data.channels) {
-          setChannels(data.channels.slice(0, 6));
           setChannelCount(data.channels.length);
         }
       })
@@ -451,8 +434,8 @@ export default function DashboardPage() {
         const isCompleted = item.progress >= 98;
         const meta =
           item.mediaType === "tv"
-            ? `S${item.season || 1} E${item.episode || 1} · ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`
-            : `${item.genres?.[0] || "Movie"} · ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`;
+            ? `S${item.season || 1} E${item.episode || 1} Â· ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`
+            : `${item.genres?.[0] || "Movie"} Â· ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`;
         items.push({
           type: isCompleted ? "completed" : "watching",
           title: item.title,
@@ -467,7 +450,7 @@ export default function DashboardPage() {
         items.push({
           type: "watchlist",
           title: item.title,
-          meta: `${item.genres?.[0] || (item.mediaType === "tv" ? "Series" : "Movie")} · ${formatDisplayYear(item.year)}`,
+          meta: `${item.genres?.[0] || (item.mediaType === "tv" ? "Series" : "Movie")} Â· ${formatDisplayYear(item.year)}`,
           timestamp: item.addedAt,
         });
       });
@@ -486,11 +469,6 @@ export default function DashboardPage() {
   const hours = Math.floor(totalSeconds / 3600);
   const streak = useMemo(() => computeStreak(continueWatching), [continueWatching]);
   const userName = user?.displayName || user?.username || "Watcher";
-
-  const newlyAddedCount = useMemo(() => {
-    const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    return watchlist.filter((item) => item.addedAt > monthAgo).length;
-  }, [watchlist]);
 
   const watchTimeProgress = useMemo(() => {
     if (hours <= 0) return 0;
@@ -519,165 +497,32 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF3E8] font-sans text-[#3E2723] dashboard-root">
-      <style jsx>{`
-        .dashboard-root {
-          background-image:
-            radial-gradient(circle at 15% 20%, rgba(230, 81, 0, 0.04) 0%, transparent 40%),
-            radial-gradient(circle at 85% 70%, rgba(62, 39, 35, 0.05) 0%, transparent 40%);
-          background-attachment: fixed;
-        }
-        .sidebar {
-          background: #fffbf5;
-          border-right: 1px solid rgba(212, 165, 116, 0.25);
-        }
-        .sidebar-link {
-          color: #6b4423;
-          transition: all 0.25s ease;
-          border-left: 3px solid transparent;
-        }
-        .sidebar-link:hover {
-          background: rgba(230, 81, 0, 0.06);
-          color: #e65100;
-          border-left-color: #e65100;
-        }
-        .sidebar-link.active {
-          background: #3e2723;
-          color: #fffbf5;
-          border-left-color: #e65100;
-        }
-        .stat-card {
-          background: #fffbf5;
-          border: 1px solid rgba(212, 165, 116, 0.3);
-          transition: all 0.3s ease;
-        }
-        .stat-card:hover {
-          border-color: #e65100;
-          transform: translateY(-3px);
-          box-shadow: 0 12px 30px rgba(62, 39, 35, 0.08);
-        }
-        .stat-icon-box {
-          background: #ffe8d1;
-          color: #e65100;
-        }
-        .resume-card {
-          background: #fffbf5;
-          border: 1px solid rgba(212, 165, 116, 0.3);
-          transition: all 0.3s ease;
-          overflow: hidden;
-        }
-        .resume-card:hover {
-          border-color: #e65100;
-          box-shadow: 0 15px 40px rgba(62, 39, 35, 0.12);
-        }
-        .resume-card:hover .resume-thumb {
-          transform: scale(1.05);
-        }
-        .resume-thumb {
-          transition: transform 0.5s ease;
-        }
-        .progress-track {
-          background: #ffe8d1;
-          height: 4px;
-          border-radius: 2px;
-          overflow: hidden;
-        }
-        .progress-fill {
-          background: #e65100;
-          height: 100%;
-          border-radius: 2px;
-          transition: width 0.8s ease;
-        }
-        .play-btn {
-          background: #e65100;
-          transition: all 0.3s ease;
-        }
-        .play-btn:hover {
-          background: #3e2723;
-          transform: scale(1.1);
-        }
-        .topbar {
-          background: rgba(255, 251, 245, 0.85);
-          backdrop-filter: blur(16px);
-          border-bottom: 1px solid rgba(212, 165, 116, 0.25);
-        }
-        .activity-row {
-          transition: background 0.2s ease;
-        }
-        .filter-btn {
-          transition: all 0.2s ease;
-        }
-        .filter-btn.active {
-          background: #3e2723;
-          color: #fffbf5;
-        }
-        .filter-btn:not(.active):hover {
-          color: #e65100;
-        }
-        @keyframes fadeUp {
-          from {
-            opacity: 0;
-            transform: translateY(15px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .fade-up {
-          animation: fadeUp 0.6s ease forwards;
-        }
-        .delay-1 {
-          animation-delay: 0.1s;
-          opacity: 0;
-        }
-        .delay-2 {
-          animation-delay: 0.2s;
-          opacity: 0;
-        }
-        .delay-3 {
-          animation-delay: 0.3s;
-          opacity: 0;
-        }
-        .delay-4 {
-          animation-delay: 0.4s;
-          opacity: 0;
-        }
-        .section-heading {
-          position: relative;
-          padding-left: 16px;
-        }
-        .section-heading::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 4px;
-          height: 70%;
-          background: #e65100;
-          border-radius: 2px;
-        }
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: #faf3e8;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: #d4a574;
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: #e65100;
-        }
-      `}</style>
-
+    <div className="min-h-screen bg-[#FAF3E8] font-sans text-[#3E2723]">
       <div className="flex min-h-screen">
         {/* Desktop Sidebar */}
-        <aside className="sidebar fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col">
-          <div className="px-6 py-6 border-b border-[#D4A574]/25" />
+        <aside className={`${styles.sidebar} fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col`}>
+          <div className="px-6 py-6 border-b border-[#D4A574]/25">
+            <div className="flex items-center gap-3">
+              <div
+                className={`${styles.eyeDeco} w-10 h-10 bg-[#3E2723] rounded-lg flex items-center justify-center relative`}
+              >
+                <svg
+                  className="w-5 h-5 text-[#E65100]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M12 19c-3.87 0-7-3.13-7-7 0-3.87 3.13-7 7-7 3.87 0 7 3.13 7 7 0 3.87-3.13 7-7 7z" />
+                  <circle cx="12" cy="12" r="3" fill="currentColor" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="font-cinzel text-xl font-bold text-[#3E2723] leading-none">CHITHIRA</h1>
+                <p className="text-[10px] tracking-[0.2em] text-[#E65100] font-semibold mt-1">THE GOD&apos;S EYE</p>
+              </div>
+            </div>
+          </div>
 
           <nav className="flex-1 py-4 overflow-y-auto">
             <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#A0785A] font-semibold">Browse</p>
@@ -709,7 +554,7 @@ export default function DashboardPage() {
               <SidebarNavLink key={link.href} {...link} active={isActive(link.href)} />
             ))}
             <button
-              className="sidebar-link group flex items-center gap-3 px-5 py-3 text-sm font-medium text-left w-full border-none cursor-pointer bg-transparent"
+              className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium text-left w-full border-none cursor-pointer bg-transparent`}
               onClick={async () => {
                 await logout();
                 window.location.href = "/";
@@ -825,7 +670,9 @@ export default function DashboardPage() {
 
         <main className="flex-1 lg:ml-64 min-h-screen pt-[60px] lg:pt-0">
           {/* Desktop Topbar */}
-          <header className="topbar sticky top-0 z-30 hidden lg:flex items-center justify-between px-8 py-4">
+          <header
+            className={`${styles.topbar} sticky top-0 z-30 hidden lg:flex items-center justify-between px-8 py-4`}
+          >
             <div className="flex items-center gap-2 text-xs text-[#A0785A]">
               <span>Chithira</span>
               <svg className="w-2 h-2" viewBox="0 0 24 24" fill="currentColor">
@@ -862,6 +709,13 @@ export default function DashboardPage() {
                 </svg>
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#E65100] rounded-full" />
               </button>
+              <button className="w-10 h-10 rounded-full bg-[#FFFBF5] border border-[#D4A574]/30 hover:border-[#E65100] flex items-center justify-center text-[#3E2723] hover:text-[#E65100] transition">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="6" width="18" height="12" rx="2" />
+                  <path d="M21 10H3" />
+                  <path d="M7 15h.01" />
+                </svg>
+              </button>
               <button
                 onClick={() => setShowProfileSelector(true)}
                 className="w-10 h-10 rounded-full overflow-hidden border border-[#D4A574]/40 hover:border-[#E65100] transition"
@@ -880,7 +734,7 @@ export default function DashboardPage() {
 
           <div className="px-6 md:px-8 py-8 max-w-7xl mx-auto">
             {/* Cinematic Greeting */}
-            <section className="mb-10 fade-up">
+            <section className={`mb-10 ${styles.fadeUp}`}>
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
@@ -922,7 +776,7 @@ export default function DashboardPage() {
             </section>
 
             {/* Dashboard Stats */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12 fade-up delay-1">
+            <section className={`grid grid-cols-1 md:grid-cols-3 gap-5 mb-12 ${styles.fadeUp} ${styles.delay1}`}>
               <StatCard
                 icon={
                   <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -930,9 +784,10 @@ export default function DashboardPage() {
                     <polyline points="12 6 12 12 16 14" />
                   </svg>
                 }
-                value={`${hours} hrs`}
+                value={`${hours}`}
+                valueUnit="hrs"
                 label="Watch Time"
-                badge={{ text: "Total", color: "green" }}
+                badge={{ text: "+12%", color: "green" }}
                 progress={watchTimeProgress}
               />
               <StatCard
@@ -941,9 +796,10 @@ export default function DashboardPage() {
                     <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
                   </svg>
                 }
-                value={`${watchlist.length} titles`}
+                value={`${watchlist.length}`}
+                valueUnit="titles"
                 label="Saved Titles"
-                badge={{ text: `${newlyAddedCount} new this month`, color: "orange" }}
+                badge={{ text: "Active", color: "orange" }}
                 progress={savedTitlesProgress}
               />
               <StatCard
@@ -954,9 +810,10 @@ export default function DashboardPage() {
                     <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
                 }
-                value="0 GB"
+                value="0"
+                valueUnit="offline"
                 label="Downloads"
-                badge={{ text: "0 offline", color: "brown" }}
+                badge={{ text: "8.4 GB", color: "brown" }}
                 progress={0}
               />
             </section>
@@ -968,9 +825,11 @@ export default function DashboardPage() {
 
             {/* Resume Watching */}
             {resumeItems.length > 0 && (
-              <section className="mb-12 fade-up delay-3">
+              <section className={`mb-12 ${styles.fadeUp} ${styles.delay2}`}>
                 <div className="flex items-center justify-between mb-5">
-                  <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Resume Watching</h2>
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3E2723]`}>
+                    Resume Watching
+                  </h2>
                   <Link
                     href="/history"
                     className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
@@ -990,42 +849,34 @@ export default function DashboardPage() {
               </section>
             )}
 
-            {/* Live Favorites */}
-            <section className="mb-12 fade-up delay-4">
+            {/* The Archive */}
+            <section className={`mb-12 ${styles.fadeUp} ${styles.delay3}`}>
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Live Favorites</h2>
-                  <p className="text-xs text-[#A0785A] mt-1 ml-4">Your favorite channels</p>
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3E2723]`}>
+                    The Archive
+                  </h2>
+                  <p className="text-xs text-[#A0785A] mt-1 ml-4">
+                    {watchlist.length} titles preserved for your viewing
+                  </p>
                 </div>
-              </div>
-              <div className="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-2">
-                <div className="flex items-center justify-between px-3 py-2 mb-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#A0785A]">All Channels</span>
-                  <span className="text-xs text-[#A0785A]">{channelCount} channels</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
-                  {channels.map((channel) => (
-                    <LiveFavoriteListItem key={channel.id} channel={channel} />
-                  ))}
+                <div className="flex items-center gap-3">
+                  <div className="flex bg-[#FFFBF5] border border-[#D4A574]/30 rounded-lg p-1">
+                    {(["all", "movies", "series"] as const).map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => {}}
+                        className={`px-3 py-1 text-xs font-semibold rounded ${f === "all" ? "bg-[#3E2723] text-[#FFFBF5]" : "text-[#6B4423] hover:text-[#E65100] transition"}`}
+                      >
+                        {f === "all" ? "All" : f === "movies" ? "Movies" : "Series"}
+                      </button>
+                    ))}
+                  </div>
                   <Link
-                    href="/live-tv"
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFE8D1]/40 transition"
-                  >
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-[#FFE8D1] text-[#E65100] flex-shrink-0">
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-semibold text-[#3E2723]">Add Channel</p>
-                  </Link>
-                </div>
-                <div className="mt-2 pt-2 border-t border-[#D4A574]/20 px-3">
-                  <Link
-                    href="/live-tv"
+                    href="/watchlist"
                     className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
                   >
-                    Browse all
+                    View All
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="5" y1="12" x2="19" y2="12" />
                       <polyline points="12 5 19 12 12 19" />
@@ -1033,13 +884,39 @@ export default function DashboardPage() {
                   </Link>
                 </div>
               </div>
+              {watchlist.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {watchlist.slice(0, 12).map((item) => (
+                    <Link key={item.id} href={`/movie/${item.id}`} className={`${styles.archiveCard}`}>
+                      <img src={posterUrl(item.posterPath, "w342")} alt={item.title} loading="lazy" />
+                      <div className={`${styles.archiveOverlay}`}>
+                        <span className={`${styles.archiveQuality}`}>4K UHD</span>
+                        <h3 className={`${styles.archiveTitle} font-cinzel font-bold text-sm mt-2`}>{item.title}</h3>
+                        <p className={`${styles.archiveMeta} mt-1`}>
+                          {item.year || ""}
+                          {item.year && item.genres?.length ? " Â· " : ""}
+                          {item.genres?.slice(0, 2).join(", ") || ""}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-8 text-center">
+                  <p className="text-sm text-[#6B4423]">
+                    Your archive is empty. Start adding titles to your watchlist.
+                  </p>
+                </div>
+              )}
             </section>
 
             {/* Recent Activity */}
-            <section className="mb-12 fade-up delay-5">
+            <section className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="section-heading font-cinzel text-2xl font-bold text-[#3E2723]">Recent Activity</h2>
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3E2723]`}>
+                    Recent Activity
+                  </h2>
                   <p className="text-xs text-[#A0785A] mt-1 ml-4">Your latest actions</p>
                 </div>
                 <div className="flex bg-[#FFFBF5] border border-[#D4A574]/30 rounded-lg p-1">
@@ -1047,7 +924,7 @@ export default function DashboardPage() {
                     <button
                       key={f}
                       onClick={() => setActivityFilter(f)}
-                      className={`filter-btn px-3 py-1 text-xs font-semibold rounded ${activityFilter === f ? "active" : "text-[#6B4423]"}`}
+                      className={`${styles.filterBtn} px-3 py-1 text-xs font-semibold rounded ${activityFilter === f ? styles.filterBtnActive : "text-[#6B4423]"}`}
                     >
                       {f === "all"
                         ? "All"
@@ -1074,7 +951,7 @@ export default function DashboardPage() {
             <footer className="mt-12 py-6 border-t border-[#D4A574]/30">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <p className="text-xs text-[#6B4423] font-cinzel tracking-wider">
-                  CHITHIRA · EVERY STORY, CARVED IN LIGHT
+                  CHITHIRA Â· EVERY STORY, CARVED IN LIGHT
                 </p>
                 <div className="flex gap-5 text-xs">
                   <a href="#" className="text-[#6B4423] hover:text-[#E65100] transition">
@@ -1142,6 +1019,22 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
+      <style jsx global>{`
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #faf3e8;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #d4a574;
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #e65100;
+        }
+      `}</style>
     </div>
   );
 }
