@@ -7,7 +7,6 @@ import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { formatDisplayYear, posterUrl } from "@/lib/movies";
 import type { ContinueWatchingItem } from "@/lib/storage/types";
-import type { LiveTvChannel } from "@/lib/live-tv/types";
 import { getProfileIcon, setProfileIcon, PROFILE_ICONS } from "@/lib/storage/profile-icon";
 import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
 import PricingModal from "@/components/dashboard/PricingModal";
@@ -382,43 +381,71 @@ function ActivityRow({ item }: { item: ActivityItem }) {
   };
   const accentColors: Record<string, { box: string; bar: string; badge: string }> = {
     watching: {
-      box: "bg-deep-orange text-faint-white",
+      box: "bg-gradient-to-br from-deep-orange to-orange-700 text-faint-white",
       bar: "bg-deep-orange",
       badge: "bg-light-orange-faint text-deep-orange",
     },
-    watchlist: { box: "bg-chocolate text-faint-white", bar: "bg-chocolate", badge: "bg-tan/20 text-brown" },
-    completed: { box: "bg-tan text-faint-white", bar: "bg-tan", badge: "bg-cream text-chocolate" },
-    downloaded: { box: "bg-brown text-faint-white", bar: "bg-brown", badge: "bg-cream text-brown" },
+    watchlist: {
+      box: "bg-gradient-to-br from-chocolate to-stone-800 text-faint-white",
+      bar: "bg-chocolate",
+      badge: "bg-tan/20 text-brown",
+    },
+    completed: {
+      box: "bg-gradient-to-br from-tan to-amber-700 text-faint-white",
+      bar: "bg-tan",
+      badge: "bg-cream text-chocolate",
+    },
+    downloaded: {
+      box: "bg-gradient-to-br from-brown to-stone-700 text-faint-white",
+      bar: "bg-brown",
+      badge: "bg-cream text-brown",
+    },
   };
   const a = accentColors[item.type];
 
   return (
-    <div
-      className={`${styles.activityRow} group relative flex items-start gap-4 pl-4 py-4 rounded-xl hover:bg-faint-white transition`}
-    >
-      <div className={`absolute left-0 top-4 bottom-4 w-0.5 rounded-full ${a.bar} opacity-40`} />
-      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${a.box}`}>
+    <div className="group relative flex items-start gap-4 pl-6 py-4 rounded-xl hover:bg-faint-white transition-all duration-300">
+      <div
+        className={`absolute left-0 top-4 bottom-4 w-0.5 rounded-full ${a.bar} opacity-20 group-hover:opacity-40 transition-opacity`}
+      />
+      <div
+        className={`relative w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${a.box}`}
+      >
         {icons[item.type]}
+        <div
+          className={`absolute -inset-0.5 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity ${a.bar}`}
+        />
       </div>
-      <div className="flex-1 min-w-0 pt-0.5">
-        <p className="text-sm text-chocolate">
+      <div className="flex-1 min-w-0 pt-1">
+        <div className="flex items-center gap-2 mb-1">
           <span
-            className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider mr-2 ${a.badge}`}
+            className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${a.badge}`}
           >
             {labels[item.type]}
           </span>
-          <span className="text-brown font-medium">{item.title}</span>
-        </p>
+          <span className="text-[11px] text-sandy/60">{timeAgo(item.timestamp)}</span>
+        </div>
+        <p className="text-sm font-semibold text-chocolate">{item.title}</p>
         {item.meta && (
-          <p className="text-xs text-sandy mt-1.5 flex items-center gap-1.5">
-            <svg className="w-3 h-3 text-tan/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <p className="text-xs text-sandy mt-0.5 flex items-center gap-1.5">
+            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
             {item.meta}
           </p>
         )}
-        <p className="text-[11px] text-sandy/70 mt-1.5">{timeAgo(item.timestamp)}</p>
+      </div>
+      <div className="flex-shrink-0 self-center">
+        <svg
+          className="w-4 h-4 text-tan/30 group-hover:text-tan/60 transition-colors"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
       </div>
     </div>
   );
@@ -430,7 +457,6 @@ export default function DashboardPage() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [channelCount, setChannelCount] = useState<number>(0);
-  const [channels, setChannels] = useState<LiveTvChannel[]>([]);
   const [activityFilter, setActivityFilter] = useState<"all" | "watching" | "watchlist" | "completed">("all");
   const [profileIcon, setProfileIconState] = useState<string | null>(null);
   const [showProfileSelector, setShowProfileSelector] = useState(false);
@@ -443,9 +469,8 @@ export default function DashboardPage() {
   useEffect(() => {
     fetch("/api/live-tv/channels")
       .then((res) => res.json())
-      .then((data: { channels?: LiveTvChannel[] }) => {
+      .then((data: { channels?: { length: number }[] }) => {
         if (data.channels) {
-          setChannels(data.channels);
           setChannelCount(data.channels.length);
         }
       })
@@ -943,61 +968,6 @@ export default function DashboardPage() {
                   <p className="text-xs text-sandy mt-1 ml-4">{watchlist.length} titles preserved for your viewing</p>
                 </div>
               </div>
-              <div className="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-2">
-                <div className="flex items-center justify-between px-3 py-2 mb-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#A0785A]">All Channels</span>
-                  <span className="text-xs text-[#A0785A]">{channelCount} channels</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
-                  {channels.map((channel) => (
-                    <Link
-                      key={channel.id}
-                      href={`/live-tv?channel=${channel.id}`}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFE8D1]/40 transition"
-                    >
-                      <div
-                        className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold text-white"
-                        style={{ background: channel.logoColor }}
-                      >
-                        {channel.logoInitials}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[#3E2723] truncate">{channel.name}</p>
-                        <p className="text-[10px] text-[#A0785A]">{channel.region}</p>
-                      </div>
-                      {channel.isHd && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#E65100]/10 text-[#E65100]">
-                          HD
-                        </span>
-                      )}
-                    </Link>
-                  ))}
-                  <Link
-                    href="/live-tv"
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFE8D1]/40 transition"
-                  >
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-[#FFE8D1] text-[#E65100] flex-shrink-0">
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-semibold text-[#3E2723]">Add Channel</p>
-                  </Link>
-                </div>
-                <div className="mt-2 pt-2 border-t border-[#D4A574]/20 px-3">
-                  <Link
-                    href="/watchlist"
-                    className="text-sm font-semibold text-deep-orange hover:text-chocolate transition flex items-center gap-1"
-                  >
-                    View All
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                      <polyline points="12 5 19 12 12 19" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
               {watchlist.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {watchlist.slice(0, 12).map((item) => (
@@ -1031,12 +1001,16 @@ export default function DashboardPage() {
                   </h2>
                   <p className="text-xs text-sandy mt-1 ml-4">Your latest actions</p>
                 </div>
-                <div className="flex bg-faint-white border border-tan/30 rounded-lg p-1">
+                <div className="flex bg-faint-white border border-tan/25 rounded-xl p-1 shadow-sm">
                   {(["all", "watching", "watchlist", "completed"] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => setActivityFilter(f)}
-                      className={`${styles.filterBtn} px-3 py-1 text-xs font-semibold rounded ${activityFilter === f ? styles.filterBtnActive : "text-brown"}`}
+                      className={`${styles.filterBtn} px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
+                        activityFilter === f
+                          ? "bg-chocolate text-faint-white shadow-md"
+                          : "text-brown hover:text-deep-orange hover:bg-light-orange-faint/50"
+                      }`}
                     >
                       {f === "all"
                         ? "All"
@@ -1049,12 +1023,27 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
-              <div className="bg-faint-white border border-tan/30 rounded-2xl divide-y divide-tan/20">
+              <div className="bg-gradient-to-br from-faint-white via-faint-white to-cream border border-tan/20 rounded-2xl shadow-sm divide-y divide-tan/15">
                 {filteredActivities.length > 0 ? (
                   filteredActivities.map((item, i) => <ActivityRow key={i} item={item} />)
                 ) : (
-                  <div className="p-8 text-center">
-                    <p className="text-sm text-brown">No activity yet. Start watching to see your history here.</p>
+                  <div className="flex flex-col items-center justify-center py-12 px-8">
+                    <div className="w-14 h-14 rounded-2xl bg-cream border border-tan/20 flex items-center justify-center mb-4">
+                      <svg
+                        className="w-6 h-6 text-sandy"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-semibold text-chocolate mb-1">No activity yet</p>
+                    <p className="text-xs text-sandy text-center max-w-xs">
+                      Start watching movies or TV series to see your activity history here.
+                    </p>
                   </div>
                 )}
               </div>
