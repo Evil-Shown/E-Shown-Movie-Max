@@ -4,6 +4,6 @@ import * as controller from "./tmdb.controller";
 
 const router = Router();
 
-router.get("/*", redisRateLimit, controller.proxy);
+router.use(redisRateLimit, controller.proxy);
 
 export default router;
