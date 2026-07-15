@@ -12,8 +12,8 @@ export default function TmdbSetupBanner() {
         >
           themoviedb.org
         </a>
-        , add <code className="rounded bg-amber-100 px-1">TMDB_API_KEY</code> to{" "}
-        <code className="rounded bg-amber-100 px-1">.env.local</code>, then restart{" "}
+        , then add <code className="rounded bg-amber-100 px-1">TMDB_API_KEY</code> to{" "}
+        <code className="rounded bg-amber-100 px-1">server/.env</code> and restart{" "}
         <code className="rounded bg-amber-100 px-1">npm run dev</code>.
       </p>
     </div>
