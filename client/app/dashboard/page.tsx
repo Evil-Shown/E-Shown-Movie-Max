@@ -531,7 +531,10 @@ export default function DashboardPage() {
   const streak = useMemo(() => computeStreak(continueWatching), [continueWatching]);
   const userName = user?.displayName || user?.username || "Watcher";
 
-  const isPro = user?.subscriptionTier === "PRO";
+  const effectiveTier = user?.effectiveTier ?? "FREE";
+  const trialDaysLeft = user?.trialDaysLeft ?? 0;
+  const isPro = effectiveTier === "PRO";
+  const isTrial = effectiveTier === "TRIAL";
 
   const watchTimeProgress = useMemo(() => {
     if (hours <= 0) return 0;
@@ -662,6 +665,10 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-1">
                   {isPro ? (
                     <ProBadge />
+                  ) : isTrial ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#D4A574]/20 text-[#D4A574]">
+                      {trialDaysLeft}d Trial
+                    </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#A0785A]/20 text-[#A0785A]">
                       Free

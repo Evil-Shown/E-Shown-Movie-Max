@@ -18,6 +18,8 @@ export interface AuthUser {
   subscriptionTier: SubscriptionTier;
   subscriptionExpiry: Date | null;
   trialStartDate: Date | null;
+  effectiveTier: "FREE" | "TRIAL" | "PRO";
+  trialDaysLeft: number;
   settings: UserSettings | null;
   createdAt: Date;
 }
@@ -51,6 +53,23 @@ export interface AuthResponse {
 }
 
 export function toAuthUser(user: User & { settings?: UserSettings | null }): AuthUser {
+  const now = new Date();
+
+  const trialDaysLeft = user.trialStartDate
+    ? Math.max(0, 7 - Math.floor((now.getTime() - user.trialStartDate.getTime()) / 86400000))
+    : 0;
+
+  const isExpired = user.subscriptionExpiry ? user.subscriptionExpiry < now : true;
+  const isOnTrial = user.subscriptionTier === "FREE" && trialDaysLeft > 0 && !isExpired;
+
+  const effectiveTier: "FREE" | "TRIAL" | "PRO" = isExpired
+    ? "FREE"
+    : isOnTrial
+      ? "TRIAL"
+      : user.subscriptionTier === "PRO"
+        ? "PRO"
+        : "FREE";
+
   return {
     id: user.id,
     email: user.email,
@@ -62,6 +81,8 @@ export function toAuthUser(user: User & { settings?: UserSettings | null }): Aut
     subscriptionTier: user.subscriptionTier,
     subscriptionExpiry: user.subscriptionExpiry,
     trialStartDate: user.trialStartDate,
+    effectiveTier,
+    trialDaysLeft,
     settings: user.settings ?? null,
     createdAt: user.createdAt,
   };

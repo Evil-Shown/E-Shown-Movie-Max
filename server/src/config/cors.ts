@@ -9,11 +9,17 @@ if (env.NODE_ENV === "production") {
 
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV !== "production") {
+    if (!origin) {
       callback(null, true);
-    } else {
-      callback(new Error(`Origin ${origin} not allowed by CORS`));
+      return;
     }
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`Origin ${origin} not allowed by CORS`));
   },
   credentials: true,
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],

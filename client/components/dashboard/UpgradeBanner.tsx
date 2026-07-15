@@ -106,10 +106,6 @@ export default function UpgradeBanner({ onUpgradeClick }: { onUpgradeClick: () =
             </div>
             <div className="text-[#FFFBF5]/40 text-xs mt-3">Only LKR 6.67 per day &bull; Cancel anytime</div>
             <div className="text-[#FFFBF5]/40 text-xs mt-1">or $0.99/month for global users</div>
-            <div className="text-[#FFFBF5]/30 text-xs mt-1">
-              or <span className="text-[#FFB87A]/70 font-semibold">LKR 2,000</span>/yr &bull;{" "}
-              <span className="text-[#FFB87A]/70">$9.99</span>/yr
-            </div>
           </div>
 
           <button
