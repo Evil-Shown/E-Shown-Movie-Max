@@ -203,7 +203,9 @@ function SidebarNavLink({
       href={href}
       className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium ${active ? styles.sidebarLinkActive : ""}`}
     >
-      <span className={`transition-colors ${active ? "text-[#ffb87a]" : "text-[#d4a574]/80 group-hover:text-[#e65100]"}`}>
+      <span
+        className={`transition-colors ${active ? "text-[#ffb87a]" : "text-[#d4a574]/80 group-hover:text-[#e65100]"}`}
+      >
         <NavIcon name={icon} />
       </span>
       <span className="flex-1">{label}</span>
@@ -268,10 +270,7 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
   const genreLabel = (isTv ? "SERIES" : (item.genres?.[0] as string) || "MOVIE").toUpperCase();
 
   return (
-    <Link
-      href={href}
-      className={`${styles.resumeCard} rounded-xl flex flex-col md:flex-row group transition`}
-    >
+    <Link href={href} className={`${styles.resumeCard} rounded-xl flex flex-col md:flex-row group transition`}>
       <div className="md:w-72 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
         <img
           src={posterUrl(item.posterPath)}
@@ -279,9 +278,7 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
           className={`${styles.resumeThumb} absolute inset-0 w-full h-full object-cover`}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-        <div className={`absolute top-3 left-3 ${styles.resumeGenreTag}`}>
-          {genreLabel}
-        </div>
+        <div className={`absolute top-3 left-3 ${styles.resumeGenreTag}`}>{genreLabel}</div>
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
           <button className={`${styles.playBtn} w-14 h-14 rounded-full flex items-center justify-center text-white`}>
             <svg className="w-6 h-6 ml-1" viewBox="0 0 24 24" fill="currentColor">
@@ -535,8 +532,7 @@ export default function DashboardPage() {
               <div
                 className={`${styles.eyeDeco} w-10 h-10 rounded-lg flex items-center justify-center relative`}
                 style={{
-                  background:
-                    "linear-gradient(135deg, #e65100 0%, #cc4d00 100%)",
+                  background: "linear-gradient(135deg, #e65100 0%, #cc4d00 100%)",
                   boxShadow: "0 2px 12px rgba(230, 81, 0, 0.4)",
                 }}
               >
@@ -558,7 +554,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <nav className="flex-1 py-4 overflow-y-auto">
+          <nav className={`${styles.sidebarNav} flex-1 py-4 overflow-y-auto`}>
             <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">Browse</p>
             {browseNav.map((link) => (
               <SidebarNavLink
@@ -569,7 +565,9 @@ export default function DashboardPage() {
               />
             ))}
 
-            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">Library</p>
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">
+              Library
+            </p>
             {libraryNav.map((link) => (
               <SidebarNavLink
                 key={link.href}
@@ -579,7 +577,9 @@ export default function DashboardPage() {
               />
             ))}
 
-            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">Account</p>
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">
+              Account
+            </p>
             {accountNav.map((link) => (
               <SidebarNavLink key={link.href} {...link} active={isActive(link.href)} />
             ))}
@@ -606,13 +606,11 @@ export default function DashboardPage() {
               onClick={() => setShowProfileSelector(true)}
               className="w-full rounded-xl p-3 flex items-center gap-3 text-left transition-all hover:scale-[1.02]"
               style={{
-                background:
-                  "linear-gradient(135deg, rgba(212, 165, 116, 0.15) 0%, rgba(107, 68, 35, 0.25) 100%)",
+                background: "linear-gradient(135deg, rgba(212, 165, 116, 0.15) 0%, rgba(107, 68, 35, 0.25) 100%)",
                 backdropFilter: "blur(12px)",
                 WebkitBackdropFilter: "blur(12px)",
                 border: "1px solid rgba(212, 165, 116, 0.2)",
-                boxShadow:
-                  "0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
               }}
             >
               {profileIcon ? (
@@ -848,13 +846,17 @@ export default function DashboardPage() {
                     <div className="text-center">
                       <p className="text-[9px] text-[#a0785a] uppercase tracking-[0.2em] font-semibold">Today</p>
                       <p className="font-cinzel text-sm font-bold text-[#3e2723] mt-0.5">
-                        {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase()}
+                        {new Date()
+                          .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                          .toUpperCase()}
                       </p>
                     </div>
                     <div className="w-px h-10 bg-gradient-to-b from-[#d4a574]/60 to-transparent" />
                     <div className="text-center">
                       <p className="text-[9px] text-[#a0785a] uppercase tracking-[0.2em] font-semibold">Streak</p>
-                      <p className="font-cinzel text-lg font-bold text-[#e65100] mt-0.5">{streak} <span className="text-xs text-[#6b4423] font-medium">DAYS</span></p>
+                      <p className="font-cinzel text-lg font-bold text-[#e65100] mt-0.5">
+                        {streak} <span className="text-xs text-[#6b4423] font-medium">DAYS</span>
+                      </p>
                     </div>
                   </div>
                 </div>

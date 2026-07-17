@@ -2,7 +2,12 @@
    CINEMATIC BACKGROUND — Warm Cream
    ========================================================================== */
 .dashboardRoot {
-  background: linear-gradient(135deg, #fdf8f0 0%, #faf3e8 50%, #f5ebe0 100%);
+  background-image:
+    linear-gradient(rgba(253, 248, 240, 0.78), rgba(245, 235, 224, 0.78)),
+    url("https://i.pinimg.com/736x/71/81/5e/71815e3c386223362c13a7feed3a56b5.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   background-attachment: fixed;
 }
 
@@ -13,7 +18,11 @@
   pointer-events: none;
   z-index: -1;
   background:
-    radial-gradient(ellipse 60% 40% at 80% 20%, color-mix(in srgb, var(--light-orange-faint) 20%, transparent) 0%, transparent 70%),
+    radial-gradient(
+      ellipse 60% 40% at 80% 20%,
+      color-mix(in srgb, var(--light-orange-faint) 20%, transparent) 0%,
+      transparent 70%
+    ),
     radial-gradient(ellipse 50% 50% at 20% 80%, color-mix(in srgb, var(--tan) 8%, transparent) 0%, transparent 60%);
 }
 
@@ -34,14 +43,20 @@
    SIDEBAR — Deep Espresso Brown
    ========================================================================== */
 .sidebar {
-  background: linear-gradient(
-    180deg,
-    #3e2723 0%,
-    #2d1b15 50%,
-    #1f120d 100%
-  );
+  background: linear-gradient(180deg, #3e2723 0%, #2d1b15 50%, #1f120d 100%);
   border-right: 1px solid rgba(212, 165, 116, 0.15);
   box-shadow: 4px 0 32px rgba(0, 0, 0, 0.3);
+  padding-bottom: 24px;
+}
+
+.sidebarNav {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebarNav::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebarLink {
@@ -58,11 +73,7 @@
 }
 
 .sidebarLinkActive {
-  background: linear-gradient(
-    90deg,
-    rgba(230, 81, 0, 0.18) 0%,
-    rgba(230, 81, 0, 0.08) 100%
-  );
+  background: linear-gradient(90deg, rgba(230, 81, 0, 0.18) 0%, rgba(230, 81, 0, 0.08) 100%);
   color: var(--light-orange);
   border-left-color: var(--deep-orange);
   box-shadow: inset 2px 0 12px rgba(230, 81, 0, 0.15);
@@ -93,22 +104,14 @@
 /* Copper Metallic Band */
 .statCardMetallicBand {
   position: relative;
-  height: 64px;
-  background: linear-gradient(
-    135deg,
-    #8b5a2b 0%,
-    #a67c52 20%,
-    #c9956a 40%,
-    #a67c52 60%,
-    #8b5a2b 80%,
-    #6b4423 100%
-  );
+  height: 52px;
+  background: linear-gradient(135deg, #8b5a2b 0%, #a67c52 20%, #c9956a 40%, #a67c52 60%, #8b5a2b 80%, #6b4423 100%);
   background-size: 200% 200%;
   animation: metallicShimmer 8s ease-in-out infinite;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 14px;
   box-shadow:
     0 2px 8px rgba(139, 90, 43, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
@@ -133,7 +136,8 @@
 }
 
 @keyframes metallicShimmer {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 0% 50%;
   }
   50% {
@@ -145,8 +149,8 @@
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -160,11 +164,12 @@
   color: #fff;
   font-size: 9px;
   font-weight: 700;
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: 999px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   backdrop-filter: blur(4px);
+  white-space: nowrap;
 }
 
 /* Glowing Progress Line */
@@ -180,12 +185,7 @@
 .progressGlowFill {
   position: relative;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    #8b5a2b 0%,
-    #c9956a 50%,
-    #a67c52 100%
-  );
+  background: linear-gradient(90deg, #8b5a2b 0%, #c9956a 50%, #a67c52 100%);
   border-radius: 2px;
   transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
   box-shadow: 0 0 8px rgba(139, 90, 43, 0.4);
@@ -209,7 +209,8 @@
 }
 
 @keyframes cometPulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: translateY(-50%) scale(1);
   }
@@ -295,11 +296,7 @@
    PLAY BUTTON
    ========================================================================== */
 .playBtn {
-  background: linear-gradient(
-    135deg,
-    #e65100 0%,
-    #cc4d00 100%
-  );
+  background: linear-gradient(135deg, #e65100 0%, #cc4d00 100%);
   transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   box-shadow: 0 4px 16px rgba(230, 81, 0, 0.4);
 }
@@ -363,11 +360,16 @@
 }
 
 @keyframes eyePulse {
-  0%, 100% {
-    box-shadow: 0 0 10px #e65100, 0 0 20px rgba(230, 81, 0, 0.4);
+  0%,
+  100% {
+    box-shadow:
+      0 0 10px #e65100,
+      0 0 20px rgba(230, 81, 0, 0.4);
   }
   50% {
-    box-shadow: 0 0 16px #e65100, 0 0 32px rgba(230, 81, 0, 0.5);
+    box-shadow:
+      0 0 16px #e65100,
+      0 0 32px rgba(230, 81, 0, 0.5);
   }
 }
 
@@ -393,12 +395,7 @@
 .archiveOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(62, 39, 35, 0.3) 40%,
-    rgba(62, 39, 35, 0.95) 100%
-  );
+  background: linear-gradient(180deg, transparent 0%, rgba(62, 39, 35, 0.3) 40%, rgba(62, 39, 35, 0.95) 100%);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -418,11 +415,7 @@
 }
 
 .archiveCard:hover .archiveOverlay {
-  background: linear-gradient(
-    180deg,
-    rgba(62, 39, 35, 0.5) 0%,
-    rgba(62, 39, 35, 0.98) 60%
-  );
+  background: linear-gradient(180deg, rgba(62, 39, 35, 0.5) 0%, rgba(62, 39, 35, 0.98) 60%);
 }
 
 .archiveQuality {
@@ -607,9 +600,5 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(
-    ellipse 70% 50% at 50% 50%,
-    transparent 50%,
-    rgba(62, 39, 35, 0.04) 100%
-  );
+  background: radial-gradient(ellipse 70% 50% at 50% 50%, transparent 50%, rgba(62, 39, 35, 0.04) 100%);
 }
