@@ -203,13 +203,13 @@ function SidebarNavLink({
       href={href}
       className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium ${active ? styles.sidebarLinkActive : ""}`}
     >
-      <span className={`transition-colors ${active ? "text-light-orange" : "text-sandy group-hover:text-deep-orange"}`}>
+      <span className={`transition-colors ${active ? "text-[#ffb87a]" : "text-[#d4a574]/80 group-hover:text-[#e65100]"}`}>
         <NavIcon name={icon} />
       </span>
       <span className="flex-1">{label}</span>
       {badge !== undefined && (
         <span
-          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${active ? "bg-deep-orange text-white" : "text-sandy"}`}
+          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${active ? "bg-[#e65100] text-white" : "text-[#d4a574]/60 bg-[#d4a574]/10"}`}
         >
           {badge}
         </span>
@@ -233,33 +233,29 @@ function StatCard({
   badge?: { text: string; color: "green" | "orange" | "brown" };
   progress?: number;
 }) {
-  const badgeColors = {
-    green: "text-green-700 bg-green-100",
-    orange: "text-deep-orange bg-light-orange-faint",
-    brown: "text-chocolate bg-tan/30",
-  };
   return (
-    <div className={`${styles.statCard} rounded-xl p-6`}>
-      <div className="flex items-start justify-between mb-4">
-        <div className={`${styles.statIconBox} w-12 h-12 rounded-lg flex items-center justify-center`}>{icon}</div>
-        {badge && (
-          <span
-            className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${badgeColors[badge.color]}`}
-          >
-            {badge.text}
-          </span>
+    <div className={`${styles.statCard} rounded-xl`}>
+      {/* Copper Metallic Band */}
+      <div className={styles.statCardMetallicBand}>
+        <div className={`${styles.statIconBox}`}>{icon}</div>
+        {badge && <span className={styles.statBadge}>{badge.text}</span>}
+      </div>
+
+      {/* Content */}
+      <div className="p-5 pb-6">
+        <p className="font-cinzel text-3xl font-bold text-[#3e2723] leading-tight">
+          {value}
+          {valueUnit && <span className="text-base text-[#a0785a] font-normal ml-1">{valueUnit}</span>}
+        </p>
+        <p className="text-sm text-[#6b4423] mt-2 font-medium">{label}</p>
+
+        {/* Glowing Progress Line */}
+        {progress !== undefined && progress > 0 && (
+          <div className={styles.progressGlowTrack}>
+            <div className={styles.progressGlowFill} style={{ width: `${progress}%` }} />
+          </div>
         )}
       </div>
-      <p className="font-cinzel text-3xl font-bold text-chocolate">
-        {value}
-        {valueUnit && <span className="text-base text-sandy font-normal ml-1">{valueUnit}</span>}
-      </p>
-      <p className="text-sm text-brown mt-1">{label}</p>
-      {progress !== undefined && (
-        <div className="mt-3 h-1 bg-light-orange-faint rounded-full overflow-hidden">
-          <div className="h-full bg-deep-orange rounded-full" style={{ width: `${progress}%` }} />
-        </div>
-      )}
     </div>
   );
 }
@@ -274,7 +270,7 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
   return (
     <Link
       href={href}
-      className={`${styles.resumeCard} rounded-xl flex flex-col md:flex-row group border border-tan/30 hover:border-deep-orange transition`}
+      className={`${styles.resumeCard} rounded-xl flex flex-col md:flex-row group transition`}
     >
       <div className="md:w-72 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
         <img
@@ -282,8 +278,8 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
           alt={item.title}
           className={`${styles.resumeThumb} absolute inset-0 w-full h-full object-cover`}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        <div className="absolute top-3 left-3 bg-deep-orange text-faint-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+        <div className={`absolute top-3 left-3 ${styles.resumeGenreTag}`}>
           {genreLabel}
         </div>
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
@@ -299,15 +295,15 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
         <div>
           <div className="flex items-start justify-between gap-3 mb-2">
             <div>
-              <h3 className="font-cinzel text-xl font-bold text-chocolate">{item.title}</h3>
-              <p className="text-xs text-sandy mt-1">
+              <h3 className="font-cinzel text-xl font-bold text-[#fffbf5]">{item.title}</h3>
+              <p className="text-xs text-[#d4a574] mt-1">
                 {isTv
                   ? `Season ${item.season || 1} · Episode ${item.episode || 1}`
                   : `${item.year || ""}${item.year ? " · " : ""}${item.genres?.slice(0, 2).join("/") || "Movie"} · ${formatDuration(item.duration)}`}
                 {!isTv && ` · IMDb ${(item.voteAverage || 0).toFixed(1)}`}
               </p>
             </div>
-            <button className="text-sandy hover:text-deep-orange transition">
+            <button className="text-[#d4a574] hover:text-[#e65100] transition">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="5" cy="12" r="2" />
                 <circle cx="12" cy="12" r="2" />
@@ -315,20 +311,20 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
               </svg>
             </button>
           </div>
-          <p className="text-sm text-brown mt-2 line-clamp-2">
+          <p className="text-sm text-[#c4b5a5] mt-2 line-clamp-2">
             {item.overview ||
               `Continue where you left off. ${remainingTime(item.currentTime, item.duration)} remaining.`}
           </p>
         </div>
 
         <div className="mt-4">
-          <div className="flex justify-between text-xs text-brown mb-1.5">
+          <div className="flex justify-between text-xs text-[#d4a574] mb-1.5">
             <span className="flex items-center gap-1.5">
-              <svg className="w-3 h-3 text-deep-orange" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-3 h-3 text-[#e65100]" viewBox="0 0 24 24" fill="currentColor">
                 <rect x="6" y="4" width="4" height="16" />
                 <rect x="14" y="4" width="4" height="16" />
               </svg>
-              <span className="font-semibold">Paused at {pausedAt}</span>
+              <span className="font-semibold text-[#fffbf5]">Paused at {pausedAt}</span>
             </span>
             <span>{totalDuration}</span>
           </div>
@@ -534,18 +530,18 @@ export default function DashboardPage() {
       <div className="flex min-h-screen">
         {/* Desktop Sidebar */}
         <aside className={`${styles.sidebar} fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col`}>
-          <div className="px-6 py-6 border-b border-tan/20">
+          <div className="px-6 py-6 border-b border-[#d4a574]/15">
             <div className="flex items-center gap-3">
               <div
                 className={`${styles.eyeDeco} w-10 h-10 rounded-lg flex items-center justify-center relative`}
                 style={{
                   background:
-                    "linear-gradient(135deg, var(--chocolate) 0%, color-mix(in srgb, var(--chocolate) 85%, var(--deep-orange) 15%) 100%)",
-                  boxShadow: "0 2px 12px color-mix(in srgb, var(--chocolate) 25%, transparent)",
+                    "linear-gradient(135deg, #e65100 0%, #cc4d00 100%)",
+                  boxShadow: "0 2px 12px rgba(230, 81, 0, 0.4)",
                 }}
               >
                 <svg
-                  className="w-5 h-5 text-light-orange"
+                  className="w-5 h-5 text-[#fffbf5]"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -556,14 +552,14 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <h1 className="font-cinzel text-xl font-bold text-chocolate leading-none">CHITHIRA</h1>
-                <p className="text-[10px] tracking-[0.2em] text-deep-orange font-semibold mt-1">THE GOD&apos;S EYE</p>
+                <h1 className="font-cinzel text-xl font-bold text-[#fffbf5] leading-none">CHITHIRA</h1>
+                <p className="text-[10px] tracking-[0.2em] text-[#d4a574] font-semibold mt-1">THE GOD&apos;S EYE</p>
               </div>
             </div>
           </div>
 
           <nav className="flex-1 py-4 overflow-y-auto">
-            <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold">Browse</p>
+            <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">Browse</p>
             {browseNav.map((link) => (
               <SidebarNavLink
                 key={link.href}
@@ -573,7 +569,7 @@ export default function DashboardPage() {
               />
             ))}
 
-            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold">Library</p>
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">Library</p>
             {libraryNav.map((link) => (
               <SidebarNavLink
                 key={link.href}
@@ -583,7 +579,7 @@ export default function DashboardPage() {
               />
             ))}
 
-            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold">Account</p>
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">Account</p>
             {accountNav.map((link) => (
               <SidebarNavLink key={link.href} {...link} active={isActive(link.href)} />
             ))}
@@ -594,7 +590,7 @@ export default function DashboardPage() {
                 window.location.href = "/";
               }}
             >
-              <span className="text-sandy group-hover:text-deep-orange transition-colors">
+              <span className="text-[#d4a574]/80 group-hover:text-[#e65100] transition-colors">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
@@ -605,42 +601,42 @@ export default function DashboardPage() {
             </button>
           </nav>
 
-          <div className="p-4 border-t border-tan/20">
+          <div className="p-4 border-t border-[#d4a574]/15">
             <button
               onClick={() => setShowProfileSelector(true)}
               className="w-full rounded-xl p-3 flex items-center gap-3 text-left transition-all hover:scale-[1.02]"
               style={{
                 background:
-                  "linear-gradient(135deg, var(--chocolate) 0%, color-mix(in srgb, var(--chocolate) 90%, var(--deep-orange) 10%) 100%)",
+                  "linear-gradient(135deg, rgba(212, 165, 116, 0.15) 0%, rgba(107, 68, 35, 0.25) 100%)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                border: "1px solid rgba(212, 165, 116, 0.2)",
                 boxShadow:
-                  "0 2px 12px color-mix(in srgb, var(--chocolate) 20%, transparent), inset 0 1px 0 color-mix(in srgb, var(--faint-white) 6%, transparent)",
+                  "0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
               }}
             >
               {profileIcon ? (
                 <img
                   src={`/avatars/${profileIcon}`}
                   alt="Profile"
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-light-orange/80"
+                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-[#d4a574]/60"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-light-orange to-deep-orange flex items-center justify-center font-bold text-chocolate flex-shrink-0 shadow-lg">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#e65100] to-[#cc4d00] flex items-center justify-center font-bold text-[#fffbf5] flex-shrink-0 shadow-lg">
                   {getInitials(userName)}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-faint-white truncate">{userName}</p>
-                <div className="flex items-center gap-1">
-                  {isPro ? (
-                    <ProBadge />
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#A0785A]/20 text-[#A0785A]">
-                      Free
-                    </span>
-                  )}
+                <p className="text-sm font-semibold text-[#fffbf5] truncate">{userName}</p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <svg className="w-3 h-3 text-[#d4a574]" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  <span className="text-[9px] text-[#d4a574] font-semibold tracking-wide">Premium Member</span>
                 </div>
               </div>
               <svg
-                className="w-3 h-3 text-tan/60"
+                className="w-3 h-3 text-[#d4a574]/60"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -837,17 +833,28 @@ export default function DashboardPage() {
                       </a>
                     )}
                   </div>
-                  <div className="flex items-center gap-5">
-                    <div className="text-right">
-                      <p className="text-[10px] text-sandy uppercase tracking-[0.2em] font-semibold">Today</p>
-                      <p className="font-cinzel text-base md:text-lg font-semibold text-chocolate mt-1">
-                        {formatToday()}
+                  <div className="flex items-center gap-4 bg-[#fdf8f0]/80 backdrop-blur-sm border border-[#d4a574]/30 rounded-xl px-5 py-3 shadow-lg">
+                    <svg
+                      className="w-8 h-8 text-[#e65100]"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M12 19c-3.87 0-7-3.13-7-7 0-3.87 3.13-7 7-7 3.87 0 7 3.13 7 7 0 3.87-3.13 7-7 7z" />
+                      <circle cx="12" cy="12" r="3" fill="currentColor" />
+                    </svg>
+                    <div className="w-px h-10 bg-gradient-to-b from-[#d4a574]/60 to-transparent" />
+                    <div className="text-center">
+                      <p className="text-[9px] text-[#a0785a] uppercase tracking-[0.2em] font-semibold">Today</p>
+                      <p className="font-cinzel text-sm font-bold text-[#3e2723] mt-0.5">
+                        {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase()}
                       </p>
                     </div>
-                    <div className="w-px h-14 bg-gradient-to-b from-tan/60 to-transparent" />
-                    <div className="text-right">
-                      <p className="text-[10px] text-sandy uppercase tracking-[0.2em] font-semibold">Streak</p>
-                      <p className="font-cinzel text-xl md:text-2xl font-bold text-deep-orange mt-1">{streak}</p>
+                    <div className="w-px h-10 bg-gradient-to-b from-[#d4a574]/60 to-transparent" />
+                    <div className="text-center">
+                      <p className="text-[9px] text-[#a0785a] uppercase tracking-[0.2em] font-semibold">Streak</p>
+                      <p className="font-cinzel text-lg font-bold text-[#e65100] mt-0.5">{streak} <span className="text-xs text-[#6b4423] font-medium">DAYS</span></p>
                     </div>
                   </div>
                 </div>
@@ -906,8 +913,8 @@ export default function DashboardPage() {
             {resumeItems.length > 0 && (
               <section className={`mb-12 ${styles.fadeUp} ${styles.delay2}`}>
                 <div className="flex items-center justify-between mb-5">
-                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3E2723]`}>
-                    Resume Watching
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3e2723]`}>
+                    RESUME WATCHING
                   </h2>
                   <Link
                     href="/history"
