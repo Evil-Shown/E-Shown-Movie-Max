@@ -1,16 +1,26 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { formatDisplayYear, posterUrl } from "@/lib/movies";
-import type { ContinueWatchingItem } from "@/lib/storage/types";
+import type { ContinueWatchingItem, WatchlistItem } from "@/lib/storage/types";
+import type { LiveTvChannel } from "@/lib/live-tv/types";
 import { getProfileIcon, setProfileIcon, PROFILE_ICONS } from "@/lib/storage/profile-icon";
+import {
+  getNotifications,
+  addNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "@/lib/storage/notifications";
+import type { LocalNotification } from "@/lib/storage/notifications";
+import { buildTasteProfile } from "@/lib/recommendations/taste-profile";
+import { getFeaturedMovie, getTrendingMovies } from "@/lib/movies";
+import type { Movie } from "@/lib/types";
 import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
 import PricingModal from "@/components/dashboard/PricingModal";
-import ProBadge from "@/components/dashboard/ProBadge";
 import styles from "./Dashboard.module.css";
 
 function formatDuration(seconds: number) {
@@ -35,23 +45,19 @@ function remainingTime(current: number, duration: number) {
   return formatDuration(left);
 }
 
-function formatToday() {
-  return new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-function computeStreak(items: ContinueWatchingItem[]) {
-  if (!items.length) return 0;
+function computeStreak(continueWatching: ContinueWatchingItem[], watchlist: WatchlistItem[]) {
   const dates = new Set<number>();
-  items.forEach((item) => {
+  continueWatching.forEach((item) => {
     const d = new Date(item.updatedAt);
     d.setHours(0, 0, 0, 0);
     dates.add(d.getTime());
   });
+  watchlist.forEach((item) => {
+    const d = new Date(item.addedAt);
+    d.setHours(0, 0, 0, 0);
+    dates.add(d.getTime());
+  });
+  if (!dates.size) return 0;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   let streak = 0;
@@ -96,9 +102,9 @@ const browseNav = [
 
 const libraryNav = [
   { href: "/watchlist", label: "Watchlist", icon: "watchlist" },
-  { href: "/history", label: "History", icon: "history" },
-  { href: "/downloads", label: "Downloads", icon: "downloads" },
-  { href: "/favorites", label: "Favorites", icon: "favorites" },
+  { href: "/dashboard?tab=activity", label: "History", icon: "history" },
+  { href: "/watchlist", label: "Downloads", icon: "downloads" },
+  { href: "/watchlist", label: "Favorites", icon: "favorites" },
 ];
 
 const accountNav = [{ href: "/settings", label: "Settings", icon: "settings" }];
@@ -268,19 +274,24 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
   const pausedAt = formatTimer(item.currentTime);
   const totalDuration = formatTimer(item.duration);
   const genreLabel = (isTv ? "SERIES" : (item.genres?.[0] as string) || "MOVIE").toUpperCase();
+  const { removeContinueItem } = useUserLibrary();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <Link href={href} className={`${styles.resumeCard} rounded-xl flex flex-col md:flex-row group transition`}>
       <div className="md:w-72 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
         <img
-          src={posterUrl(item.posterPath)}
+          src={posterUrl(item.posterPath, "w342")}
           alt={item.title}
           className={`${styles.resumeThumb} absolute inset-0 w-full h-full object-cover`}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         <div className={`absolute top-3 left-3 ${styles.resumeGenreTag}`}>{genreLabel}</div>
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-          <button className={`${styles.playBtn} w-14 h-14 rounded-full flex items-center justify-center text-white`}>
+          <button
+            type="button"
+            className={`${styles.playBtn} w-14 h-14 rounded-full flex items-center justify-center text-white`}
+          >
             <svg className="w-6 h-6 ml-1" viewBox="0 0 24 24" fill="currentColor">
               <path d="M8 5v14l11-7z" />
             </svg>
@@ -300,13 +311,46 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
                 {!isTv && ` · IMDb ${(item.voteAverage || 0).toFixed(1)}`}
               </p>
             </div>
-            <button className="text-[#d4a574] hover:text-[#e65100] transition">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="5" cy="12" r="2" />
-                <circle cx="12" cy="12" r="2" />
-                <circle cx="19" cy="12" r="2" />
-              </svg>
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="More actions"
+                aria-expanded={menuOpen}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMenuOpen((o) => !o);
+                }}
+                className="text-[#d4a574] hover:text-[#e65100] transition"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="5" cy="12" r="2" />
+                  <circle cx="12" cy="12" r="2" />
+                  <circle cx="19" cy="12" r="2" />
+                </svg>
+              </button>
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
+                  <div className="absolute right-0 top-full mt-1 z-40 w-56 rounded-xl bg-white shadow-2xl border border-tan/30 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        removeContinueItem(item.id);
+                        setMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-brown hover:bg-light-orange-faint transition flex items-center gap-3"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                      Remove from Continue Watching
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           <p className="text-sm text-[#c4b5a5] mt-2 line-clamp-2">
             {item.overview ||
@@ -364,7 +408,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
         <div className="aspect-[16/9] rounded-[10px] overflow-hidden bg-[#e8ddd0]">
           {item.posterPath ? (
             <img
-              src={posterUrl(item.posterPath, "w185")}
+              src={posterUrl(item.posterPath, "w342")}
               alt={item.title}
               className="w-full h-full object-cover"
               loading="lazy"
@@ -412,19 +456,83 @@ function ActivityRow({ item }: { item: ActivityItem }) {
   );
 }
 
+function DashboardSkeleton() {
+  return (
+    <div className="min-h-screen font-sans text-chocolate" style={{ background: "#fdf8f0" }}>
+      <div className="flex min-h-screen">
+        <aside className="fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col bg-[#3e2723] animate-pulse">
+          <div className="px-6 py-6 border-b border-[#d4a574]/15">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#d4a574]/20" />
+              <div className="space-y-2">
+                <div className="h-4 w-24 rounded bg-[#d4a574]/20" />
+                <div className="h-2 w-16 rounded bg-[#d4a574]/10" />
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 px-4 py-4 space-y-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="h-10 rounded-lg bg-[#d4a574]/10" />
+            ))}
+          </div>
+        </aside>
+        <main className="flex-1 lg:ml-64 min-h-screen">
+          <div className="px-6 md:px-8 py-8 max-w-7xl mx-auto animate-pulse">
+            <div className="mb-10">
+              <div className="rounded-2xl bg-[#f5efe8] p-6 md:p-8">
+                <div className="h-3 w-40 rounded bg-[#d4a574]/20 mb-4" />
+                <div className="h-8 w-64 rounded bg-[#d4a574]/20 mb-2" />
+                <div className="h-8 w-48 rounded bg-[#d4a574]/20 mb-4" />
+                <div className="h-4 w-96 rounded bg-[#d4a574]/10" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-xl bg-[#f5efe8] h-40" />
+              ))}
+            </div>
+            <div className="rounded-2xl bg-[#f5efe8] h-48 mb-12" />
+            <div className="rounded-2xl bg-[#f5efe8] h-64 mb-12" />
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
-  const { watchlist, continueWatching } = useUserLibrary();
+  const { user, logout, isLoading: authLoading } = useAuth();
+  const { watchlist, continueWatching, hydrated } = useUserLibrary();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [channelCount, setChannelCount] = useState<number>(0);
+  const [archiveFilter, setArchiveFilter] = useState<"all" | "movies" | "series">("all");
   const [activityFilter, setActivityFilter] = useState<"all" | "watching" | "watchlist" | "completed">("all");
   const [profileIcon, setProfileIconState] = useState<string | null>(null);
   const [showProfileSelector, setShowProfileSelector] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [notifications, setNotificationsState] = useState<LocalNotification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifGenerated = useRef(false);
+  const router = useRouter();
+
+  const [dailyPick] = useState<Movie | null>(() => {
+    try {
+      return getFeaturedMovie();
+    } catch {
+      return null;
+    }
+  });
+  const [recommendations, setRecommendations] = useState<Movie[]>([]);
+  const [recsLoading, setRecsLoading] = useState(true);
 
   useEffect(() => {
     setProfileIconState(getProfileIcon());
+  }, []);
+
+  useEffect(() => {
+    setNotificationsState(getNotifications());
   }, []);
 
   useEffect(() => {
@@ -436,6 +544,30 @@ export default function DashboardPage() {
         }
       })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const profile = buildTasteProfile();
+    fetch("/api/recommendations/for-you", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profile),
+    })
+      .then((res) => (res.ok ? res.json() : { movies: [], hasSignals: false }))
+      .then((data: { movies?: Movie[] }) => {
+        if (cancelled) return;
+        setRecommendations(data.movies?.length ? data.movies.slice(0, 6) : getTrendingMovies().slice(0, 6));
+      })
+      .catch(() => {
+        if (!cancelled) setRecommendations(getTrendingMovies().slice(0, 6));
+      })
+      .finally(() => {
+        if (!cancelled) setRecsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const resumeItems = useMemo(
@@ -456,8 +588,8 @@ export default function DashboardPage() {
         const isCompleted = item.progress >= 98;
         const meta =
           item.mediaType === "tv"
-            ? `S${item.season || 1} E${item.episode || 1} Â· ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`
-            : `${item.genres?.[0] || "Movie"} Â· ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`;
+            ? `S${item.season || 1} E${item.episode || 1} · ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`
+            : `${item.genres?.[0] || "Movie"} · ${isCompleted ? "Completed" : `Stopped at ${formatDuration(item.currentTime)}`}`;
         items.push({
           type: isCompleted ? "completed" : "watching",
           title: item.title,
@@ -481,17 +613,50 @@ export default function DashboardPage() {
     return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, 8);
   }, [continueWatching, watchlist]);
 
+  useEffect(() => {
+    if (notifGenerated.current) return;
+    notifGenerated.current = true;
+    const existing = getNotifications();
+    const existingKeys = new Set(existing.map((n) => `${n.title}::${n.type}`));
+    const toAdd = activities
+      .filter((a) => !existingKeys.has(`${a.title}::${a.type}`))
+      .map((a) => ({
+        type: a.type as LocalNotification["type"],
+        title: a.title,
+        message: a.meta || "",
+        timestamp: a.timestamp,
+        posterPath: a.posterPath,
+      }));
+    if (toAdd.length > 0) {
+      addNotifications(toAdd);
+      setNotificationsState(getNotifications());
+    }
+  }, [activities]);
+
   const filteredActivities = useMemo(() => {
     if (activityFilter === "all") return activities;
     return activities.filter((a) => a.type === activityFilter);
   }, [activities, activityFilter]);
 
-  const totalSeconds = useMemo(
-    () => continueWatching.reduce((acc, item) => acc + (item.currentTime || 0), 0),
-    [continueWatching]
-  );
-  const hours = Math.floor(totalSeconds / 3600);
-  const streak = useMemo(() => computeStreak(continueWatching), [continueWatching]);
+  const filteredArchive = useMemo(() => {
+    if (archiveFilter === "all") return watchlist;
+    return watchlist.filter((item) =>
+      archiveFilter === "movies" ? item.mediaType === "movie" : item.mediaType === "tv"
+    );
+  }, [watchlist, archiveFilter]);
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("tab") === "activity") {
+      requestAnimationFrame(() => {
+        document.getElementById("recent-activity")?.scrollIntoView({ behavior: "smooth" });
+      });
+    }
+  }, [searchParams]);
+
+  const activeItems = useMemo(() => continueWatching.filter((item) => item.progress < 98).length, [continueWatching]);
+  const streak = useMemo(() => computeStreak(continueWatching, watchlist), [continueWatching, watchlist]);
   const userName = user?.displayName || user?.username || "Watcher";
 
   const isPro = user?.subscriptionTier === "PRO";
@@ -514,13 +679,31 @@ export default function DashboardPage() {
     setShowProfileSelector(false);
   };
 
+  const unread = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = searchQuery.trim();
+    if (trimmed) {
+      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+    }
+  };
+
+  const handleNotificationClick = (id: string) => {
+    markNotificationRead(id);
+    setNotificationsState(getNotifications());
+  };
+
   const isActive = (href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard";
+    if (href === "/dashboard") return pathname === "/dashboard" && searchParams.get("tab") !== "activity";
+    if (href === "/dashboard?tab=activity") return pathname === "/dashboard" && searchParams.get("tab") === "activity";
     if (href === "/") return pathname === "/";
     if (href === "/browse") return pathname === "/browse" && !pathname.includes("type=tv");
     if (href === "/browse?type=tv") return pathname.includes("type=tv");
     return pathname === href;
   };
+
+  if (!hydrated || authLoading) return <DashboardSkeleton />;
 
   return (
     <div suppressHydrationWarning className={`min-h-screen font-sans text-chocolate ${styles.dashboardRoot}`}>
@@ -570,10 +753,10 @@ export default function DashboardPage() {
             </p>
             {libraryNav.map((link) => (
               <SidebarNavLink
-                key={link.href}
+                key={link.label}
                 {...link}
                 active={isActive(link.href)}
-                badge={link.label === "Watchlist" ? watchlist.length : link.label === "Downloads" ? 7 : undefined}
+                badge={link.label === "Watchlist" ? watchlist.length : undefined}
               />
             ))}
 
@@ -584,6 +767,7 @@ export default function DashboardPage() {
               <SidebarNavLink key={link.href} {...link} active={isActive(link.href)} />
             ))}
             <button
+              type="button"
               className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium text-left w-full border-none cursor-pointer bg-transparent`}
               onClick={async () => {
                 await logout();
@@ -630,7 +814,7 @@ export default function DashboardPage() {
                   <svg className="w-3 h-3 text-[#d4a574]" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
-                  <span className="text-[9px] text-[#d4a574] font-semibold tracking-wide">Premium Member</span>
+                  <span className="text-[9px] text-[#d4a574] font-semibold tracking-wide">Member</span>
                 </div>
               </div>
               <svg
@@ -698,7 +882,7 @@ export default function DashboardPage() {
                 <div className="space-y-1">
                   {libraryNav.map((link) => (
                     <Link
-                      key={link.href}
+                      key={link.label}
                       href={link.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
@@ -729,7 +913,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex-1 max-w-md mx-6">
-              <div className={`relative ${styles.cardGlass} rounded-full`}>
+              <form className={`relative ${styles.cardGlass} rounded-full`} onSubmit={handleSearchSubmit}>
                 <svg
                   className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-sandy"
                   viewBox="0 0 24 24"
@@ -741,25 +925,109 @@ export default function DashboardPage() {
                   <path d="m21 21-4.3-4.3" />
                 </svg>
                 <input
-                  type="text"
+                  type="search"
+                  aria-label="Search for movies and series"
                   placeholder="Search for your next obsession..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-transparent border-0 rounded-full pl-11 pr-4 py-2 text-sm text-chocolate placeholder-sandy focus:outline-none transition"
                 />
-              </div>
+              </form>
             </div>
 
             <div className="flex items-center gap-2">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowNotifications((o) => !o)}
+                  className={`relative w-10 h-10 rounded-full ${styles.cardGlass} hover:border-deep-orange flex items-center justify-center text-chocolate hover:text-deep-orange transition`}
+                  aria-label="Notifications"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                  {unread > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-deep-orange text-white text-[9px] font-bold rounded-full px-1 shadow-lg">
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  )}
+                </button>
+                {showNotifications && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                    <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-16px)] bg-white rounded-xl shadow-2xl border border-tan/30 z-50 overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-tan/20">
+                        <h4 className="text-sm font-bold text-chocolate">Notifications</h4>
+                        {unread > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              markAllNotificationsRead();
+                              setNotificationsState(getNotifications());
+                            }}
+                            className="text-[10px] text-deep-orange hover:text-chocolate font-semibold transition"
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-80 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="p-6 text-center">
+                            <p className="text-xs text-brown">No notifications yet</p>
+                          </div>
+                        ) : (
+                          notifications.map((n) => (
+                            <button
+                              type="button"
+                              key={n.id}
+                              onClick={() => handleNotificationClick(n.id)}
+                              className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-faint-white transition ${
+                                n.read ? "" : "bg-light-orange-faint/40"
+                              }`}
+                            >
+                              <div className="w-8 h-8 rounded-lg overflow-hidden bg-tan/20 flex-shrink-0 mt-0.5">
+                                {n.posterPath ? (
+                                  <img
+                                    src={posterUrl(n.posterPath, "w342")}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <svg
+                                      className="w-4 h-4 text-sandy"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="1.5"
+                                    >
+                                      <circle cx="12" cy="12" r="10" />
+                                      <polyline points="12 6 12 12 16 14" />
+                                    </svg>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-chocolate truncate">{n.title}</p>
+                                <p className="text-[10px] text-brown mt-0.5 line-clamp-2">{n.message}</p>
+                                <p className="text-[9px] text-sandy mt-1">{timeAgo(n.timestamp)}</p>
+                              </div>
+                              {!n.read && <div className="w-2 h-2 rounded-full bg-deep-orange flex-shrink-0 mt-2" />}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
               <button
-                className={`relative w-10 h-10 rounded-full ${styles.cardGlass} hover:border-deep-orange flex items-center justify-center text-chocolate hover:text-deep-orange transition`}
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-deep-orange rounded-full" />
-              </button>
-              <button
-                className={`w-10 h-10 rounded-full ${styles.cardGlass} hover:border-deep-orange flex items-center justify-center text-chocolate hover:text-deep-orange transition`}
+                type="button"
+                aria-label="Cast to device — unavailable"
+                disabled
+                className={`w-10 h-10 rounded-full ${styles.cardGlass} flex items-center justify-center text-sandy/40 cursor-not-allowed transition`}
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="6" width="18" height="12" rx="2" />
@@ -768,6 +1036,7 @@ export default function DashboardPage() {
                 </svg>
               </button>
               <button
+                type="button"
                 onClick={() => setShowProfileSelector(true)}
                 className={`w-10 h-10 rounded-full overflow-hidden ${styles.cardGlass} hover:border-deep-orange transition`}
                 aria-label="Change profile icon"
@@ -820,7 +1089,7 @@ export default function DashboardPage() {
                       Every story, carved in light. Pick up where you left off, or let the eye find your next obsession.
                     </p>
                     {resumeItems.length > 0 && (
-                      <a
+                      <Link
                         href={`/movie/${resumeItems[0].id}`}
                         className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 rounded-full bg-gradient-to-r from-deep-orange to-chocolate text-faint-white text-sm font-semibold hover:from-chocolate hover:to-chocolate transition-all shadow-lg shadow-deep-orange/20 hover:shadow-deep-orange/30"
                       >
@@ -828,7 +1097,7 @@ export default function DashboardPage() {
                           <polygon points="5 3 19 12 5 21 5 3" />
                         </svg>
                         Continue Watching
-                      </a>
+                      </Link>
                     )}
                   </div>
                   <div className="flex items-center gap-4 bg-[#fdf8f0]/80 backdrop-blur-sm border border-[#d4a574]/30 rounded-xl px-5 py-3 shadow-lg">
@@ -872,11 +1141,9 @@ export default function DashboardPage() {
                     <polyline points="12 6 12 12 16 14" />
                   </svg>
                 }
-                value={`${hours}`}
-                valueUnit="hrs"
-                label="Watch Time"
-                badge={{ text: "+12%", color: "green" }}
-                progress={watchTimeProgress}
+                value={`${activeItems}`}
+                valueUnit="titles"
+                label="In Progress"
               />
               <StatCard
                 icon={
@@ -887,7 +1154,6 @@ export default function DashboardPage() {
                 value={`${watchlist.length}`}
                 valueUnit="titles"
                 label="Saved Titles"
-                badge={{ text: "Active", color: "orange" }}
                 progress={savedTitlesProgress}
               />
               <StatCard
@@ -901,10 +1167,55 @@ export default function DashboardPage() {
                 value="0"
                 valueUnit="offline"
                 label="Downloads"
-                badge={{ text: "8.4 GB", color: "brown" }}
-                progress={0}
               />
             </section>
+
+            {/* Daily Pick */}
+            {dailyPick && (
+              <section className={`mb-12 ${styles.fadeUp} ${styles.delay1}`}>
+                <Link
+                  href={`/movie/${dailyPick.id}`}
+                  className="relative block rounded-2xl overflow-hidden border border-tan/20 bg-gradient-to-br from-faint-white to-[#f5efe8] group transition-all hover:shadow-lg hover:shadow-deep-orange/5"
+                >
+                  <div className="flex flex-col sm:flex-row items-stretch">
+                    <div className="relative w-full sm:w-40 h-32 sm:h-auto flex-shrink-0 overflow-hidden">
+                      <img
+                        src={posterUrl(dailyPick.posterPath, "w342")}
+                        alt={dailyPick.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-chocolate/40 to-transparent" />
+                    </div>
+                    <div className="flex-1 p-5 flex flex-col justify-center">
+                      <span className="text-[10px] uppercase tracking-[0.3em] text-deep-orange font-semibold mb-1">
+                        Today&apos;s Pick
+                      </span>
+                      <h3 className="font-cinzel text-xl font-bold text-chocolate group-hover:text-deep-orange transition-colors">
+                        {dailyPick.title}
+                      </h3>
+                      <p className="text-xs text-brown mt-1 line-clamp-2">{dailyPick.tagline}</p>
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="flex items-center gap-1 text-xs text-deep-orange font-semibold">
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                          </svg>
+                          {dailyPick.rating.toFixed(1)}
+                        </span>
+                        <span className="text-xs text-sandy">{dailyPick.year}</span>
+                        <span className="text-xs text-sandy">{dailyPick.genres.slice(0, 2).join(", ")}</span>
+                      </div>
+                    </div>
+                    <div className="hidden sm:flex items-center pr-5">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-r from-deep-orange to-chocolate flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                        <svg className="w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                          <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </section>
+            )}
 
             {/* Upgrade Banner */}
             <div className={`mb-12 ${styles.fadeUp} ${styles.delay2}`}>
@@ -912,30 +1223,64 @@ export default function DashboardPage() {
             </div>
 
             {/* Resume Watching */}
-            {resumeItems.length > 0 && (
-              <section className={`mb-12 ${styles.fadeUp} ${styles.delay2}`}>
-                <div className="flex items-center justify-between mb-5">
-                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3e2723]`}>
-                    RESUME WATCHING
-                  </h2>
-                  <Link
-                    href="/history"
-                    className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
-                  >
-                    View All
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                      <polyline points="12 5 19 12 12 19" />
+            <section className={`mb-12 ${styles.fadeUp} ${styles.delay2}`}>
+              {resumeItems.length > 0 ? (
+                <>
+                  <div className="flex items-center justify-between mb-5">
+                    <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3e2723]`}>
+                      RESUME WATCHING
+                    </h2>
+                    <Link
+                      href="/dashboard?tab=activity"
+                      className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
+                    >
+                      View All
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <polyline points="12 5 19 12 12 19" />
+                      </svg>
+                    </Link>
+                  </div>
+                  <div className="space-y-4">
+                    {resumeItems.map((item) => (
+                      <ResumeCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="bg-faint-white border border-tan/30 rounded-2xl p-8 md:p-10 text-center">
+                  <div className="flex justify-center mb-4">
+                    <svg
+                      className="w-12 h-12 text-sandy/60"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    >
+                      <polygon points="5 3 19 12 5 21 5 3" />
                     </svg>
-                  </Link>
+                  </div>
+                  <h3 className="font-cinzel text-lg font-bold text-chocolate mb-2">Nothing in Progress</h3>
+                  <p className="text-sm text-brown mb-6 max-w-md mx-auto">
+                    You haven&apos;t started watching anything yet. Browse our collection and pick your next obsession.
+                  </p>
+                  <div className="flex items-center justify-center gap-3">
+                    <Link
+                      href="/browse"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-deep-orange to-chocolate text-faint-white text-sm font-semibold hover:from-chocolate hover:to-chocolate transition-all shadow-lg shadow-deep-orange/20"
+                    >
+                      Browse Movies
+                    </Link>
+                    <Link
+                      href="/browse?type=tv"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-tan/40 text-brown text-sm font-semibold hover:border-deep-orange hover:text-deep-orange transition-all"
+                    >
+                      Explore Series
+                    </Link>
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {resumeItems.map((item) => (
-                    <ResumeCard key={item.id} item={item} />
-                  ))}
-                </div>
-              </section>
-            )}
+              )}
+            </section>
 
             {/* The Archive */}
             <section className={`mb-12 ${styles.fadeUp} ${styles.delay3}`}>
@@ -944,20 +1289,45 @@ export default function DashboardPage() {
                   <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
                     The Archive
                   </h2>
-                  <p className="text-xs text-sandy mt-1 ml-4">{watchlist.length} titles preserved for your viewing</p>
+                  <p className="text-xs text-sandy mt-1 ml-4">
+                    {filteredArchive.length} titles preserved for your viewing
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex bg-faint-white border border-tan/30 rounded-lg p-1">
+                    {(["all", "movies", "series"] as const).map((f) => (
+                      <button
+                        type="button"
+                        key={f}
+                        onClick={() => setArchiveFilter(f)}
+                        className={`px-3 py-1 text-xs font-semibold rounded transition ${archiveFilter === f ? "bg-chocolate text-faint-white" : "text-brown hover:text-deep-orange"}`}
+                      >
+                        {f === "all" ? "All" : f === "movies" ? "Movies" : "Series"}
+                      </button>
+                    ))}
+                  </div>
+                  <Link
+                    href="/watchlist"
+                    className="text-sm font-semibold text-deep-orange hover:text-chocolate transition flex items-center gap-1"
+                  >
+                    View All
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                  </Link>
                 </div>
               </div>
-              {watchlist.length > 0 ? (
+              {filteredArchive.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {watchlist.slice(0, 12).map((item) => (
+                  {filteredArchive.slice(0, 12).map((item) => (
                     <Link key={item.id} href={`/movie/${item.id}`} className={`${styles.archiveCard}`}>
                       <img src={posterUrl(item.posterPath, "w342")} alt={item.title} loading="lazy" />
                       <div className={`${styles.archiveOverlay}`}>
-                        <span className={`${styles.archiveQuality}`}>4K UHD</span>
                         <h3 className={`${styles.archiveTitle} font-cinzel font-bold text-sm mt-2`}>{item.title}</h3>
                         <p className={`${styles.archiveMeta} mt-1`}>
                           {item.year || ""}
-                          {item.year && item.genres?.length ? " Â· " : ""}
+                          {item.year && item.genres?.length ? " · " : ""}
                           {item.genres?.slice(0, 2).join(", ") || ""}
                         </p>
                       </div>
@@ -966,13 +1336,40 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="bg-faint-white border border-tan/30 rounded-2xl p-8 text-center">
-                  <p className="text-sm text-brown">Your archive is empty. Start adding titles to your watchlist.</p>
+                  <div className="flex justify-center mb-3">
+                    <svg
+                      className="w-10 h-10 text-sandy/60"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    >
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-brown mb-5">
+                    Your archive is empty. Start adding titles to your watchlist.
+                  </p>
+                  <div className="flex items-center justify-center gap-3">
+                    <Link
+                      href="/browse"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-deep-orange to-chocolate text-faint-white text-xs font-semibold hover:from-chocolate hover:to-chocolate transition-all shadow-lg shadow-deep-orange/20"
+                    >
+                      Browse Movies
+                    </Link>
+                    <Link
+                      href="/browse?type=tv"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-tan/40 text-brown text-xs font-semibold hover:border-deep-orange hover:text-deep-orange transition-all"
+                    >
+                      Explore Series
+                    </Link>
+                  </div>
                 </div>
               )}
             </section>
 
             {/* Recent Activity */}
-            <section className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>
+            <section id="recent-activity" className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>
               {/* Main card container */}
               <div className={styles.activityCard}>
                 {/* Left orange accent bar */}
@@ -983,31 +1380,17 @@ export default function DashboardPage() {
                   {/* Header */}
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="font-cinzel text-lg font-bold text-[#3e2723] tracking-[0.5px]">RECENT ACTIVITY</h3>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => setActivityFilter("all")}
-                        className={`${styles.filterPill} ${activityFilter === "all" ? styles.filterPillActive : ""}`}
-                      >
-                        Filter
-                      </button>
-                      <div className="relative">
+                    <div className="flex items-center gap-2">
+                      {(["all", "watching", "watchlist", "completed"] as const).map((f) => (
                         <button
-                          onClick={() =>
-                            setActivityFilter(
-                              activityFilter === "all"
-                                ? "watching"
-                                : activityFilter === "watching"
-                                  ? "watchlist"
-                                  : activityFilter === "watchlist"
-                                    ? "completed"
-                                    : "all"
-                            )
-                          }
-                          className={`${styles.filterPill} ${activityFilter !== "all" ? styles.filterPillActive : ""}`}
+                          type="button"
+                          key={f}
+                          onClick={() => setActivityFilter(f)}
+                          className={`${styles.filterPill} ${activityFilter === f ? styles.filterPillActive : ""}`}
                         >
-                          Filters
+                          {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
                         </button>
-                      </div>
+                      ))}
                       <Link
                         href="/dashboard?tab=activity"
                         className="text-[12px] font-semibold text-[#6b4423] hover:text-[#e65100] transition-colors whitespace-nowrap"
@@ -1020,18 +1403,73 @@ export default function DashboardPage() {
                   {/* Activity rows */}
                   <div className="space-y-3">
                     {filteredActivities.length > 0 ? (
-                      filteredActivities.map((item, i) => <ActivityRow key={i} item={item} />)
+                      filteredActivities.map((item) => (
+                        <ActivityRow key={`${item.type}-${item.title}-${item.timestamp}`} item={item} />
+                      ))
                     ) : (
                       <div className="p-8 text-center bg-[#faf6f0] rounded-[14px]">
-                        <p className="text-sm text-[#a0785a]">
+                        <p className="text-sm text-[#a0785a] mb-4">
                           No activity yet. Start watching to see your history here.
                         </p>
+                        <Link
+                          href="/browse"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-deep-orange to-chocolate text-faint-white text-xs font-semibold hover:from-chocolate hover:to-chocolate transition-all shadow-lg shadow-deep-orange/20"
+                        >
+                          Start Exploring
+                        </Link>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
             </section>
+
+            {/* Recommended For You */}
+            {(!recsLoading || recommendations.length > 0) && (
+              <section className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
+                    Recommended For You
+                  </h2>
+                  <Link
+                    href="/browse"
+                    className="text-sm font-semibold text-deep-orange hover:text-chocolate transition flex items-center gap-1"
+                  >
+                    View All
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                  </Link>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {recsLoading
+                    ? Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className={`${styles.archiveCard} animate-pulse`}>
+                          <div className="w-full h-full bg-[#f5efe8]" />
+                          <div className={`${styles.archiveOverlay}`}>
+                            <div className="h-3 w-3/4 rounded bg-[#d4a574]/30 mt-2" />
+                            <div className="h-2 w-1/2 rounded bg-[#d4a574]/20 mt-2" />
+                          </div>
+                        </div>
+                      ))
+                    : recommendations.map((movie) => (
+                        <Link key={movie.id} href={`/movie/${movie.id}`} className={`${styles.archiveCard}`}>
+                          <img src={posterUrl(movie.posterPath, "w342")} alt={movie.title} loading="lazy" />
+                          <div className={`${styles.archiveOverlay}`}>
+                            <h3 className={`${styles.archiveTitle} font-cinzel font-bold text-sm mt-2`}>
+                              {movie.title}
+                            </h3>
+                            <p className={`${styles.archiveMeta} mt-1`}>
+                              {movie.year}
+                              {movie.genres?.length ? ` · ${movie.genres.slice(0, 2).join(", ")}` : ""}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                </div>
+              </section>
+            )}
 
             <footer className="mt-12 py-6 border-t border-tan/30">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -1067,6 +1505,7 @@ export default function DashboardPage() {
                     <p className="text-xs text-brown mt-1">Select a profile icon to personalize your experience</p>
                   </div>
                   <button
+                    type="button"
                     onClick={() => setShowProfileSelector(false)}
                     className="w-8 h-8 rounded-full hover:bg-light-orange-faint flex items-center justify-center text-brown transition"
                   >
@@ -1078,6 +1517,7 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
                   {PROFILE_ICONS.map((icon) => (
                     <button
+                      type="button"
                       key={icon}
                       onClick={() => handleSelectProfileIcon(icon)}
                       className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition hover:scale-105 ${
