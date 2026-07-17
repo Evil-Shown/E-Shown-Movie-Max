@@ -19,6 +19,7 @@ import type { LocalNotification } from "@/lib/storage/notifications";
 import { buildTasteProfile } from "@/lib/recommendations/taste-profile";
 import { getFeaturedMovie, getTrendingMovies } from "@/lib/movies";
 import type { Movie } from "@/lib/types";
+import { api } from "@/lib/api";
 import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
 import PricingModal from "@/components/dashboard/PricingModal";
 import styles from "./Dashboard.module.css";
@@ -501,7 +502,7 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
-  const { user, logout, isLoading: authLoading } = useAuth();
+  const { user, logout, isLoading: authLoading, token } = useAuth();
   const { watchlist, continueWatching, hydrated } = useUserLibrary();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -514,6 +515,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [notifications, setNotificationsState] = useState<LocalNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const notifGenerated = useRef(false);
   const router = useRouter();
 
@@ -661,11 +663,16 @@ export default function DashboardPage() {
 
   const isPro = user?.subscriptionTier === "PRO";
 
+  const totalWatchHours = useMemo(() => {
+    const totalSeconds = continueWatching.reduce((sum, item) => sum + (item.currentTime || 0), 0);
+    return Math.floor(totalSeconds / 3600);
+  }, [continueWatching]);
+
   const watchTimeProgress = useMemo(() => {
-    if (hours <= 0) return 0;
-    const goal = Math.max(10, Math.ceil(hours / 10) * 10);
-    return Math.min(100, Math.round((hours / goal) * 100));
-  }, [hours]);
+    if (totalWatchHours <= 0) return 0;
+    const goal = Math.max(10, Math.ceil(totalWatchHours / 10) * 10);
+    return Math.min(100, Math.round((totalWatchHours / goal) * 100));
+  }, [totalWatchHours]);
 
   const savedTitlesProgress = useMemo(() => {
     if (watchlist.length <= 0) return 0;
@@ -677,6 +684,11 @@ export default function DashboardPage() {
     setProfileIcon(icon);
     setProfileIconState(icon);
     setShowProfileSelector(false);
+
+    if (token) {
+      const avatarUrl = `/avatars/${icon}`;
+      api.patch("/api/v1/users/avatar", { avatarUrl }, token).catch(console.error);
+    }
   };
 
   const unread = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
@@ -769,10 +781,7 @@ export default function DashboardPage() {
             <button
               type="button"
               className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium text-left w-full border-none cursor-pointer bg-transparent`}
-              onClick={async () => {
-                await logout();
-                window.location.href = "/";
-              }}
+              onClick={() => setShowLogoutConfirm(true)}
             >
               <span className="text-[#d4a574]/80 group-hover:text-[#e65100] transition-colors">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -783,6 +792,79 @@ export default function DashboardPage() {
               </span>
               <span>Logout</span>
             </button>
+
+            {showLogoutConfirm && (
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+                style={{ background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(4px)" }}
+                onClick={() => setShowLogoutConfirm(false)}
+              >
+                <div
+                  className="relative w-full max-w-md rounded-2xl p-6 text-center"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(255, 250, 240, 0.98) 0%, rgba(255, 245, 230, 0.98) 100%)",
+                    backdropFilter: "blur(20px)",
+                    WebkitBackdropFilter: "blur(20px)",
+                    border: "1px solid rgba(212, 165, 116, 0.4)",
+                    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+                    style={{ background: "rgba(230, 81, 0, 0.15)" }}
+                  >
+                    <svg
+                      className="w-8 h-8"
+                      style={{ color: "#e65100" }}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2" style={{ color: "#3d2a10" }}>
+                    Logout
+                  </h3>
+                  <p className="mb-6 text-base leading-relaxed" style={{ color: "#6b4a1e" }}>
+                    Are you sure you want to logout of your account? You&apos;ll need to sign in again to continue
+                    watching.
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={() => setShowLogoutConfirm(false)}
+                      className="px-6 py-2.5 rounded-xl font-medium text-sm transition-all"
+                      style={{
+                        background: "rgba(255, 255, 255, 0.8)",
+                        color: "#6b4a1e",
+                        border: "1px solid rgba(212, 165, 116, 0.3)",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await logout();
+                        window.location.href = "/";
+                      }}
+                      className="px-6 py-2.5 rounded-xl font-medium text-sm transition-all"
+                      style={{
+                        background: "linear-gradient(135deg, #e65100 0%, #cc4d00 100%)",
+                        color: "#fffbf5",
+                        border: "none",
+                        boxShadow: "0 4px 16px rgba(230, 81, 0, 0.4)",
+                      }}
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </nav>
 
           <div className="p-4 border-t border-[#d4a574]/15">
