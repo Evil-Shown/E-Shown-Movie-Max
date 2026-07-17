@@ -255,7 +255,8 @@ function GoogleOAuthButton({ onClose }: { onClose: () => void }) {
         const redirectTo = `${window.location.origin}/auth/callback`;
         const url = `${baseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&state=${claimJson.data.claimId}&prompt=select_account`;
 
-        const opened = await (window as Window & typeof globalThis).chithraDesktop!.openExternal(url);
+        const chithraDesktop = (window as Window & typeof globalThis).chithraDesktop!;
+        const opened = await chithraDesktop.openExternal!(url);
         if (!opened) {
           window.location.href = url;
           return;

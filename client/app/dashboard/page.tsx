@@ -22,6 +22,7 @@ import type { Movie } from "@/lib/types";
 import { api } from "@/lib/api";
 import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
 import PricingModal from "@/components/dashboard/PricingModal";
+import ProBadge from "@/components/dashboard/ProBadge";
 import styles from "./Dashboard.module.css";
 
 function formatDuration(seconds: number) {
