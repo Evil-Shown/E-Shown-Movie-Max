@@ -4,18 +4,29 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { useAuthModal } from "@/components/AuthModalProvider";
+import { getProfileIcon } from "@/lib/storage/profile-icon";
 
 export default function UserDashboard() {
   const { user, isAuthenticated } = useAuth();
   const { openAuthModal } = useAuthModal();
 
   const [mounted, setMounted] = useState(false);
+  const [localIcon, setLocalIcon] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const avatarUrl = user?.avatarUrl;
+  useEffect(() => {
+    if (!mounted) return;
+    setLocalIcon(getProfileIcon());
+
+    const handler = () => setLocalIcon(getProfileIcon());
+    window.addEventListener("profileIconChanged", handler);
+    return () => window.removeEventListener("profileIconChanged", handler);
+  }, [mounted]);
+
+  const avatarUrl = localIcon ? `/avatars/${localIcon}` : user?.avatarUrl;
 
   if (!mounted) {
     return <div className="h-11 w-11" />;

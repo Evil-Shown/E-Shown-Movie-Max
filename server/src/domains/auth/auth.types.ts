@@ -1,4 +1,4 @@
-import type { User, UserSettings } from "../../../generated/prisma";
+import type { User, UserSettings, SubscriptionTier } from "../../../generated/prisma";
 
 export interface AuthTokens {
   accessToken: string;
@@ -15,6 +15,9 @@ export interface AuthUser {
   avatarUrl: string | null;
   role: string;
   isVerified: boolean;
+  subscriptionTier: SubscriptionTier;
+  subscriptionExpiry: Date | null;
+  trialStartDate: Date | null;
   settings: UserSettings | null;
   createdAt: Date;
 }
@@ -56,6 +59,9 @@ export function toAuthUser(user: User & { settings?: UserSettings | null }): Aut
     avatarUrl: user.avatarUrl,
     role: user.role,
     isVerified: user.isVerified,
+    subscriptionTier: user.subscriptionTier,
+    subscriptionExpiry: user.subscriptionExpiry,
+    trialStartDate: user.trialStartDate,
     settings: user.settings ?? null,
     createdAt: user.createdAt,
   };

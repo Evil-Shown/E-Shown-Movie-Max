@@ -6,6 +6,7 @@ import { env } from "../../config/env";
 import * as authRepository from "./auth.repository";
 import type { RegisterInput, LoginInput, OAuthInput, AuthResponse, AuthUser } from "./auth.types";
 import { toAuthUser } from "./auth.types";
+import { setTrialStartDate } from "../subscription/subscription.service";
 
 async function createAuditLog(userId: string, action: string, metadata?: Record<string, unknown>) {
   try {
@@ -132,6 +133,7 @@ export async function register(input: RegisterInput, ip?: string): Promise<AuthR
     });
 
     await createAuditLog(localUser.id, "REGISTER", { email, ip });
+    await setTrialStartDate(localUser.id);
 
     return {
       user: toAuthUser(localUser),
@@ -233,6 +235,8 @@ export async function oauth(input: OAuthInput, ip?: string): Promise<AuthRespons
       authUserId: supabaseUser.id,
       isVerified: true,
     });
+
+    await setTrialStartDate(localUser.id);
 
     if (avatarUrl) {
       await prisma.user

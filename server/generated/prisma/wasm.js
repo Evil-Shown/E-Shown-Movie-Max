@@ -135,8 +135,21 @@ exports.Prisma.UserScalarFieldEnum = {
   subscriptionTier: 'subscriptionTier',
   subscriptionExpiry: 'subscriptionExpiry',
   currencyPreference: 'currencyPreference',
+  trialStartDate: 'trialStartDate',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PaymentScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  orderId: 'orderId',
+  amount: 'amount',
+  currency: 'currency',
+  status: 'status',
+  paymentId: 'paymentId',
+  method: 'method',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.UserSettingsScalarFieldEnum = {
@@ -265,6 +278,7 @@ exports.SubscriptionTier = exports.$Enums.SubscriptionTier = {
 
 exports.Prisma.ModelName = {
   User: 'User',
+  Payment: 'Payment',
   UserSettings: 'UserSettings',
   Device: 'Device',
   WatchlistItem: 'WatchlistItem',
