@@ -253,7 +253,7 @@ export default function SettingsPage() {
                       name="currentPassword"
                       value={form.currentPassword}
                       onChange={handleChange}
-                      placeholder="••••••••"
+                      placeholder="Current password"
                       className="form-input w-full rounded-xl px-4 py-2.5 text-sm text-[#3E2723] placeholder:text-[#A0785A]"
                     />
                   </div>
@@ -267,7 +267,7 @@ export default function SettingsPage() {
                       name="newPassword"
                       value={form.newPassword}
                       onChange={handleChange}
-                      placeholder="••••••••"
+                      placeholder="New password"
                       className="form-input w-full rounded-xl px-4 py-2.5 text-sm text-[#3E2723] placeholder:text-[#A0785A]"
                     />
                   </div>
@@ -280,7 +280,7 @@ export default function SettingsPage() {
                       name="confirmPassword"
                       value={form.confirmPassword}
                       onChange={handleChange}
-                      placeholder="••••••••"
+                      placeholder="Confirm new password"
                       className="form-input w-full rounded-xl px-4 py-2.5 text-sm text-[#3E2723] placeholder:text-[#A0785A]"
                     />
                   </div>
