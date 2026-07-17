@@ -189,7 +189,7 @@ export default function AuthPage({ defaultMode = "login" }: AuthPageProps) {
                     type="password"
                     value={loginForm.password}
                     onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))}
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
                     className="form-input w-full rounded-xl px-4 py-3 text-sm text-[#3E2723] placeholder:text-[#A0785A]"
                     required
                   />
@@ -276,7 +276,7 @@ export default function AuthPage({ defaultMode = "login" }: AuthPageProps) {
                       type="password"
                       value={registerForm.password}
                       onChange={(e) => updateRegister("password", e.target.value)}
-                      placeholder="••••••••"
+                      placeholder="Create a password"
                       className="form-input w-full rounded-xl px-4 py-3 text-sm text-[#3E2723] placeholder:text-[#A0785A]"
                       required
                     />
@@ -289,7 +289,7 @@ export default function AuthPage({ defaultMode = "login" }: AuthPageProps) {
                       type="password"
                       value={registerForm.confirmPassword}
                       onChange={(e) => updateRegister("confirmPassword", e.target.value)}
-                      placeholder="••••••••"
+                      placeholder="Confirm your password"
                       className="form-input w-full rounded-xl px-4 py-3 text-sm text-[#3E2723] placeholder:text-[#A0785A]"
                       required
                     />
