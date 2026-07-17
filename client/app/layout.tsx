@@ -5,7 +5,6 @@ import AuthActionHandler from "@/components/AuthActionHandler";
 import AuthModalProvider from "@/components/AuthModalProvider";
 import AuthProvider from "@/components/AuthProvider";
 import BackToTop from "@/components/BackToTop";
-import CinemaIntroLoader from "@/components/CinemaIntroLoader";
 import StartupSplashLoader from "@/components/StartupSplashLoader";
 import DesktopMediaPauseHandler from "@/components/DesktopMediaPauseHandler";
 import Footer from "@/components/Footer";
@@ -86,7 +85,6 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-full flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <StartupSplashLoader />
-        <CinemaIntroLoader />
         <AuthProvider>
           <AuthModalProvider>
             <AuthActionHandler />
