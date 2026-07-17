@@ -1,13 +1,8 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import axios from "axios";
+import { tmdbGet } from "./lib/tmdb";
 
-const TMDB_BASE = "https://api.themoviedb.org/3";
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
-
-interface TMDBConfig {
-  apiKey: string;
-  language: string;
-  region: string;
+function mobileTmdbGet<T>(path: string, params: Record<string, string> = {}): Promise<T> {
+  return tmdbGet<T>(path, params, { region: "US" });
 }
 
 interface TMDBMovie {
@@ -74,37 +69,6 @@ interface TMDBGenresResponse {
   genres: TMDBGenre[];
 }
 
-function getTMDBConfig(): TMDBConfig {
-  const apiKey = process.env.TMDB_API_KEY;
-  if (!apiKey || apiKey === "your_tmdb_api_key_here") {
-    throw new Error("TMDB_API_KEY not configured on server");
-  }
-  return {
-    apiKey,
-    language: "en-US",
-    region: "US",
-  };
-}
-
-function tmdbParams(extra: Record<string, string> = {}): Record<string, string> {
-  const cfg = getTMDBConfig();
-  return {
-    api_key: cfg.apiKey,
-    language: cfg.language,
-    region: cfg.region,
-    ...extra,
-  };
-}
-
-async function tmdbGet<T>(path: string, params: Record<string, string> = {}): Promise<T> {
-  const cfg = getTMDBConfig();
-  const response = await axios.get<T>(`${TMDB_BASE}${path}`, {
-    params: tmdbParams(params),
-    timeout: 10000,
-  });
-  return response.data;
-}
-
 function sanitizeQuery(query: unknown): string {
   if (typeof query !== "string") return "";
   return query.replace(/\s+/g, " ").trim();
@@ -114,11 +78,6 @@ function parsePositiveInt(value: unknown, fallback: number, max: number): number
   const parsed = Number.parseInt(String(value ?? fallback), 10);
   if (Number.isNaN(parsed) || parsed < 1) return fallback;
   return Math.min(parsed, max);
-}
-
-function getImageUrl(path: string | null | undefined, size: string = "w500"): string | null {
-  if (!path) return null;
-  return `${TMDB_IMAGE_BASE}/${size}${path}`;
 }
 
 function mapMovie(data: any): any {
@@ -189,13 +148,13 @@ router.get("/health", (_req: Request, res: Response) => {
 router.get("/home", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const [trending, popular, topRated, nowPlaying, popularTv, topRatedTv, onTheAir] = await Promise.all([
-      tmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/trending/all/week", { page: "1" }),
-      tmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/movie/popular", { page: "1" }),
-      tmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/movie/top_rated", { page: "1" }),
-      tmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/movie/now_playing", { page: "1" }),
-      tmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/tv/popular", { page: "1" }),
-      tmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/tv/top_rated", { page: "1" }),
-      tmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/tv/on_the_air", { page: "1" }),
+      mobileTmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/trending/all/week", { page: "1" }),
+      mobileTmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/movie/popular", { page: "1" }),
+      mobileTmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/movie/top_rated", { page: "1" }),
+      mobileTmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/movie/now_playing", { page: "1" }),
+      mobileTmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/tv/popular", { page: "1" }),
+      mobileTmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/tv/top_rated", { page: "1" }),
+      mobileTmdbGet<TMDBPaginatedResponse<TMDBMovie>>("/tv/on_the_air", { page: "1" }),
     ]);
 
     const featured = trending.results[0] || popular.results[0];
@@ -256,7 +215,7 @@ router.get("/browse", async (req: Request, res: Response, next: NextFunction) =>
         break;
     }
 
-    const data = await tmdbGet<TMDBPaginatedResponse<TMDBMovie>>(endpoint, params);
+    const data = await mobileTmdbGet<TMDBPaginatedResponse<TMDBMovie>>(endpoint, params);
 
     const result = {
       movies: data.results.map(mapMovie),
@@ -284,7 +243,10 @@ router.get("/search", async (req: Request, res: Response, next: NextFunction) =>
       return;
     }
 
-    const data = await tmdbGet<TMDBPaginatedResponse<TMDBMovie>>(`/search/${media}`, { query, page: String(page) });
+    const data = await mobileTmdbGet<TMDBPaginatedResponse<TMDBMovie>>(`/search/${media}`, {
+      query,
+      page: String(page),
+    });
 
     const result = {
       movies: data.results.map(mapMovie),
@@ -304,7 +266,9 @@ router.get("/search", async (req: Request, res: Response, next: NextFunction) =>
 router.get("/movie/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = sanitizeQuery(req.params.id);
-    const data = await tmdbGet<TMDBMovie>(`/movie/${id}`, { append_to_response: "credits,videos,images,similar" });
+    const data = await mobileTmdbGet<TMDBMovie>(`/movie/${id}`, {
+      append_to_response: "credits,videos,images,similar",
+    });
     res.json(mapMovieDetail(data));
   } catch (error) {
     next(error);
@@ -315,7 +279,7 @@ router.get("/movie/:id/similar", async (req: Request, res: Response, next: NextF
   try {
     const id = sanitizeQuery(req.params.id);
     const limit = parsePositiveInt(req.query.limit, 8, 20);
-    const data = await tmdbGet<TMDBPaginatedResponse<TMDBMovie>>(`/movie/${id}/similar`, { page: "1" });
+    const data = await mobileTmdbGet<TMDBPaginatedResponse<TMDBMovie>>(`/movie/${id}/similar`, { page: "1" });
     res.json({ movies: data.results.slice(0, limit).map(mapMovie) });
   } catch (error) {
     next(error);
@@ -325,7 +289,7 @@ router.get("/movie/:id/similar", async (req: Request, res: Response, next: NextF
 router.get("/tv/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = sanitizeQuery(req.params.id);
-    const data = await tmdbGet<TMDBMovie>(`/tv/${id}`, { append_to_response: "credits,videos,images" });
+    const data = await mobileTmdbGet<TMDBMovie>(`/tv/${id}`, { append_to_response: "credits,videos,images" });
     res.json(mapMovieDetail(data));
   } catch (error) {
     next(error);
@@ -335,7 +299,7 @@ router.get("/tv/:id", async (req: Request, res: Response, next: NextFunction) =>
 router.get("/tv/:id/seasons", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = sanitizeQuery(req.params.id);
-    const data = await tmdbGet<TMDBMovie>(`/tv/${id}`, { append_to_response: "credits" });
+    const data = await mobileTmdbGet<TMDBMovie>(`/tv/${id}`, { append_to_response: "credits" });
     res.json({
       seasons: (data.seasons || []).map((s: any) => ({
         id: s.id,
@@ -356,7 +320,7 @@ router.get("/tv/:id/season/:seasonNumber", async (req: Request, res: Response, n
   try {
     const id = sanitizeQuery(req.params.id);
     const seasonNumber = sanitizeQuery(req.params.seasonNumber);
-    const data = await tmdbGet<any>(`/tv/${id}/season/${seasonNumber}`);
+    const data = await mobileTmdbGet<any>(`/tv/${id}/season/${seasonNumber}`);
     res.json({
       episodes: (data.episodes || []).map((ep: any) => ({
         id: ep.id,
@@ -376,7 +340,7 @@ router.get("/tv/:id/season/:seasonNumber", async (req: Request, res: Response, n
 
 router.get("/genres/movie", async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await tmdbGet<TMDBGenresResponse>("/genre/movie/list");
+    const data = await mobileTmdbGet<TMDBGenresResponse>("/genre/movie/list");
     res.json({ genres: data.genres });
   } catch (error) {
     next(error);
@@ -385,7 +349,7 @@ router.get("/genres/movie", async (_req: Request, res: Response, next: NextFunct
 
 router.get("/genres/tv", async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await tmdbGet<TMDBGenresResponse>("/genre/tv/list");
+    const data = await mobileTmdbGet<TMDBGenresResponse>("/genre/tv/list");
     res.json({ genres: data.genres });
   } catch (error) {
     next(error);

@@ -57,12 +57,8 @@ function Prepare-ClientEnvForPackage {
   Copy-Item $SourceEnv $DestPath -Force
   $lines = @(Get-Content $DestPath)
 
-  $tmdbKey = $null
-  foreach ($line in $lines) {
-    if ($line -match '^\s*TMDB_API_KEY=(.+)$') {
-      $tmdbKey = $Matches[1].Trim()
-    }
-  }
+  # Remove any TMDB key lines from the client env — the key must stay server-side.
+  $lines = $lines | Where-Object { $_ -notmatch '^\s*(TMDB_API_KEY|NEXT_PUBLIC_TMDB_KEY)=' }
 
   $siteName = "CHITHRA $([char]0x2014) CINEMA"
   $required = [ordered]@{
@@ -70,10 +66,6 @@ function Prepare-ClientEnvForPackage {
     "NEXT_PUBLIC_GODS_EYE_API_URL"  = "http://localhost:5000"
     "NEXT_PUBLIC_TBOOM_API_URL"     = "http://localhost:5000"
     "NEXT_PUBLIC_SITE_NAME"         = $siteName
-  }
-
-  if ($tmdbKey -and -not ($lines -match '^\s*NEXT_PUBLIC_TMDB_KEY=')) {
-    $required["NEXT_PUBLIC_TMDB_KEY"] = $tmdbKey
   }
 
   foreach ($key in $required.Keys) {
@@ -98,7 +90,7 @@ if (-not (Test-Path $server)) {
 }
 
 if (-not (Test-Path $clientEnvFile)) {
-  throw "Missing $clientEnvFile - create it from client/.env.example (TMDB + OMDB keys)."
+  throw "Missing $clientEnvFile - create it from client/.env.example (public URLs only)."
 }
 
 if (-not (Test-Path $serverEnvFile)) {
@@ -242,8 +234,8 @@ $readmeLines = @(
   '',
   'What is included',
   '----------------',
-  '- app/.env.local  -> TMDB, OMDB, and site keys for the website',
-  '- server/.env     -> VirusTotal and API server settings',
+  '- app/.env.local  -> public site/API URLs only (no API keys)',
+  '- server/.env     -> API keys (TMDB, OMDB, VirusTotal) and server settings',
   '',
   'Troubleshooting',
   '---------------',

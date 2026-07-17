@@ -32,8 +32,8 @@ The release process can be done locally or via GitHub Actions:
 echo "GH_TOKEN=ghp_your_token_here" >> .env
 
 # 2. Ensure .env files exist for client and server
-# client/.env.local  — should have API keys
-# server/.env        — should have API keys + DB config
+# client/.env.local  — public URLs only (no API keys)
+# server/.env        — API keys + DB config
 ```
 
 ### Usage
@@ -122,14 +122,14 @@ gh workflow run release-desktop.yml -f version=2.2.11
 
 ### Workflow Steps (`.github/workflows/release-desktop.yml`)
 
-| Step                        | Description                                                           |
-| --------------------------- | --------------------------------------------------------------------- |
-| Checkout                    | Full repo clone                                                       |
-| Setup Node.js               | Node 20 with npm cache                                                |
-| Validate secrets            | Checks TMDB_API_KEY, OMDB_API_KEY, WYZIE_API_KEY, VIRUSTOTAL_API_KEY  |
-| Create build env files      | Generates `client/.env.local` and `server/.env` from GitHub secrets   |
-| Build and publish installer | Runs `publish-desktop-release.ps1`                                    |
-| Upload artifact             | Saves installer as a build artifact (downloadable from workflow page) |
+| Step                        | Description                                                                           |
+| --------------------------- | ------------------------------------------------------------------------------------- |
+| Checkout                    | Full repo clone                                                                       |
+| Setup Node.js               | Node 20 with npm cache                                                                |
+| Validate secrets            | Checks TMDB_API_KEY, OMDB_API_KEY, WYZIE_API_KEY, VIRUSTOTAL_API_KEY                  |
+| Create build env files      | Generates `client/.env.local` (public URLs only) and `server/.env` (private API keys) |
+| Build and publish installer | Runs `publish-desktop-release.ps1`                                                    |
+| Upload artifact             | Saves installer as a build artifact (downloadable from workflow page)                 |
 
 ### Required Secrets
 
@@ -199,23 +199,44 @@ jobs:
           OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
           WYZIE_API_KEY: ${{ secrets.WYZIE_API_KEY }}
           VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
         run: |
+          function Write-Utf8NoBom {
+            param([string]$Path, [string]$Content)
+            $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+            [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
+          }
+
+          $siteName = "CHITHRA $([char]0x2014) CINEMA"
+
+          # Client env: public URLs only — API keys stay server-side.
           $clientEnv = @(
-            "OMDB_API_KEY=$env:OMDB_API_KEY"
-            "TMDB_API_KEY=$env:TMDB_API_KEY"
-            "WYZIE_API_KEY=$env:WYZIE_API_KEY"
-            "NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:5000"
             "NEXT_PUBLIC_GODS_EYE_API_URL=http://127.0.0.1:5000"
             "NEXT_PUBLIC_TBOOM_API_URL=http://127.0.0.1:5000"
-            "NEXT_PUBLIC_SITE_NAME=CHITHRA — CINEMA"
+            "NEXT_PUBLIC_SITE_NAME=$siteName"
+            "NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:5000"
             "NEXT_PUBLIC_USE_EMBED_PROXY=false"
           ) -join "`n"
-          $serverEnv = @(
-            "VIRUSTOTAL_API_KEY=$env:VIRUSTOTAL_API_KEY"
+
+          # Server env: holds the private API keys.
+          $serverLines = @(
             "PORT=5000"
-          ) -join "`n"
-          Set-Content -Path client/.env.local -Value $clientEnv -Encoding UTF8
-          Set-Content -Path server/.env -Value $serverEnv -Encoding UTF8
+            "TMDB_API_KEY=$env:TMDB_API_KEY"
+            "OMDB_API_KEY=$env:OMDB_API_KEY"
+            "WYZIE_API_KEY=$env:WYZIE_API_KEY"
+            "VIRUSTOTAL_API_KEY=$env:VIRUSTOTAL_API_KEY"
+          )
+          if (-not [string]::IsNullOrWhiteSpace($env:UPSTASH_REDIS_REST_URL)) {
+            $serverLines += "UPSTASH_REDIS_REST_URL=$env:UPSTASH_REDIS_REST_URL"
+          }
+          if (-not [string]::IsNullOrWhiteSpace($env:UPSTASH_REDIS_REST_TOKEN)) {
+            $serverLines += "UPSTASH_REDIS_REST_TOKEN=$env:UPSTASH_REDIS_REST_TOKEN"
+          }
+          $serverEnv = $serverLines -join "`n"
+
+          Write-Utf8NoBom -Path "client/.env.local" -Content $clientEnv
+          Write-Utf8NoBom -Path "server/.env" -Content $serverEnv
 
       - name: Build and publish installer
         shell: pwsh

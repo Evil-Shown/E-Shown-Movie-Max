@@ -9,7 +9,8 @@ export const supabaseAnon = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY
     persistSession: false,
   },
   realtime: {
-    transport: WebSocket as unknown as { new (url: string | URL, protocols?: string | string[]): WebSocket },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transport: WebSocket as any,
   },
 });
 
@@ -20,6 +21,7 @@ export const supabaseAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE
     persistSession: false,
   },
   realtime: {
-    transport: WebSocket as unknown as { new (url: string | URL, protocols?: string | string[]): WebSocket },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transport: WebSocket as any,
   },
 });

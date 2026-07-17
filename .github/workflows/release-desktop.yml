@@ -63,10 +63,9 @@ jobs:
           }
 
           $siteName = "CHITHRA $([char]0x2014) CINEMA"
+
+          # Client env: public URLs only — API keys stay server-side.
           $clientEnv = @(
-            "OMDB_API_KEY=$env:OMDB_API_KEY"
-            "TMDB_API_KEY=$env:TMDB_API_KEY"
-            "WYZIE_API_KEY=$env:WYZIE_API_KEY"
             "NEXT_PUBLIC_GODS_EYE_API_URL=http://127.0.0.1:5000"
             "NEXT_PUBLIC_TBOOM_API_URL=http://127.0.0.1:5000"
             "NEXT_PUBLIC_SITE_NAME=$siteName"
@@ -74,9 +73,13 @@ jobs:
             "NEXT_PUBLIC_USE_EMBED_PROXY=false"
           ) -join "`n"
 
+          # Server env: holds the private API keys.
           $serverLines = @(
-            "VIRUSTOTAL_API_KEY=$env:VIRUSTOTAL_API_KEY"
             "PORT=5000"
+            "TMDB_API_KEY=$env:TMDB_API_KEY"
+            "OMDB_API_KEY=$env:OMDB_API_KEY"
+            "WYZIE_API_KEY=$env:WYZIE_API_KEY"
+            "VIRUSTOTAL_API_KEY=$env:VIRUSTOTAL_API_KEY"
           )
           if (-not [string]::IsNullOrWhiteSpace($env:UPSTASH_REDIS_REST_URL)) {
             $serverLines += "UPSTASH_REDIS_REST_URL=$env:UPSTASH_REDIS_REST_URL"

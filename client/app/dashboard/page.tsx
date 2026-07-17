@@ -661,7 +661,10 @@ export default function DashboardPage() {
   const streak = useMemo(() => computeStreak(continueWatching, watchlist), [continueWatching, watchlist]);
   const userName = user?.displayName || user?.username || "Watcher";
 
-  const isPro = user?.subscriptionTier === "PRO";
+  const effectiveTier = user?.effectiveTier ?? "FREE";
+  const trialDaysLeft = user?.trialDaysLeft ?? 0;
+  const isPro = effectiveTier === "PRO";
+  const isTrial = effectiveTier === "TRIAL";
 
   const totalWatchHours = useMemo(() => {
     const totalSeconds = continueWatching.reduce((sum, item) => sum + (item.currentTime || 0), 0);
@@ -891,12 +894,19 @@ export default function DashboardPage() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#fffbf5] truncate">{userName}</p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <svg className="w-3 h-3 text-[#d4a574]" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                  <span className="text-[9px] text-[#d4a574] font-semibold tracking-wide">Member</span>
+                <p className="text-sm font-semibold text-faint-white truncate">{userName}</p>
+                <div className="flex items-center gap-1">
+                  {isPro ? (
+                    <ProBadge />
+                  ) : isTrial ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#D4A574]/20 text-[#D4A574]">
+                      {trialDaysLeft}d Trial
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#A0785A]/20 text-[#A0785A]">
+                      Free
+                    </span>
+                  )}
                 </div>
               </div>
               <svg
