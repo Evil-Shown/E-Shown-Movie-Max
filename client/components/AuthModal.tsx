@@ -448,7 +448,7 @@ function InputGroup({
           autoComplete={autoComplete}
           required
           style={{ outline: "none" }}
-          className="flex-1 h-11 pl-3 pr-0 bg-transparent text-[15px] text-white placeholder-gray-500 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 [&:-webkit-autofill]:!bg-transparent [&:-webkit-autofill]:[transition-delay:9999s] [&:-webkit-autofill]:shadow-[0_0_0_1000px_transparent_inset]"
+          className="flex-1 h-11 pl-3 pr-0 bg-transparent text-[15px] text-white placeholder-gray-500 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 font-sans [&:-webkit-autofill]:!bg-transparent [&:-webkit-autofill]:[transition-delay:9999s] [&:-webkit-autofill]:shadow-[0_0_0_1000px_transparent_inset]"
         />
         {trailing && <span className="flex items-center justify-center shrink-0 w-10 h-11">{trailing}</span>}
       </div>
