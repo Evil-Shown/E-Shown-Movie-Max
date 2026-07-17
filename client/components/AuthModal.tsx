@@ -38,10 +38,10 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
 
   const handleClose = useCallback(() => {
     if (didAuth.current) {
-      // Auth succeeded ΓÇö replay pending action
+      // Auth succeeded -- replay pending action
       onClose(true);
     } else {
-      // Dismissed without login ΓÇö only redirect home if not already there
+      // Dismissed without login -- only redirect home if not already there
       if (redirectOnClose && typeof window !== "undefined" && window.location.pathname !== "/") {
         window.location.href = "/";
       }
@@ -262,7 +262,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
                     type={showPassword ? "text" : "password"}
                     value={loginForm.password}
                     onChange={(v) => setLoginForm((f) => ({ ...f, password: v }))}
-                    placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"
+                    placeholder="Enter your password"
                     autoComplete="current-password"
                     trailing={<EyeToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />}
                   />
