@@ -346,106 +346,74 @@ interface ActivityItem {
   title: string;
   meta?: string;
   timestamp: number;
+  posterPath?: string;
 }
 
 function ActivityRow({ item }: { item: ActivityItem }) {
-  const icons = {
-    watching: (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-        <polygon points="5 3 19 12 5 21 5 3" />
-      </svg>
-    ),
-    watchlist: (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-      </svg>
-    ),
-    completed: (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-        <polyline points="20 6 9 17 4 12" />
-      </svg>
-    ),
-    downloaded: (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <polyline points="7 10 12 15 17 10" />
-        <line x1="12" y1="15" x2="12" y2="3" />
-      </svg>
-    ),
+  const badgeLabel: Record<string, string> = {
+    watching: "STARTED WATCHING",
+    watchlist: "ADDED TO WATCHLIST",
+    completed: "COMPLETED",
+    downloaded: "DOWNLOADED",
   };
-  const labels = {
-    watching: "Started watching",
-    watchlist: "Added to watchlist",
-    completed: "Completed watching",
-    downloaded: "Downloaded",
+
+  const badgeStyle: Record<string, string> = {
+    watching: "bg-[#fef0e6] text-[#cc4d00]",
+    watchlist: "bg-[#efe6db] text-[#3e2723]",
+    completed: "bg-[#f5efe8] text-[#6b4423]",
+    downloaded: "bg-[#f5efe8] text-[#6b4423]",
   };
-  const accentColors: Record<string, { box: string; bar: string; badge: string }> = {
-    watching: {
-      box: "bg-gradient-to-br from-deep-orange to-orange-700 text-faint-white",
-      bar: "bg-deep-orange",
-      badge: "bg-light-orange-faint text-deep-orange",
-    },
-    watchlist: {
-      box: "bg-gradient-to-br from-chocolate to-stone-800 text-faint-white",
-      bar: "bg-chocolate",
-      badge: "bg-tan/20 text-brown",
-    },
-    completed: {
-      box: "bg-gradient-to-br from-tan to-amber-700 text-faint-white",
-      bar: "bg-tan",
-      badge: "bg-cream text-chocolate",
-    },
-    downloaded: {
-      box: "bg-gradient-to-br from-brown to-stone-700 text-faint-white",
-      bar: "bg-brown",
-      badge: "bg-cream text-brown",
-    },
-  };
-  const a = accentColors[item.type];
 
   return (
-    <div className="group relative flex items-start gap-4 pl-6 py-4 rounded-xl hover:bg-faint-white transition-all duration-300">
-      <div
-        className={`absolute left-0 top-4 bottom-4 w-0.5 rounded-full ${a.bar} opacity-20 group-hover:opacity-40 transition-opacity`}
-      />
-      <div
-        className={`relative w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${a.box}`}
-      >
-        {icons[item.type]}
-        <div
-          className={`absolute -inset-0.5 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity ${a.bar}`}
-        />
-      </div>
-      <div className="flex-1 min-w-0 pt-1">
-        <div className="flex items-center gap-2 mb-1">
-          <span
-            className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${a.badge}`}
-          >
-            {labels[item.type]}
-          </span>
-          <span className="text-[11px] text-sandy/60">{timeAgo(item.timestamp)}</span>
+    <div className={`${styles.activityRow} flex items-center gap-4 px-5 py-4 rounded-[14px] bg-[#faf6f0]`}>
+      {/* Thumbnail */}
+      <div className="relative w-[88px] shrink-0">
+        <div className="aspect-[16/9] rounded-[10px] overflow-hidden bg-[#e8ddd0]">
+          {item.posterPath ? (
+            <img
+              src={posterUrl(item.posterPath, "w185")}
+              alt={item.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[#c4b5a5]">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="2" y="2" width="20" height="20" rx="3" />
+                <circle cx="9" cy="9" r="2" />
+                <path d="m21 15-5-5L5 21" />
+              </svg>
+            </div>
+          )}
         </div>
-        <p className="text-sm font-semibold text-chocolate">{item.title}</p>
-        {item.meta && (
-          <p className="text-xs text-sandy mt-0.5 flex items-center gap-1.5">
-            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-            {item.meta}
-          </p>
+        {/* Play overlay for watching */}
+        {item.type === "watching" && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-white/85 flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
+              <svg className="w-3 h-3 text-[#3e2723] ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+            </div>
+          </div>
         )}
       </div>
-      <div className="flex-shrink-0 self-center">
-        <svg
-          className="w-4 h-4 text-tan/30 group-hover:text-tan/60 transition-colors"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
+
+      {/* Middle: metadata */}
+      <div className="flex-1 min-w-0">
+        <p className="text-[15px] font-bold text-[#3e2723] leading-tight truncate">{item.title}</p>
+        <p className="text-[12px] text-[#a0785a] mt-1.5 truncate">
+          {item.meta && <span>{item.meta} · </span>}
+          {timeAgo(item.timestamp)}
+        </p>
+      </div>
+
+      {/* Right: status badge */}
+      <div className="shrink-0">
+        <span
+          className={`inline-block text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-[0.5px] ${badgeStyle[item.type] || badgeStyle.watching}`}
         >
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+          {badgeLabel[item.type] || "WATCHING"}
+        </span>
       </div>
     </div>
   );
@@ -502,6 +470,7 @@ export default function DashboardPage() {
           title: item.title,
           meta,
           timestamp: item.updatedAt,
+          posterPath: item.posterPath,
         });
       });
     watchlist
@@ -511,8 +480,9 @@ export default function DashboardPage() {
         items.push({
           type: "watchlist",
           title: item.title,
-          meta: `${item.genres?.[0] || (item.mediaType === "tv" ? "Series" : "Movie")} Â· ${formatDisplayYear(item.year)}`,
+          meta: `${item.genres?.[0] || (item.mediaType === "tv" ? "Series" : "Movie")} · ${formatDisplayYear(item.year)}`,
           timestamp: item.addedAt,
+          posterPath: item.posterPath,
         });
       });
     return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, 8);
@@ -994,58 +964,63 @@ export default function DashboardPage() {
 
             {/* Recent Activity */}
             <section className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
-                    Recent Activity
-                  </h2>
-                  <p className="text-xs text-sandy mt-1 ml-4">Your latest actions</p>
-                </div>
-                <div className="flex bg-faint-white border border-tan/25 rounded-xl p-1 shadow-sm">
-                  {(["all", "watching", "watchlist", "completed"] as const).map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setActivityFilter(f)}
-                      className={`${styles.filterBtn} px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
-                        activityFilter === f
-                          ? "bg-chocolate text-faint-white shadow-md"
-                          : "text-brown hover:text-deep-orange hover:bg-light-orange-faint/50"
-                      }`}
-                    >
-                      {f === "all"
-                        ? "All"
-                        : f === "watching"
-                          ? "Watching"
-                          : f === "watchlist"
-                            ? "Watchlist"
-                            : "Completed"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-gradient-to-br from-faint-white via-faint-white to-cream border border-tan/20 rounded-2xl shadow-sm divide-y divide-tan/15">
-                {filteredActivities.length > 0 ? (
-                  filteredActivities.map((item, i) => <ActivityRow key={i} item={item} />)
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12 px-8">
-                    <div className="w-14 h-14 rounded-2xl bg-cream border border-tan/20 flex items-center justify-center mb-4">
-                      <svg
-                        className="w-6 h-6 text-sandy"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
+              {/* Main card container */}
+              <div className={styles.activityCard}>
+                {/* Left orange accent bar */}
+                <div className={styles.activityCardAccent} />
+
+                {/* Card content */}
+                <div className="p-6 md:p-8">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-cinzel text-lg font-bold text-[#3e2723] tracking-[0.5px]">RECENT ACTIVITY</h3>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setActivityFilter("all")}
+                        className={`${styles.filterPill} ${activityFilter === "all" ? styles.filterPillActive : ""}`}
                       >
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                      </svg>
+                        Filter
+                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={() =>
+                            setActivityFilter(
+                              activityFilter === "all"
+                                ? "watching"
+                                : activityFilter === "watching"
+                                  ? "watchlist"
+                                  : activityFilter === "watchlist"
+                                    ? "completed"
+                                    : "all"
+                            )
+                          }
+                          className={`${styles.filterPill} ${activityFilter !== "all" ? styles.filterPillActive : ""}`}
+                        >
+                          Filters
+                        </button>
+                      </div>
+                      <Link
+                        href="/dashboard?tab=activity"
+                        className="text-[12px] font-semibold text-[#6b4423] hover:text-[#e65100] transition-colors whitespace-nowrap"
+                      >
+                        View All &rarr;
+                      </Link>
                     </div>
-                    <p className="text-sm font-semibold text-chocolate mb-1">No activity yet</p>
-                    <p className="text-xs text-sandy text-center max-w-xs">
-                      Start watching movies or TV series to see your activity history here.
-                    </p>
                   </div>
-                )}
+
+                  {/* Activity rows */}
+                  <div className="space-y-3">
+                    {filteredActivities.length > 0 ? (
+                      filteredActivities.map((item, i) => <ActivityRow key={i} item={item} />)
+                    ) : (
+                      <div className="p-8 text-center bg-[#faf6f0] rounded-[14px]">
+                        <p className="text-sm text-[#a0785a]">
+                          No activity yet. Start watching to see your history here.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </section>
 
