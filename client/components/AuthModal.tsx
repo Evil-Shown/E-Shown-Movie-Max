@@ -150,6 +150,67 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <GoogleOAuthButton onClose={onClose} />
         </div>
       </div>
+
+      <style jsx global>{`
+        .auth-modal-input {
+          appearance: none;
+          -webkit-appearance: none;
+          background-color: #1b1a2a !important;
+          background-image: none !important;
+          color: #ffffff !important;
+          caret-color: #ffffff;
+          outline: none !important;
+          box-shadow: none !important;
+          border: none;
+          color-scheme: dark;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .auth-modal-input::placeholder {
+          color: #6b7280 !important;
+          opacity: 1;
+        }
+
+        .auth-modal-input:hover,
+        .auth-modal-input:focus,
+        .auth-modal-input:focus-visible,
+        .auth-modal-input:active,
+        .auth-modal-input:disabled {
+          appearance: none;
+          -webkit-appearance: none;
+          background-color: #1b1a2a !important;
+          background-image: none !important;
+          color: #ffffff !important;
+          outline: none !important;
+          box-shadow: none !important;
+          border: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .auth-modal-input:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .auth-modal-input:-webkit-autofill,
+        .auth-modal-input:-webkit-autofill:hover,
+        .auth-modal-input:-webkit-autofill:focus,
+        .auth-modal-input:-webkit-autofill:active {
+          -webkit-text-fill-color: #ffffff !important;
+          caret-color: #ffffff;
+          color: #ffffff !important;
+          border: none !important;
+          outline: none !important;
+          transition: background-color 99999s ease-in-out 0s;
+          box-shadow: 0 0 0 1000px #1b1a2a inset !important;
+          -webkit-box-shadow: 0 0 0 1000px #1b1a2a inset !important;
+        }
+
+        input[type="password"].auth-modal-input::-ms-reveal,
+        input[type="password"].auth-modal-input::-ms-clear {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }
@@ -189,7 +250,7 @@ function LoginForm({ onSwitch, onDone }: { onSwitch: () => void; onDone: () => v
         {label}
       </label>
       <div
-        className={`group relative flex items-center h-[46px] rounded-xl border bg-white/[0.03] transition-all duration-200
+        className={`group relative flex items-center h-[46px] rounded-xl border bg-[#1B1A2A] transition-all duration-200
           ${focused ? "border-[#e65100] shadow-[0_0_0_3px_rgba(230,81,0,0.15)]" : "border-white/10 hover:border-white/25"}
         `}
       >
@@ -207,8 +268,7 @@ function LoginForm({ onSwitch, onDone }: { onSwitch: () => void; onDone: () => v
           placeholder={placeholder}
           autoComplete={autoComplete}
           required
-          style={{ outline: "none" }}
-          className="flex-1 h-11 pl-3 pr-0 bg-transparent text-[15px] text-white placeholder-gray-500 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 [&:-webkit-autofill]:!bg-transparent [&:-webkit-autofill]:[transition-delay:9999s] [&:-webkit-autofill]:shadow-[0_0_0_1000px_transparent_inset]"
+          className="auth-modal-input flex-1 h-11 pl-3 pr-0 text-[15px] placeholder-gray-500"
         />
         {trailing && <span className="flex items-center justify-center shrink-0 w-10 h-11">{trailing}</span>}
       </div>
