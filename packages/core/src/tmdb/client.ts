@@ -17,7 +17,18 @@ const TMDB_LIST_TTL_MS = 6 * 60 * 60 * 1000;
 const TMDB_SEARCH_TTL_MS = 60 * 60 * 1000;
 const TMDB_DETAIL_TTL_MS = 24 * 60 * 60 * 1000;
 
+let _tmdbBaseUrl: string | null = null;
+
+export function configureTmdbBaseUrl(url: string): void {
+  _tmdbBaseUrl = url;
+}
+
+function getBaseUrl(): string {
+  return _tmdbBaseUrl ?? TMDB_BASE;
+}
+
 function getApiKey(): string | undefined {
+  if (_tmdbBaseUrl) return "proxy";
   return process.env.TMDB_API_KEY;
 }
 
@@ -29,8 +40,14 @@ async function tmdbFetch<T>(path: string, params: Record<string, string> = {}): 
   const key = getApiKey();
   if (!key) throw new Error("TMDB_API_KEY is not configured");
 
-  const search = new URLSearchParams({ api_key: key, language: "en-US", ...params });
-  const url = `${TMDB_BASE}${path}?${search}`;
+  const searchParams: Record<string, string> = { language: "en-US", ...params };
+  if (!_tmdbBaseUrl) {
+    searchParams.api_key = key;
+  }
+
+  const search = new URLSearchParams(searchParams);
+  const base = getBaseUrl();
+  const url = `${base}${path}?${search}`;
   const cacheKey = buildCacheKey("tmdb", path, { language: "en-US", ...params });
   const ttlMs = getTmdbCacheTtl(path, params);
 
@@ -112,10 +129,7 @@ function discoverTvSortBy(sort?: DiscoverSort): string {
   return "popularity.desc";
 }
 
-export async function fetchTvBrowsePage(
-  page: number,
-  options: { genre?: Genre; sort?: BrowseSort } = {}
-) {
+export async function fetchTvBrowsePage(page: number, options: { genre?: Genre; sort?: BrowseSort } = {}) {
   const sort = options.sort ?? "popular";
 
   if (sort === "top_rated") {
@@ -313,10 +327,7 @@ function isAnimeGenreIds(genreIds: number[] | undefined): boolean {
 }
 
 export async function fetchAnimeTrending(page = 1) {
-  const [tv, movies] = await Promise.all([
-    fetchAnimeTrendingTv(page),
-    fetchAnimeTrendingMovies(page),
-  ]);
+  const [tv, movies] = await Promise.all([fetchAnimeTrendingTv(page), fetchAnimeTrendingMovies(page)]);
 
   return {
     tv: tv.results,
@@ -368,10 +379,7 @@ export async function fetchTvSeason(tvId: number, season: number) {
   return tmdbFetch<TmdbSeasonDetail>(`/tv/${tvId}/season/${season}`, {});
 }
 
-export async function fetchBrowsePage(
-  page: number,
-  options: { genre?: Genre; sort?: BrowseSort } = {}
-) {
+export async function fetchBrowsePage(page: number, options: { genre?: Genre; sort?: BrowseSort } = {}) {
   const sort = options.sort ?? "popular";
 
   if (sort === "top_rated") {

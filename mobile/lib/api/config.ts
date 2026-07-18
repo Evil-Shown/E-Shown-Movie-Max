@@ -1,29 +1,45 @@
-import Constants from 'expo-constants';
+import Constants from "expo-constants";
 
-/**
- * Resolves the API base URL (shared with the web/desktop client).
- *
- * Priority:
- *  1. EXPO_PUBLIC_API_URL — explicit override, set this for production
- *     (e.g. your deployed Vercel URL) or if auto-detection ever picks the
- *     wrong network interface.
- *  2. Auto-detected from Expo's dev server connection (Constants.expoConfig
- *     .hostUri gives the same LAN IP:port Metro is already using — no need
- *     to hardcode or manually look up your PC's IP).
- *  3. Falls back to localhost, which only works in a web/simulator context
- *     on the same machine as the backend, never on a physical phone.
- */
+const ALLOW_HTTP_IN_DEV = typeof __DEV__ !== "undefined" && __DEV__;
+
 function resolveApiBaseUrl(): string {
   const explicit = process.env.EXPO_PUBLIC_API_URL;
-  if (explicit) return explicit.replace(/\/$/, '');
 
-  const hostUri = Constants.expoConfig?.hostUri;
-  if (hostUri) {
-    const host = hostUri.split(':')[0];
-    if (host) return `http://${host}:3000`;
+  if (explicit) {
+    const url = explicit.replace(/\/$/, "");
+
+    if (url.startsWith("http://")) {
+      if (!ALLOW_HTTP_IN_DEV) {
+        throw new Error(
+          "[CHITHRA] EXPO_PUBLIC_API_URL uses HTTP, which is insecure in production. " +
+            "Set EXPO_PUBLIC_API_URL to an HTTPS URL, or omit it to use auto-detection in development."
+        );
+      }
+      // Allowed only in dev mode — Metro dev server on LAN
+      return url;
+    }
+
+    return url;
   }
 
-  return 'http://localhost:3000';
+  // Auto-detect from Expo dev server (LAN — dev only)
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const host = hostUri.split(":")[0];
+    if (host) {
+      return `http://${host}:3000`;
+    }
+  }
+
+  if (!ALLOW_HTTP_IN_DEV) {
+    throw new Error(
+      "[CHITHRA] No EXPO_PUBLIC_API_URL configured. " +
+        "Set EXPO_PUBLIC_API_URL to the HTTPS URL of your production API server."
+    );
+  }
+
+  // Dev-only fallback for simulator
+  return "http://localhost:3000";
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();

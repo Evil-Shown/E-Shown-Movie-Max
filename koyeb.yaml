@@ -1,0 +1,50 @@
+name: chithra-cinema-api
+service:
+  port: 5000
+  health:
+    path: /api/v1/health
+    interval: 30
+  routes:
+    - path: /
+      port: 5000
+  env:
+    - key: NODE_ENV
+      value: production
+    - key: PORT
+      value: "5000"
+    - key: SUPABASE_URL
+      secret: SUPABASE_URL
+    - key: SUPABASE_ANON_KEY
+      secret: SUPABASE_ANON_KEY
+    - key: SUPABASE_SERVICE_ROLE_KEY
+      secret: SUPABASE_SERVICE_ROLE_KEY
+    - key: DATABASE_URL
+      secret: DATABASE_URL
+    - key: TMDB_API_KEY
+      secret: TMDB_API_KEY
+    - key: UPSTASH_REDIS_REST_URL
+      secret: UPSTASH_REDIS_REST_URL
+    - key: UPSTASH_REDIS_REST_TOKEN
+      secret: UPSTASH_REDIS_REST_TOKEN
+    - key: APP_URL
+      value: https://your-app.vercel.app
+    - key: API_URL
+      value: https://chithra-cinema-api.koyeb.app
+    - key: CORS_ORIGIN
+      value: https://your-app.vercel.app
+    - key: LOG_LEVEL
+      value: info
+    - key: ADMIN_TELEMETRY_KEY
+      secret: ADMIN_TELEMETRY_KEY
+    - key: PAYHERE_MERCHANT_ID
+      secret: PAYHERE_MERCHANT_ID
+    - key: PAYHERE_SECRET
+      secret: PAYHERE_SECRET
+    - key: PAYHERE_API_URL
+      value: https://payhere.lk
+  regions:
+    - fra
+    - was
+  scalings:
+    min: 1
+    max: 1

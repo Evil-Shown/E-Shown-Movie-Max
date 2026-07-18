@@ -23,6 +23,7 @@ import telemetryRoutes from "./domains/telemetry/telemetry.routes";
 import securityRoutes from "./domains/security/security.routes";
 import mobileRoutes from "./domains/mobile/mobile.routes";
 import subscriptionRoutes from "./domains/subscription/subscription.routes";
+import tmdbRoutes from "./domains/tmdb/tmdb.routes";
 
 import { prisma } from "./infrastructure/prisma";
 
@@ -56,7 +57,11 @@ app.use(express.json({ limit: "50kb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Public health checks (no rate limiting)
+// Platform health check (no rate limiting)
+app.get("/health", (_req, res) => {
+  res.json({ success: true, data: { status: "ok", timestamp: new Date().toISOString() } });
+});
+
 app.use("/api/v1/health", healthRoutes);
 
 // Global rate limiting for API routes
@@ -75,6 +80,7 @@ app.use("/api/v1/telemetry", telemetryRoutes);
 app.use("/api/v1/security", securityRoutes);
 app.use("/api/v1/mobile", mobileRoutes);
 app.use("/api/v1/subscription", subscriptionRoutes);
+app.use("/api/v1/tmdb", tmdbRoutes);
 
 // Legacy route compatibility (redirect /api/* to /api/v1/*)
 app.use("/api/auth", authRoutes);
@@ -89,6 +95,7 @@ app.use("/api/telemetry", telemetryRoutes);
 app.use("/api/security", securityRoutes);
 app.use("/api/mobile", mobileRoutes);
 app.use("/api/subscription", subscriptionRoutes);
+app.use("/api/tmdb", tmdbRoutes);
 app.get("/api/health", (_req, res) => {
   res.json({ success: true, data: { status: "ok" } });
 });
@@ -165,3 +172,6 @@ async function shutdown(signal: string) {
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
+
+// Koyeb sends SIGTERM on stop; ensure clean exit
+process.on("SIGQUIT", () => shutdown("SIGQUIT"));

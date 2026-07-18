@@ -7,11 +7,32 @@ import { logger } from "../config/logger";
 const RATE_LIMIT_WINDOW_SECONDS = 60;
 const RATE_LIMIT_MAX_REQUESTS = 60;
 
+const inMemoryCounts = new Map<string, { count: number; expiresAt: number }>();
+
+async function inMemoryIncr(key: string, windowSeconds: number): Promise<number> {
+  const now = Date.now();
+  const entry = inMemoryCounts.get(key);
+
+  if (!entry || now >= entry.expiresAt) {
+    inMemoryCounts.set(key, { count: 1, expiresAt: now + windowSeconds * 1000 });
+    return 1;
+  }
+
+  entry.count += 1;
+  return entry.count;
+}
+
 export async function redisRateLimit(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
     const ip = req.ip || req.socket?.remoteAddress || "unknown";
     const key = `chithra:ratelimit:server:api:${ip}`;
-    const count = await cacheIncr(key, RATE_LIMIT_WINDOW_SECONDS);
+
+    let count: number;
+    try {
+      count = await cacheIncr(key, RATE_LIMIT_WINDOW_SECONDS);
+    } catch {
+      count = await inMemoryIncr(key, RATE_LIMIT_WINDOW_SECONDS);
+    }
 
     if (count > RATE_LIMIT_MAX_REQUESTS) {
       next(new AppError(429, "RATE_LIMITED", "Too many requests. Please try again shortly."));
@@ -20,8 +41,8 @@ export async function redisRateLimit(req: Request, _res: Response, next: NextFun
 
     next();
   } catch (err) {
-    logger.warn({ err }, "redisRateLimit failed");
-    next();
+    logger.error({ err }, "Rate limiter critical failure");
+    next(new AppError(429, "RATE_LIMITED", "Too many requests. Please try again shortly."));
   }
 }
 
