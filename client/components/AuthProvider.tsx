@@ -15,6 +15,8 @@ export interface AuthUser {
   subscriptionTier: string;
   subscriptionExpiry: string | null;
   trialStartDate: string | null;
+  effectiveTier: "FREE" | "TRIAL" | "PRO";
+  trialDaysLeft: number;
   settings: {
     language: string;
     autoplay: boolean;
@@ -118,11 +120,39 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
     // Poll for OAuth sessions relayed from system browser (Electron desktop)
     let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let nonce: string | null = null;
     const isElectron = typeof window !== "undefined" && window.chithraDesktop?.isDesktopApp;
     if (isElectron && !getStoredToken()) {
+      (async () => {
+        for (let attempt = 0; attempt < 5; attempt++) {
+          try {
+            const resp = await fetch("http://localhost:5000/api/v1/auth/create-claim", {
+              method: "POST",
+            });
+            const json = await resp.json();
+            if (json.success && json.data) {
+              nonce = json.data.nonce;
+              return;
+            }
+            if (resp.status === 429) {
+              await new Promise((r) => setTimeout(r, 2000));
+              continue;
+            }
+          } catch {
+            /* server not ready */
+          }
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+      })();
+
       pollTimer = setInterval(async () => {
+        if (!nonce) return;
         try {
-          const resp = await fetch("http://localhost:5000/api/v1/auth/claim-session");
+          const resp = await fetch("http://localhost:5000/api/v1/auth/claim-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nonce }),
+          });
           const json = await resp.json();
           if (json.success && json.data) {
             localStorage.setItem("chithra-auth-token", json.data.accessToken);

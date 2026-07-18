@@ -1,5 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import axios from "axios";
+import { env } from "./config/env";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
@@ -75,8 +76,8 @@ interface TMDBGenresResponse {
 }
 
 function getTMDBConfig(): TMDBConfig {
-  const apiKey = process.env.TMDB_API_KEY;
-  if (!apiKey || apiKey === "your_tmdb_api_key_here") {
+  const apiKey = env.TMDB_API_KEY;
+  if (!apiKey) {
     throw new Error("TMDB_API_KEY not configured on server");
   }
   return {

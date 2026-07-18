@@ -2,6 +2,9 @@
 
 This document explains the environment variable strategy for the Chithra Cinema monorepo and why the TMDB API key lives on the backend, not in the mobile app.
 
+> **⚠️ All environment variables are now validated at startup via Zod schema** (`server/src/config/env.ts`).
+> If a required variable is missing, the server **will not start** — fail-safe by default.
+
 ---
 
 ## Variable Classification
@@ -26,17 +29,35 @@ This document explains the environment variable strategy for the Chithra Cinema 
 
 **Never leave the server process.** Stored in GitHub Actions secrets, server `.env`, or secret managers (AWS Secrets Manager, GCP Secret Manager, etc.).
 
-| Variable                   | Used By                   | Description                                                         |
-| -------------------------- | ------------------------- | ------------------------------------------------------------------- |
-| `TMDB_API_KEY`             | Server (mobile API proxy) | The Movie Database API key — proxies all movie/TV metadata requests |
-| `VIRUSTOTAL_API_KEY`       | Server (security)         | VirusTotal API for hash scanning                                    |
-| `UPSTASH_REDIS_REST_URL`   | Server (caching)          | Redis connection URL                                                |
-| `UPSTASH_REDIS_REST_TOKEN` | Server (caching)          | Redis auth token                                                    |
-| `EMBED_PROXY_LIST`         | Server (embeds)           | Comma-separated proxy URLs                                          |
-| `ADMIN_TELEMETRY_KEY`      | Server (admin)            | Secret for telemetry stats endpoint                                 |
-| `PORT`                     | Server                    | HTTP port (default 5000)                                            |
-| `OMDB_API_KEY`             | Server (optional)         | OMDB API key for additional metadata                                |
-| `WYZIE_API_KEY`            | Server (optional)         | Wyzie streaming API key                                             |
+All variables are validated by the Zod schema in `server/src/config/env.ts`. The server crashes on startup if required vars are missing.
+
+| Variable                    | Required                   | Description                                                       |
+| --------------------------- | -------------------------- | ----------------------------------------------------------------- |
+| `SUPABASE_URL`              | ✅ Yes                     | Supabase project URL                                              |
+| `SUPABASE_ANON_KEY`         | ✅ Yes                     | Supabase anonymous key                                            |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ Yes                     | Supabase service role key (admin operations)                      |
+| `DATABASE_URL`              | ✅ Yes                     | PostgreSQL connection string                                      |
+| `TMDB_API_KEY`              | ✅ Yes                     | TMDB API key — proxies all movie/TV metadata requests             |
+| `PAYHERE_MERCHANT_ID`       | ✅ Yes                     | PayHere merchant ID for payment processing                        |
+| `PAYHERE_SECRET`            | ✅ Yes                     | PayHere merchant secret for webhook verification                  |
+| `ADMIN_TELEMETRY_KEY`       | ✅ Yes                     | Secret for telemetry stats endpoint (no hardcoded fallback)       |
+| `PAYHERE_API_URL`           | Dev Default; Prod Required | PayHere API base URL — sandbox in dev, https://payhere.lk in prod |
+| `APP_URL`                   | Dev Default; Prod Required | Frontend URL for PayHere return redirects                         |
+| `API_URL`                   | Dev Default; Prod Required | Backend URL for PayHere webhook notifications                     |
+| `PORT`                      | Default                    | HTTP port (default 5000)                                          |
+| `NODE_ENV`                  | Default                    | Environment: development/production/test                          |
+| `LOG_LEVEL`                 | Default                    | Pino log level                                                    |
+| `EMBED_CACHE_TTL_MS`        | Default                    | Embed proxy cache TTL                                             |
+| `EMBED_REQUEST_TIMEOUT_MS`  | Default                    | Embed proxy request timeout                                       |
+| `EMBED_MAX_CACHE_BYTES`     | Default                    | Max embed cache entry size                                        |
+| `VIRUSTOTAL_API_KEY`        | Optional                   | VirusTotal API for hash scanning                                  |
+| `OMDB_API_KEY`              | Optional                   | OMDB API key for additional metadata                              |
+| `WYZIE_API_KEY`             | Optional                   | Wyzie streaming API key                                           |
+| `UPSTASH_REDIS_REST_URL`    | Optional                   | Redis connection URL                                              |
+| `UPSTASH_REDIS_REST_TOKEN`  | Optional                   | Redis auth token                                                  |
+| `EMBED_PROXY_LIST`          | Optional                   | Comma-separated proxy URLs                                        |
+| `USER_DATA_PATH`            | Optional                   | Custom user data path (desktop app)                               |
+| `GH_TOKEN`                  | Optional                   | GitHub token for release automation                               |
 
 ---
 
@@ -94,6 +115,7 @@ export async function searchMovies(query: string, page = 1) {
 // server/src/mobile-api.ts
 import { Router } from "express";
 import axios from "axios";
+import { env } from "./config/env";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
@@ -114,10 +136,10 @@ router.get("/search", async (req, res) => {
   res.json(mapSearchResults(tmdbData));
 });
 
-// tmdbGet() injects TMDB_API_KEY from process.env (server-only)
+// tmdbGet() injects TMDB_API_KEY from the validated env object (server-only)
 async function tmdbGet<T>(path: string, params: Record<string, string>) {
   const response = await axios.get(`${TMDB_BASE}${path}`, {
-    params: { api_key: process.env.TMDB_API_KEY, language: "en-US", ...params },
+    params: { api_key: env.TMDB_API_KEY, language: "en-US", ...params },
     timeout: 10000,
   });
   return response.data;
@@ -253,12 +275,14 @@ If you change the API domain:
 
 ## Common Mistakes
 
-| Mistake                                         | Consequence                           | Fix                              |
-| ----------------------------------------------- | ------------------------------------- | -------------------------------- |
-| `TMDB_API_KEY` in `mobile/.env`                 | Key exposed in APK                    | Move to server only              |
-| `EXPO_PUBLIC_API_URL` pointing to TMDB directly | Bypasses your rate limits, no caching | Point to your backend            |
-| Committing `.env` files                         | Secrets in git history                | Add to `.gitignore`, rotate keys |
-| Using `process.env.TMDB_API_KEY` in mobile code | Undefined at runtime (not bundled)    | Only available on server         |
+| Mistake                                         | Consequence                              | Fix                                                |
+| ----------------------------------------------- | ---------------------------------------- | -------------------------------------------------- |
+| `TMDB_API_KEY` in `mobile/.env`                 | Key exposed in APK                       | Move to server only                                |
+| `EXPO_PUBLIC_API_URL` pointing to TMDB directly | Bypasses your rate limits, no caching    | Point to your backend                              |
+| Committing `.env` files                         | Secrets in git history                   | Add to `.gitignore`, rotate keys                   |
+| Using `process.env.TMDB_API_KEY` in mobile code | Undefined at runtime (not bundled)       | Only available on server                           |
+| Missing required env var at startup             | Server crashes with Zod validation error | Check server startup logs, set the missing var     |
+| Hardcoded env values in source code             | Security audit failure                   | Add to `.env.example`, import from `config/env.ts` |
 
 ---
 

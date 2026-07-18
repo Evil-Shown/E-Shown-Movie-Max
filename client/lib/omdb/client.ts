@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { OmdbMovieResponse, OmdbSearchResponse } from "./types";
 import { buildCacheKey, cacheJson } from "@/lib/cache/request-cache";
 
@@ -42,42 +44,42 @@ async function omdbFetch<T>(params: Record<string, string>, cacheScope: string):
   });
 }
 
-export async function searchOmdb(
-  query: string,
-  page = 1
-): Promise<OmdbSearchResponse> {
-  return omdbFetch<OmdbSearchResponse>({
-    s: query.trim(),
-    type: "movie",
-    page: String(page),
-    r: "json",
-  }, "search.movie");
+export async function searchOmdb(query: string, page = 1): Promise<OmdbSearchResponse> {
+  return omdbFetch<OmdbSearchResponse>(
+    {
+      s: query.trim(),
+      type: "movie",
+      page: String(page),
+      r: "json",
+    },
+    "search.movie"
+  );
 }
 
-export async function searchOmdbSeries(
-  query: string,
-  page = 1
-): Promise<OmdbSearchResponse> {
-  return omdbFetch<OmdbSearchResponse>({
-    s: query.trim(),
-    type: "series",
-    page: String(page),
-    r: "json",
-  }, "search.series");
+export async function searchOmdbSeries(query: string, page = 1): Promise<OmdbSearchResponse> {
+  return omdbFetch<OmdbSearchResponse>(
+    {
+      s: query.trim(),
+      type: "series",
+      page: String(page),
+      r: "json",
+    },
+    "search.series"
+  );
 }
 
 export async function fetchOmdbByImdbId(imdbId: string): Promise<OmdbMovieResponse> {
-  return omdbFetch<OmdbMovieResponse>({
-    i: imdbId,
-    plot: "full",
-    r: "json",
-  }, "detail.imdb");
+  return omdbFetch<OmdbMovieResponse>(
+    {
+      i: imdbId,
+      plot: "full",
+      r: "json",
+    },
+    "detail.imdb"
+  );
 }
 
-export async function fetchOmdbByTitle(
-  title: string,
-  year?: number
-): Promise<OmdbMovieResponse> {
+export async function fetchOmdbByTitle(title: string, year?: number): Promise<OmdbMovieResponse> {
   const params: Record<string, string> = {
     t: title,
     plot: "full",

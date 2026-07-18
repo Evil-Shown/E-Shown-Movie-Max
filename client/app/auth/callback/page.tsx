@@ -24,9 +24,12 @@ export default function AuthCallbackPage() {
     const handle = async () => {
       try {
         const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get("access_token");
-        const errorDescription = params.get("error_description");
+        const hashParams = new URLSearchParams(hash);
+        const queryParams = new URLSearchParams(window.location.search);
+        const accessToken = hashParams.get("access_token");
+        const errorDescription = hashParams.get("error_description");
+        const state = queryParams.get("state");
+        const claimId = state || localStorage.getItem("chithra-oauth-claim-id");
 
         if (errorDescription) {
           setStatus("error");
@@ -39,6 +42,9 @@ export default function AuthCallbackPage() {
           setErrorMsg("No access token received.");
           return;
         }
+
+        const isElectron =
+          typeof window !== "undefined" && (window as Window & typeof globalThis).chithraDesktop?.isDesktopApp;
 
         const result = await api.post<{ user: Record<string, unknown>; tokens: { accessToken: string } }>(
           "/api/v1/auth/oauth",
@@ -53,21 +59,20 @@ export default function AuthCallbackPage() {
 
         const { user, tokens } = result.data;
 
-        const isElectron = typeof window !== "undefined" && (window as any).chithraDesktop?.isDesktopApp;
-
-        if (isElectron) {
-          localStorage.setItem("chithra-auth-token", tokens.accessToken);
-          localStorage.setItem("chithra-auth-user", JSON.stringify(user));
-          window.dispatchEvent(new Event("auth-stored"));
-          router.replace("/");
-        } else {
+        if (isElectron && claimId) {
           await fetch("http://localhost:5000/api/v1/auth/store-session", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ accessToken: tokens.accessToken, user }),
+            body: JSON.stringify({ accessToken: tokens.accessToken, user, claimId }),
           });
           setStatus("success");
+          return;
         }
+
+        localStorage.setItem("chithra-auth-token", tokens.accessToken);
+        localStorage.setItem("chithra-auth-user", JSON.stringify(user));
+        window.dispatchEvent(new Event("auth-stored"));
+        router.replace("/");
       } catch (err) {
         setStatus("error");
         setErrorMsg(err instanceof Error ? err.message : "An unexpected error occurred.");
