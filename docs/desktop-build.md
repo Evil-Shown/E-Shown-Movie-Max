@@ -199,31 +199,31 @@ npm run package:publish
 
 The `build-desktop.ps1` script generates `.env` files for the client and server using values from:
 
-| Source                 | Used For                            |
-| ---------------------- | ----------------------------------- |
-| `client/.env.local`    | Client API URL, TMDB key, site name |
-| `server/.env`          | Server API keys, DB connection      |
-| GitHub Actions Secrets | CI/CD build values                  |
+| Source                 | Used For                       |
+| ---------------------- | ------------------------------ |
+| `client/.env.local`    | Client API URL, site name      |
+| `server/.env`          | Server API keys, DB connection |
+| GitHub Actions Secrets | CI/CD build values             |
 
 ### Client `.env.local` (auto-generated during build)
 
 ```
-OMDB_API_KEY=...
-TMDB_API_KEY=...
-WYZIE_API_KEY=...
 NEXT_PUBLIC_GODS_EYE_API_URL=http://127.0.0.1:5000
 NEXT_PUBLIC_TBOOM_API_URL=http://127.0.0.1:5000
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:5000
 NEXT_PUBLIC_USE_EMBED_PROXY=false
 ```
 
+> ⚠️ API keys such as `TMDB_API_KEY` are **never** written to the client env. They stay in `server/.env`.
+
 ### Server `.env` (auto-generated during build)
 
 ```
-VIRUSTOTAL_API_KEY=...
 PORT=5000
-UPSTASH_REDIS_REST_URL=... (optional)
-UPSTASH_REDIS_REST_TOKEN=... (optional)
+TMDB_API_KEY=...
+OMDB_API_KEY=...
+WYZIE_API_KEY=...
+VIRUSTOTAL_API_KEY=...
 ```
 
 ---

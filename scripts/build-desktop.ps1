@@ -221,12 +221,8 @@ function Prepare-ClientEnvForPackage {
   Copy-Item $SourceEnv $DestPath -Force
   $lines = @(Get-Content $DestPath)
 
-  $tmdbKey = $null
-  foreach ($line in $lines) {
-    if ($line -match '^\s*TMDB_API_KEY=(.+)$') {
-      $tmdbKey = $Matches[1].Trim()
-    }
-  }
+  # Remove any TMDB key lines from the client env — the key must stay server-side.
+  $lines = $lines | Where-Object { $_ -notmatch '^\s*(TMDB_API_KEY|NEXT_PUBLIC_TMDB_KEY)=' }
 
   $siteName = "CHITHRA $([char]0x2014) CINEMA"
   $required = [ordered]@{
@@ -234,10 +230,6 @@ function Prepare-ClientEnvForPackage {
     "NEXT_PUBLIC_GODS_EYE_API_URL" = "http://127.0.0.1:5000"
     "NEXT_PUBLIC_TBOOM_API_URL"    = "http://127.0.0.1:5000"
     "NEXT_PUBLIC_SITE_NAME"        = $siteName
-  }
-
-  if ($tmdbKey -and -not ($lines -match '^\s*NEXT_PUBLIC_TMDB_KEY=')) {
-    $required["NEXT_PUBLIC_TMDB_KEY"] = $tmdbKey
   }
 
   foreach ($key in $required.Keys) {

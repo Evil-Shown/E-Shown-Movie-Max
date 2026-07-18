@@ -63,9 +63,11 @@ export function heartbeat(clientId: string): void {
 }
 
 export function getStats(providedSecret: string | string[] | undefined) {
-  const adminSecret = env.ADMIN_TELEMETRY_KEY || "chithra-telemetry-secret-1029";
+  if (!env.ADMIN_TELEMETRY_KEY) {
+    throw new Error("ADMIN_TELEMETRY_KEY not configured");
+  }
 
-  if (providedSecret !== adminSecret) {
+  if (providedSecret !== env.ADMIN_TELEMETRY_KEY) {
     throw new Error("Unauthorized access to telemetry statistics.");
   }
 

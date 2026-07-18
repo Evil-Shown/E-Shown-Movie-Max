@@ -1,8 +1,9 @@
 import axios, { type AxiosProxyConfig } from "axios";
+import { env } from "./config/env";
 
-const EMBED_CACHE_TTL_MS = Number(process.env.EMBED_CACHE_TTL_MS) || 60 * 60 * 1000;
-const EMBED_REQUEST_TIMEOUT_MS = Number(process.env.EMBED_REQUEST_TIMEOUT_MS) || 15000;
-const EMBED_MAX_CACHE_BYTES = Number(process.env.EMBED_MAX_CACHE_BYTES) || 5 * 1024 * 1024;
+const EMBED_CACHE_TTL_MS = env.EMBED_CACHE_TTL_MS;
+const EMBED_REQUEST_TIMEOUT_MS = env.EMBED_REQUEST_TIMEOUT_MS;
+const EMBED_MAX_CACHE_BYTES = env.EMBED_MAX_CACHE_BYTES;
 const EMBED_MAX_RETRIES = 3;
 
 export const USER_AGENTS = [
@@ -77,7 +78,7 @@ export function getRandomReferrer(): string {
 }
 
 function parseProxyList(): string[] {
-  const raw = process.env.EMBED_PROXY_LIST || "";
+  const raw = env.EMBED_PROXY_LIST || "";
   return raw
     .split(/[,\s]+/)
     .map((entry) => entry.trim())
