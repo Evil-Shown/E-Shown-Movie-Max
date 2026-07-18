@@ -14,7 +14,6 @@
     "lint": "turbo run lint && eslint server packages",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky || true",
     "package": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1",
     "package:current": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1 -NoIncrement",
     "package:version": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1 -Version",
@@ -25,28 +24,10 @@
     "release:desktop": "gh workflow run release-desktop.yml",
     "release:mobile": "node scripts/release-mobile.mjs"
   },
-  "lint-staged": {
-    "*.{json,md,css,yml,yaml}": "prettier --write",
-    "client/**/*.{js,jsx,ts,tsx,mjs}": [
-      "prettier --write",
-      "eslint --fix --config client/eslint.config.mjs"
-    ],
-    "server/**/*.ts": [
-      "prettier --write",
-      "eslint --fix"
-    ],
-    "packages/**/*.ts": [
-      "prettier --write",
-      "eslint --fix"
-    ],
-    "mobile/**/*.{js,jsx,ts,tsx}": "prettier --write"
-  },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
     "prompts": "^2.4.2",
     "turbo": "^2.5.4",
