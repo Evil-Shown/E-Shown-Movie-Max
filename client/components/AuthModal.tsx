@@ -468,7 +468,18 @@ function GoogleOAuthButton() {
   const handleGoogleAuth = async () => {
     setLoading(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const baseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/$/, "");
+      if (!baseUrl || baseUrl.includes("undefined")) {
+        console.error(
+          "[chithra-auth] NEXT_PUBLIC_SUPABASE_URL is missing. Set it on Vercel to your Supabase Project URL (https://xxxx.supabase.co) and redeploy."
+        );
+        alert(
+          "Google sign-in is not configured. Missing NEXT_PUBLIC_SUPABASE_URL on this deployment. Add it in Vercel → Environment Variables and redeploy."
+        );
+        setLoading(false);
+        return;
+      }
+
       const redirectTo = `${window.location.origin}/auth/callback`;
       const url = `${baseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&prompt=select_account`;
 

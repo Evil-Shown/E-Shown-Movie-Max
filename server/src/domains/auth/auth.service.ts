@@ -2,7 +2,6 @@ import { supabaseAdmin, supabaseAnon } from "../../infrastructure/supabase";
 import { prisma } from "../../infrastructure/prisma";
 import { AppError } from "../../utils/response";
 import { logger } from "../../config/logger";
-import { env } from "../../config/env";
 import * as authRepository from "./auth.repository";
 import type { RegisterInput, LoginInput, OAuthInput, AuthResponse, AuthUser } from "./auth.types";
 import { toAuthUser } from "./auth.types";
@@ -93,10 +92,12 @@ export async function register(input: RegisterInput, ip?: string): Promise<AuthR
     throw new AppError(409, "USERNAME_EXISTS", "This username is already taken");
   }
 
+  // Admin createUser can mark email confirmed so the user can sign in immediately.
+  // (Previously only true in development → production got "Account created but login failed".)
   const { data: authData, error: createError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
-    email_confirm: env.NODE_ENV === "development", // Auto-verify in dev
+    email_confirm: true,
     user_metadata: { username },
   });
 
@@ -110,17 +111,39 @@ export async function register(input: RegisterInput, ip?: string): Promise<AuthR
       email,
       username,
       authUserId: authData.user.id,
-      isVerified: env.NODE_ENV === "development",
+      isVerified: true,
     });
 
-    const { data: signInData, error: signInError } = await supabaseAnon.auth.signInWithPassword({
+    let { data: signInData, error: signInError } = await supabaseAnon.auth.signInWithPassword({
       email,
       password,
     });
 
+    // Recovery if project still requires confirmation or createUser confirm lagged
     if (signInError || !signInData.session) {
-      logger.error({ error: signInError, email }, "Auto-login after registration failed");
-      throw new AppError(500, "AUTH_PROVIDER_ERROR", "Account created but login failed");
+      logger.warn(
+        { error: signInError, email, code: signInError?.code, msg: signInError?.message },
+        "Auto-login after registration failed — confirming email and retrying"
+      );
+      await supabaseAdmin.auth.admin.updateUserById(authData.user.id, { email_confirm: true });
+      ({ data: signInData, error: signInError } = await supabaseAnon.auth.signInWithPassword({
+        email,
+        password,
+      }));
+    }
+
+    if (signInError || !signInData.session) {
+      logger.error(
+        { error: signInError, email, code: signInError?.code, msg: signInError?.message },
+        "Auto-login after registration failed"
+      );
+      throw new AppError(
+        500,
+        "AUTH_PROVIDER_ERROR",
+        signInError?.message
+          ? `Account created but login failed: ${signInError.message}`
+          : "Account created but login failed"
+      );
     }
 
     await upsertDevice(localUser.id, {
@@ -149,10 +172,19 @@ export async function register(input: RegisterInput, ip?: string): Promise<AuthR
 export async function login(input: LoginInput, ip?: string): Promise<AuthResponse> {
   const { email, password } = input;
 
-  const { data, error } = await supabaseAnon.auth.signInWithPassword({
+  let { data, error } = await supabaseAnon.auth.signInWithPassword({
     email,
     password,
   });
+
+  // Users created before email_confirm fix may still be unconfirmed — recover once
+  if (error && /not confirmed|confirm/i.test(error.message || "")) {
+    const local = await authRepository.findUserByEmail(email);
+    if (local?.authUserId) {
+      await supabaseAdmin.auth.admin.updateUserById(local.authUserId, { email_confirm: true });
+      ({ data, error } = await supabaseAnon.auth.signInWithPassword({ email, password }));
+    }
+  }
 
   if (error || !data.session || !data.user) {
     throw new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password");
