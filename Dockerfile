@@ -42,7 +42,7 @@ USER node
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -sf http://localhost:5000/api/v1/health || exit 1
+  CMD curl -sf http://localhost:${PORT:-5000}/api/v1/health || exit 1
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "dist/src/index.js"]

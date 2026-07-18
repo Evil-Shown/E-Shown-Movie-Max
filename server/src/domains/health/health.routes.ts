@@ -4,6 +4,14 @@ import { success } from "../../utils/response";
 
 const router = Router();
 
+// Render/Koyeb health check path is /api/v1/health (this router is mounted there).
+router.get("/", (_req, res) => {
+  success(res, {
+    status: "ok",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 router.get("/health", (_req, res) => {
   success(res, {
     status: "ok",
