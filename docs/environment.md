@@ -65,26 +65,32 @@ All variables are validated by the Zod schema in `server/src/config/env.ts`. The
 
 ### Threat Model
 
-| Scenario                   | If Key in Mobile App                                       | If Key on Server                                   |
-| -------------------------- | ---------------------------------------------------------- | -------------------------------------------------- |
-| APK reverse-engineered     | **Key stolen** — attacker uses your quota, gets you banned | Key safe                                           |
-| MITM on user WiFi          | Key visible in traffic (even with pinning bypass)          | Only proxied requests visible                      |
-| Malicious user scripts app | Can scrape TMDB directly, bypassing your rate limits       | Must go through your API (rate-limited, monitored) |
-| Key rotation needed        | Requires app update + user update                          | Instant server-side change                         |
+| Scenario                      | If Key in Client                                           | If Key on Server                                   |
+| ----------------------------- | ---------------------------------------------------------- | -------------------------------------------------- |
+| Bundle reverse-engineered     | **Key stolen** — attacker uses your quota, gets you banned | Key safe                                           |
+| MITM on user network          | Key visible in traffic                                     | Only proxied requests visible                      |
+| Malicious user scripts client | Can scrape TMDB directly, bypassing your rate limits       | Must go through your API (rate-limited, monitored) |
+| Key rotation needed           | Requires app update + user update                          | Instant server-side change                         |
 
 ### Architecture
 
 ```
 ┌─────────────┐     HTTPS      ┌─────────────┐     HTTPS      ┌─────────┐
-│  Mobile App │ ─────────────▶ │   Backend   │ ─────────────▶ │  TMDB   │
-│             │  /api/mobile/* │  (Server)   │  api.themoviedb│  API    │
-│  No TMDB    │                │  TMDB_KEY   │     .org/3     │         │
-│  key here   │                │  (secret)   │                │         │
-└─────────────┘                └─────────────┘                └─────────┘
-     │                              │
-     │  EXPO_PUBLIC_API_URL         │  TMDB_API_KEY (private)
-     │  (public)                    │  (private)
-     ▼                              ▼
+│  Mobile App │ ─────────────▶ │             │ ─────────────▶ │  TMDB   │
+│             │  /api/mobile/* │   Backend   │  api.themoviedb│  API    │
+│  No TMDB    │                │  (Server)   │     .org/3     │         │
+│  key here   │                │  TMDB_KEY   │                │         │
+└─────────────┘                │  (secret)   │                └─────────┘
+                               └─────────────┘
+┌─────────────┐     HTTPS      ▲
+│  Web Client │ ───────────────┘
+│  (Next.js)  │  /api/v1/tmdb/*
+│  No TMDB    │
+│  key here   │
+└─────────────┘
+
+Public:  EXPO_PUBLIC_API_URL / NEXT_PUBLIC_API_BASE_URL
+Private: TMDB_API_KEY (server-only)
 ```
 
 ### Mobile App Requests
@@ -111,38 +117,39 @@ export async function searchMovies(query: string, page = 1) {
 
 ### Backend Proxies to TMDB
 
+The backend holds `TMDB_API_KEY` and exposes two proxy surfaces:
+
+1. **Mobile API** (`/api/mobile/*`) — higher-level endpoints that transform TMDB responses into the mobile app's internal types.
+2. **Web TMDB Proxy** (`/api/v1/tmdb/*`) — raw pass-through proxy used by the Next.js web client.
+
+#### Mobile API
+
 ```typescript
 // server/src/mobile-api.ts
 import { Router } from "express";
-import axios from "axios";
-import { env } from "./config/env";
-
-const TMDB_BASE = "https://api.themoviedb.org/3";
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
+import { tmdbGet } from "./lib/tmdb";
 
 router.get("/movie/:id", async (req, res) => {
-  const tmdbData = await tmdbGet(`/movie/${req.params.id}`, {
-    append_to_response: "credits,videos,images,similar",
-  });
-  res.json(mapMovieDetail(tmdbData)); // Transform to your types
+  const tmdbData = await tmdbGet(
+    `/movie/${req.params.id}`,
+    {
+      append_to_response: "credits,videos,images,similar",
+    },
+    { region: "US" }
+  );
+  res.json(mapMovieDetail(tmdbData)); // Transform to mobile types
 });
+```
 
-router.get("/search", async (req, res) => {
-  const { q, page, media } = req.query;
-  const tmdbData = await tmdbGet(`/search/${media || "multi"}`, {
-    query: q,
-    page: page || "1",
-  });
-  res.json(mapSearchResults(tmdbData));
-});
+#### Web TMDB Proxy
 
-// tmdbGet() injects TMDB_API_KEY from the validated env object (server-only)
-async function tmdbGet<T>(path: string, params: Record<string, string>) {
-  const response = await axios.get(`${TMDB_BASE}${path}`, {
-    params: { api_key: env.TMDB_API_KEY, language: "en-US", ...params },
-    timeout: 10000,
-  });
-  return response.data;
+```typescript
+// server/src/domains/tmdb/tmdb.controller.ts
+import { tmdbGet } from "../../lib/tmdb";
+
+export async function proxy(req: Request, res: Response, next: NextFunction) {
+  const data = await tmdbGet<unknown>(req.path, req.query as Record<string, string>);
+  res.json(data); // Raw TMDB response
 }
 ```
 
@@ -277,10 +284,11 @@ If you change the API domain:
 
 | Mistake                                         | Consequence                              | Fix                                                |
 | ----------------------------------------------- | ---------------------------------------- | -------------------------------------------------- |
+| `TMDB_API_KEY` in `client/.env.local`           | Key exposed in browser bundle            | Move to `server/.env`                              |
 | `TMDB_API_KEY` in `mobile/.env`                 | Key exposed in APK                       | Move to server only                                |
 | `EXPO_PUBLIC_API_URL` pointing to TMDB directly | Bypasses your rate limits, no caching    | Point to your backend                              |
 | Committing `.env` files                         | Secrets in git history                   | Add to `.gitignore`, rotate keys                   |
-| Using `process.env.TMDB_API_KEY` in mobile code | Undefined at runtime (not bundled)       | Only available on server                           |
+| Using `process.env.TMDB_API_KEY` in client code | Key undefined or leaked in bundle        | Only available on server                           |
 | Missing required env var at startup             | Server crashes with Zod validation error | Check server startup logs, set the missing var     |
 | Hardcoded env values in source code             | Security audit failure                   | Add to `.env.example`, import from `config/env.ts` |
 
@@ -299,6 +307,11 @@ curl "http://localhost:5000/api/mobile/movie/550"  # Fight Club
 curl "http://localhost:5000/api/mobile/search?q=inception"
 curl "http://localhost:5000/api/mobile/tv/1399/seasons"  # Game of Thrones
 curl "http://localhost:5000/api/mobile/genres/movie"
+
+# Test web TMDB proxy (raw TMDB responses)
+curl "http://localhost:5000/api/v1/tmdb/movie/popular"
+curl "http://localhost:5000/api/v1/tmdb/movie/550"
+curl "http://localhost:5000/api/v1/tmdb/search/movie?query=inception"
 ```
 
 ---
@@ -476,6 +489,6 @@ function mapMovie(data: TMDBMovie): Movie {
 ## Summary
 
 - **Mobile app** = thin client, only knows `EXPO_PUBLIC_API_URL`
-- **Backend** = gatekeeper, holds `TMDB_API_KEY`, proxies, caches, rate-limits
-- **Web/desktop** = same pattern, uses `NEXT_PUBLIC_API_URL` / config
+- **Web/desktop client** = thin client, only knows `NEXT_PUBLIC_API_BASE_URL`
+- **Backend** = gatekeeper, holds `TMDB_API_KEY`, proxies via `/api/mobile/*` and `/api/v1/tmdb/*`, caches, rate-limits
 - **Key rotation** = server-only change, zero client updates
