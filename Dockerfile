@@ -9,7 +9,7 @@ COPY package.json package-lock.json ./
 COPY server/package.json ./server/package.json
 COPY packages/core/package.json ./packages/core/package.json
 
-RUN npm ci --ignore-scripts
+RUN npm ci
 
 COPY server/ ./server
 COPY packages/core/ ./packages/core
@@ -28,16 +28,13 @@ COPY package.json package-lock.json ./
 COPY server/package.json ./server/package.json
 COPY packages/core/package.json ./packages/core/package.json
 
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/server/dist ./server/dist
 COPY --from=builder /app/server/prisma ./server/prisma
+COPY --from=builder /app/server/node_modules/.prisma ./server/node_modules/.prisma
 
 WORKDIR /app/server
-
-RUN chown -R node:node /app
-
-USER node
 
 EXPOSE 5000
 

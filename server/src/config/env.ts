@@ -30,21 +30,9 @@ const envSchema = z.object({
   DATABASE_URL: notEmptyOrPlaceholder("DATABASE_URL"),
 
   TMDB_API_KEY: notEmptyOrPlaceholder("TMDB_API_KEY"),
-  TMDB_API_KEY_WEB: z.string().optional(),
-  TMDB_API_KEY_DESKTOP: z.string().optional(),
-  TMDB_API_KEY_MOBILE: z.string().optional(),
   VIRUSTOTAL_API_KEY: z.string().optional(),
-  VIRUSTOTAL_API_KEY_WEB: z.string().optional(),
-  VIRUSTOTAL_API_KEY_DESKTOP: z.string().optional(),
-  VIRUSTOTAL_API_KEY_MOBILE: z.string().optional(),
   OMDB_API_KEY: z.string().optional(),
-  OMDB_API_KEY_WEB: z.string().optional(),
-  OMDB_API_KEY_DESKTOP: z.string().optional(),
-  OMDB_API_KEY_MOBILE: z.string().optional(),
   WYZIE_API_KEY: z.string().optional(),
-  WYZIE_API_KEY_WEB: z.string().optional(),
-  WYZIE_API_KEY_DESKTOP: z.string().optional(),
-  WYZIE_API_KEY_MOBILE: z.string().optional(),
 
   CORS_ORIGIN: z.string().optional(),
 
