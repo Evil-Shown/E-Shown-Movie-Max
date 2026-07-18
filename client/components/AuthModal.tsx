@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthProvider";
+import { API_BASE } from "@/lib/api";
 
 const cinemaGradients = [
   "radial-gradient(ellipse at 20% 50%, #e65100 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, #0f3460 0%, transparent 50%), #0a0a0f",
@@ -525,7 +526,7 @@ function GoogleOAuthButton() {
   const startPolling = () => {
     const poll = async () => {
       try {
-        const resp = await fetch("http://localhost:5000/api/v1/auth/claim-session");
+        const resp = await fetch(`${API_BASE}/api/v1/auth/claim-session`);
         const json = await resp.json();
         if (json.success && json.data) {
           localStorage.setItem("chithra-auth-token", json.data.accessToken);

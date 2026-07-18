@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { api } from "@/lib/api";
+import { API_BASE, api } from "@/lib/api";
 import { migrateLocalStorageToBackend } from "@/lib/api/migrate";
 
 export interface AuthUser {
@@ -126,7 +126,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       (async () => {
         for (let attempt = 0; attempt < 5; attempt++) {
           try {
-            const resp = await fetch("http://localhost:5000/api/v1/auth/create-claim", {
+            const resp = await fetch(`${API_BASE}/api/v1/auth/create-claim`, {
               method: "POST",
             });
             const json = await resp.json();
@@ -148,7 +148,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       pollTimer = setInterval(async () => {
         if (!nonce) return;
         try {
-          const resp = await fetch("http://localhost:5000/api/v1/auth/claim-session", {
+          const resp = await fetch(`${API_BASE}/api/v1/auth/claim-session`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ nonce }),

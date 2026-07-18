@@ -6,6 +6,7 @@ const allowedOrigins: string[] = [
   "http://localhost:3000",
   "http://localhost:19006",
   "https://chithra-cinema.vercel.app",
+  "https://chithracinema.vercel.app",
 ];
 
 if (env.CORS_ORIGIN) {
