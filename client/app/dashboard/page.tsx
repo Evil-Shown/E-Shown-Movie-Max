@@ -388,7 +388,10 @@ interface ActivityItem {
 }
 
 function ActivityRow({ item }: { item: ActivityItem }) {
-  const badgeCfg: Record<string, { label: string; icon: React.ReactNode; pill: string; iconBg: string; iconColor: string }> = {
+  const badgeCfg: Record<
+    string,
+    { label: string; icon: React.ReactNode; pill: string; iconBg: string; iconColor: string }
+  > = {
     watching: {
       label: "WATCHING",
       icon: <polygon points="5 3 19 12 5 21 5 3" />,
@@ -412,7 +415,13 @@ function ActivityRow({ item }: { item: ActivityItem }) {
     },
     downloaded: {
       label: "DOWNLOADED",
-      icon: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></>,
+      icon: (
+        <>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </>
+      ),
       pill: "bg-gradient-to-r from-[#1565c0] to-[#64b5f6] text-white shadow-[0_2px_10px_rgba(21,101,192,0.35)]",
       iconBg: "bg-[#3e2723]",
       iconColor: "text-[#64b5f6]",
@@ -425,7 +434,13 @@ function ActivityRow({ item }: { item: ActivityItem }) {
     <div className={`${styles.activityRow} flex items-center gap-4 px-5 py-4 rounded-[14px] bg-[#faf6f0]`}>
       {/* Action Icon */}
       <div className={`w-9 h-9 rounded-xl ${cfg.iconBg} flex items-center justify-center shrink-0`}>
-        <svg className={`w-4 h-4 ${cfg.iconColor}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          className={`w-4 h-4 ${cfg.iconColor}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           {cfg.icon}
         </svg>
       </div>
@@ -463,7 +478,9 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 
       {/* Right: status pill */}
       <div className="shrink-0">
-        <span className={`inline-block text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-[0.5px] ${cfg.pill}`}>
+        <span
+          className={`inline-block text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-[0.5px] ${cfg.pill}`}
+        >
           {cfg.label}
         </span>
       </div>
@@ -1178,10 +1195,7 @@ export default function DashboardPage() {
                     Every story, carved in light. Pick up where you left off, or let the eye find your next obsession.
                   </p>
                   {resumeItems.length > 0 && (
-                    <Link
-                      href={`/movie/${resumeItems[0].id}`}
-                      className={styles.heroCtaButton}
-                    >
+                    <Link href={`/movie/${resumeItems[0].id}`} className={styles.heroCtaButton}>
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                         <polygon points="5 3 19 12 5 21 5 3" />
                       </svg>
@@ -1191,7 +1205,13 @@ export default function DashboardPage() {
                 </div>
                 {/* Date & Streak Info Panel */}
                 <div className={styles.heroInfoPanel}>
-                  <svg className={styles.heroInfoEye} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    className={styles.heroInfoEye}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <path d="M12 19c-3.87 0-7-3.13-7-7 0-3.87 3.13-7 7-7 3.87 0 7 3.13 7 7 0 3.87-3.13 7-7 7z" />
                     <circle cx="12" cy="12" r="3" fill="currentColor" />
                   </svg>
