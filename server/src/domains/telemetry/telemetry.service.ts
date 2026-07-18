@@ -62,15 +62,7 @@ export function heartbeat(clientId: string): void {
   }
 }
 
-export function getStats(providedSecret: string | string[] | undefined) {
-  if (!env.ADMIN_TELEMETRY_KEY) {
-    throw new Error("ADMIN_TELEMETRY_KEY not configured");
-  }
-
-  if (providedSecret !== env.ADMIN_TELEMETRY_KEY) {
-    throw new Error("Unauthorized access to telemetry statistics.");
-  }
-
+export function getStats() {
   const now = Date.now();
   const fiveMinutesAgo = now - 5 * 60 * 1000;
   const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
