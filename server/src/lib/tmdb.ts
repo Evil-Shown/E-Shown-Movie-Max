@@ -3,8 +3,21 @@ import { env } from "../config/env";
 export const TMDB_BASE = "https://api.themoviedb.org/3";
 export const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
-export function getTmdbConfig() {
-  const apiKey = env.TMDB_API_KEY;
+function resolveTmdbKey(platform?: string): string {
+  switch (platform) {
+    case "web":
+      return env.TMDB_API_KEY_WEB || env.TMDB_API_KEY;
+    case "desktop":
+      return env.TMDB_API_KEY_DESKTOP || env.TMDB_API_KEY;
+    case "mobile":
+      return env.TMDB_API_KEY_MOBILE || env.TMDB_API_KEY;
+    default:
+      return env.TMDB_API_KEY;
+  }
+}
+
+export function getTmdbConfig(platform?: string) {
+  const apiKey = resolveTmdbKey(platform);
   if (!apiKey) {
     throw new Error("TMDB_API_KEY not configured on server");
   }
@@ -23,9 +36,9 @@ export function getTmdbImageUrl(path: string | null | undefined, size: string = 
 export async function tmdbGet<T>(
   path: string,
   params: Record<string, string> = {},
-  options: { region?: string } = {}
+  options: { region?: string; platform?: string } = {}
 ): Promise<T> {
-  const cfg = getTmdbConfig();
+  const cfg = getTmdbConfig(options.platform);
 
   const searchParams: Record<string, string> = {
     api_key: cfg.apiKey,

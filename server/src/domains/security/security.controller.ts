@@ -7,7 +7,7 @@ export async function virusTotalReport(req: Request, res: Response, next: NextFu
     const hash = String(req.query.hash || "")
       .toLowerCase()
       .trim();
-    const report = await securityService.getVirusTotalReport(hash);
+    const report = await securityService.getVirusTotalReport(hash, req.platform);
     success(res, report);
   } catch (error) {
     next(error);

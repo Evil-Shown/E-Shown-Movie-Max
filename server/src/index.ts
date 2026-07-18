@@ -9,6 +9,7 @@ import { corsOptions } from "./config/cors";
 
 import { errorHandler } from "./middleware/error-handler";
 import { redisRateLimit } from "./middleware/rate-limit";
+import { platformMiddleware } from "./middleware/platform";
 
 import healthRoutes from "./domains/health/health.routes";
 import authRoutes from "./domains/auth/auth.routes";
@@ -24,10 +25,16 @@ import securityRoutes from "./domains/security/security.routes";
 import mobileRoutes from "./domains/mobile/mobile.routes";
 import subscriptionRoutes from "./domains/subscription/subscription.routes";
 import tmdbRoutes from "./domains/tmdb/tmdb.routes";
+import omdbRoutes from "./domains/omdb/omdb.routes";
+import wyzieRoutes from "./domains/wyzie/wyzie.routes";
 
 import { prisma } from "./infrastructure/prisma";
 
 const app = express();
+
+// trust the first proxy (Render load balancer / reverse proxy)
+// required for req.ip to return the real client IP instead of the proxy IP
+app.set("trust proxy", 1);
 
 app.use(
   helmet({
@@ -56,6 +63,7 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "50kb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(platformMiddleware);
 
 // Platform health check (no rate limiting)
 app.get("/health", (_req, res) => {
@@ -81,6 +89,8 @@ app.use("/api/v1/security", securityRoutes);
 app.use("/api/v1/mobile", mobileRoutes);
 app.use("/api/v1/subscription", subscriptionRoutes);
 app.use("/api/v1/tmdb", tmdbRoutes);
+app.use("/api/v1/omdb", omdbRoutes);
+app.use("/api/v1/subtitles", wyzieRoutes);
 
 // Legacy route compatibility (redirect /api/* to /api/v1/*)
 app.use("/api/auth", authRoutes);
@@ -96,6 +106,8 @@ app.use("/api/security", securityRoutes);
 app.use("/api/mobile", mobileRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/tmdb", tmdbRoutes);
+app.use("/api/omdb", omdbRoutes);
+app.use("/api/subtitles", wyzieRoutes);
 app.get("/api/health", (_req, res) => {
   res.json({ success: true, data: { status: "ok" } });
 });

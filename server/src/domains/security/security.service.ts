@@ -4,12 +4,27 @@ import { AppError } from "../../utils/response";
 
 const REQUEST_TIMEOUT_MS = 8000;
 
-export async function getVirusTotalReport(hash: string) {
+function resolveVtKey(platform?: string): string | undefined {
+  switch (platform) {
+    case "web":
+      return env.VIRUSTOTAL_API_KEY_WEB || env.VIRUSTOTAL_API_KEY;
+    case "desktop":
+      return env.VIRUSTOTAL_API_KEY_DESKTOP || env.VIRUSTOTAL_API_KEY;
+    case "mobile":
+      return env.VIRUSTOTAL_API_KEY_MOBILE || env.VIRUSTOTAL_API_KEY;
+    default:
+      return env.VIRUSTOTAL_API_KEY;
+  }
+}
+
+export async function getVirusTotalReport(hash: string, platform?: string) {
   if (!hash || hash.length < 20) {
     throw new AppError(400, "INVALID_HASH", "Valid torrent hash is required.");
   }
 
-  if (!env.VIRUSTOTAL_API_KEY) {
+  const apiKey = resolveVtKey(platform);
+
+  if (!apiKey) {
     return {
       configured: false,
       error: "VirusTotal is not configured.",
@@ -19,7 +34,7 @@ export async function getVirusTotalReport(hash: string) {
   try {
     const response = await axios.get(`https://www.virustotal.com/api/v3/files/${encodeURIComponent(hash)}`, {
       headers: {
-        "x-apikey": env.VIRUSTOTAL_API_KEY,
+        "x-apikey": apiKey,
       },
       timeout: REQUEST_TIMEOUT_MS,
     });

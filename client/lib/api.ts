@@ -1,5 +1,12 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
+function getPlatform(): "web" | "desktop" | "mobile" {
+  if (typeof window !== "undefined" && window.chithraDesktop?.isDesktopApp) {
+    return "desktop";
+  }
+  return "web";
+}
+
 interface ApiOptions extends RequestInit {
   token?: string;
 }
@@ -20,6 +27,7 @@ async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<Ap
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "X-Platform": getPlatform(),
     ...(options.headers as Record<string, string>),
   };
 

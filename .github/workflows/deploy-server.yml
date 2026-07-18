@@ -1,4 +1,4 @@
-name: Deploy Server (Koyeb)
+name: Deploy Server
 
 on:
   push:
@@ -10,10 +10,19 @@ on:
       - ".dockerignore"
       - "package.json"
       - "package-lock.json"
+  pull_request:
+    branches: [main]
+    paths:
+      - "server/**"
+      - "packages/core/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "package.json"
+      - "package-lock.json"
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,18 +47,22 @@ jobs:
       - name: Build Docker image
         run: docker build -t chithra-cinema-api:${{ github.sha }} .
 
-      - name: Deploy to Koyeb
-        env:
-          KOYEB_API_TOKEN: ${{ secrets.KOYEB_API_TOKEN }}
-        run: |
-          if [ -z "$KOYEB_API_TOKEN" ]; then
-            echo "KOYEB_API_TOKEN not set — skipping Koyeb deploy."
-            echo "Push to main and Koyeb will auto-deploy via GitHub integration."
-            exit 0
-          fi
+  deploy:
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
 
-          KOYEB_APP="chithra-cinema-api"
-          curl -X POST "https://app.koyeb.com/v1/apps/$KOYEB_APP/deploy" \
-            -H "Authorization: Bearer $KOYEB_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"image":"chithra-cinema-api:'${{ github.sha }}'"}'
+      - name: Build Docker image
+        run: docker build -t chithra-cinema-api:${{ github.sha }} .
+
+      - name: Trigger Render deploy
+        run: |
+          echo "Deploy ready — Render auto-deploys from main branch."
+          echo "Alternatively, configure a Render Deploy Hook URL in secrets."
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          fi

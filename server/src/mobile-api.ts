@@ -2,7 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from "express"
 import { tmdbGet } from "./lib/tmdb";
 
 function mobileTmdbGet<T>(path: string, params: Record<string, string> = {}): Promise<T> {
-  return tmdbGet<T>(path, params, { region: "US" });
+  return tmdbGet<T>(path, params, { region: "US", platform: "mobile" });
 }
 
 interface TMDBMovie {

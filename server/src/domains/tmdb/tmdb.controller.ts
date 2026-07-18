@@ -14,7 +14,7 @@ export async function proxy(req: Request, res: Response, next: NextFunction): Pr
       });
     }
 
-    const data = await tmdbGet<unknown>(tmdbPath, params);
+    const data = await tmdbGet<unknown>(tmdbPath, params, { platform: req.platform });
     res.json(data);
   } catch (error) {
     next(error);

@@ -1,10 +1,10 @@
-import { API_BASE_URL } from './config';
+import { API_BASE_URL } from "./config";
 
 export class ApiError extends Error {
   status?: number;
   constructor(message: string, status?: number) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
   }
 }
@@ -20,7 +20,8 @@ async function request<T>(path: string, init?: RequestInit, timeoutMs = DEFAULT_
       ...init,
       signal: controller.signal,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        "X-Platform": "mobile",
         ...init?.headers,
       },
     });
@@ -32,7 +33,7 @@ async function request<T>(path: string, init?: RequestInit, timeoutMs = DEFAULT_
     return (await response.json()) as T;
   } catch (err) {
     if (err instanceof ApiError) throw err;
-    if (err instanceof Error && err.name === 'AbortError') {
+    if (err instanceof Error && err.name === "AbortError") {
       throw new ApiError(`Request timed out: ${path}`);
     }
     throw new ApiError(`Network error: ${path}`);
@@ -42,9 +43,9 @@ async function request<T>(path: string, init?: RequestInit, timeoutMs = DEFAULT_
 }
 
 export function apiGet<T>(path: string, timeoutMs?: number): Promise<T> {
-  return request<T>(path, { method: 'GET' }, timeoutMs);
+  return request<T>(path, { method: "GET" }, timeoutMs);
 }
 
 export function apiPost<T>(path: string, body: unknown, timeoutMs?: number): Promise<T> {
-  return request<T>(path, { method: 'POST', body: JSON.stringify(body) }, timeoutMs);
+  return request<T>(path, { method: "POST", body: JSON.stringify(body) }, timeoutMs);
 }

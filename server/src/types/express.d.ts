@@ -6,6 +6,7 @@ declare global {
       user?: User;
       token?: string;
       sessionId?: string;
+      platform?: "web" | "desktop" | "mobile";
     }
   }
 }
