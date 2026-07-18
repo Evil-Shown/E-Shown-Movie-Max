@@ -60,7 +60,7 @@
 }
 
 .sidebarLink {
-  color: rgba(212, 165, 116, 0.8);
+  color: rgba(255, 255, 255, 0.8);
   transition: all 0.25s ease;
   border-left: 3px solid transparent;
   position: relative;
@@ -68,13 +68,13 @@
 
 .sidebarLink:hover {
   background: rgba(230, 81, 0, 0.12);
-  color: var(--light-orange);
+  color: rgba(255, 255, 255, 0.8);
   border-left-color: var(--deep-orange);
 }
 
 .sidebarLinkActive {
   background: linear-gradient(90deg, rgba(230, 81, 0, 0.18) 0%, rgba(230, 81, 0, 0.08) 100%);
-  color: var(--light-orange);
+  color: rgba(255, 255, 255, 0.8);
   border-left-color: var(--deep-orange);
   box-shadow: inset 2px 0 12px rgba(230, 81, 0, 0.15);
 }
@@ -342,6 +342,11 @@
    ========================================================================== */
 .eyeDeco {
   position: relative;
+  background-image: url("/dashboard/hero-bg.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 12px;
 }
 
 .eyeDeco::after {

@@ -210,9 +210,7 @@ function SidebarNavLink({
       href={href}
       className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium ${active ? styles.sidebarLinkActive : ""}`}
     >
-      <span
-        className={`transition-colors ${active ? "text-[#ffb87a]" : "text-[#d4a574]/80 group-hover:text-[#e65100]"}`}
-      >
+      <span className={`transition-colors ${active ? "text-white/80" : "text-white/80 group-hover:text-white/80"}`}>
         <NavIcon name={icon} />
       </span>
       <span className="flex-1">{label}</span>
@@ -755,33 +753,15 @@ export default function DashboardPage() {
         <aside className={`${styles.sidebar} fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col`}>
           <div className="px-6 py-6 border-b border-[#d4a574]/15">
             <div className="flex items-center gap-3">
-              <div
-                className={`${styles.eyeDeco} w-10 h-10 rounded-lg flex items-center justify-center relative`}
-                style={{
-                  background: "linear-gradient(135deg, #e65100 0%, #cc4d00 100%)",
-                  boxShadow: "0 2px 12px rgba(230, 81, 0, 0.4)",
-                }}
-              >
-                <svg
-                  className="w-5 h-5 text-[#fffbf5]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M12 19c-3.87 0-7-3.13-7-7 0-3.87 3.13-7 7-7 3.87 0 7 3.13 7 7 0 3.87-3.13 7-7 7z" />
-                  <circle cx="12" cy="12" r="3" fill="currentColor" />
-                </svg>
-              </div>
+              <div className={`${styles.eyeDeco} w-10 h-10 relative`} />
               <div>
                 <h1 className="font-cinzel text-xl font-bold text-[#fffbf5] leading-none">CHITHIRA</h1>
-                <p className="text-[10px] tracking-[0.2em] text-[#d4a574] font-semibold mt-1">THE GOD&apos;S EYE</p>
               </div>
             </div>
           </div>
 
           <nav className={`${styles.sidebarNav} flex-1 py-4 overflow-y-auto`}>
-            <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">Browse</p>
+            <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-white/60 font-semibold">Browse</p>
             {browseNav.map((link) => (
               <SidebarNavLink
                 key={link.href}
@@ -791,9 +771,7 @@ export default function DashboardPage() {
               />
             ))}
 
-            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">
-              Library
-            </p>
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-white/60 font-semibold">Library</p>
             {libraryNav.map((link) => (
               <SidebarNavLink
                 key={link.label}
@@ -803,9 +781,7 @@ export default function DashboardPage() {
               />
             ))}
 
-            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">
-              Account
-            </p>
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-white/60 font-semibold">Account</p>
             {accountNav.map((link) => (
               <SidebarNavLink key={link.href} {...link} active={isActive(link.href)} />
             ))}
