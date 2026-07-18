@@ -39,10 +39,10 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
 
   const handleClose = useCallback(() => {
     if (didAuth.current) {
-      // Auth succeeded ΓÇö replay pending action
+      // Auth succeeded — replay pending action
       onClose(true);
     } else {
-      // Dismissed without login ΓÇö only redirect home if not already there
+      // Dismissed without login — only redirect home if not already there
       if (redirectOnClose && typeof window !== "undefined" && window.location.pathname !== "/") {
         window.location.href = "/";
       }
@@ -368,6 +368,67 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        .auth-modal-input {
+          appearance: none;
+          -webkit-appearance: none;
+          background-color: #1b1a2a !important;
+          background-image: none !important;
+          color: #ffffff !important;
+          caret-color: #ffffff;
+          outline: none !important;
+          box-shadow: none !important;
+          border: none;
+          color-scheme: dark;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .auth-modal-input::placeholder {
+          color: #6b7280 !important;
+          opacity: 1;
+        }
+
+        .auth-modal-input:hover,
+        .auth-modal-input:focus,
+        .auth-modal-input:focus-visible,
+        .auth-modal-input:active,
+        .auth-modal-input:disabled {
+          appearance: none;
+          -webkit-appearance: none;
+          background-color: #1b1a2a !important;
+          background-image: none !important;
+          color: #ffffff !important;
+          outline: none !important;
+          box-shadow: none !important;
+          border: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .auth-modal-input:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .auth-modal-input:-webkit-autofill,
+        .auth-modal-input:-webkit-autofill:hover,
+        .auth-modal-input:-webkit-autofill:focus,
+        .auth-modal-input:-webkit-autofill:active {
+          -webkit-text-fill-color: #ffffff !important;
+          caret-color: #ffffff;
+          color: #ffffff !important;
+          border: none !important;
+          outline: none !important;
+          transition: background-color 99999s ease-in-out 0s;
+          box-shadow: 0 0 0 1000px #1b1a2a inset !important;
+          -webkit-box-shadow: 0 0 0 1000px #1b1a2a inset !important;
+        }
+
+        input[type="password"].auth-modal-input::-ms-reveal,
+        input[type="password"].auth-modal-input::-ms-clear {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }
@@ -430,7 +491,7 @@ function InputGroup({
         {label}
       </label>
       <div
-        className={`group relative flex items-center h-[46px] rounded-xl border bg-white/[0.03] transition-all duration-200
+        className={`group relative flex items-center h-[46px] rounded-xl border bg-[#1B1A2A] transition-all duration-200
           ${focused ? "border-[#e65100] shadow-[0_0_0_3px_rgba(230,81,0,0.15)]" : "border-white/10 hover:border-white/25"}
         `}
       >
@@ -448,22 +509,44 @@ function InputGroup({
           placeholder={placeholder}
           autoComplete={autoComplete}
           required
-          style={{ outline: "none" }}
-          className="flex-1 h-11 pl-3 pr-0 bg-transparent text-[15px] text-white placeholder-gray-500 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 [&:-webkit-autofill]:!bg-transparent [&:-webkit-autofill]:[transition-delay:9999s] [&:-webkit-autofill]:shadow-[0_0_0_1000px_transparent_inset]"
+          className="auth-modal-input flex-1 h-11 pl-3 pr-0 text-[15px] placeholder-gray-500"
         />
         {trailing && <span className="flex items-center justify-center shrink-0 w-10 h-11">{trailing}</span>}
       </div>
-      <style jsx global>{`
-        input[type="password"]::-ms-reveal {
-          display: none;
-        }
-      `}</style>
     </div>
   );
 }
 
 function GoogleOAuthButton() {
   const [loading, setLoading] = useState(false);
+  const [claimId, setClaimId] = useState<string | null>(null);
+  const [nonce, setNonce] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!claimId || !nonce) return;
+    const poll = async () => {
+      try {
+        const resp = await fetch(`${getApiBase()}/api/v1/auth/claim-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nonce }),
+        });
+        const json = await resp.json();
+        if (json.success && json.data) {
+          localStorage.setItem("chithra-auth-token", json.data.accessToken);
+          localStorage.setItem("chithra-auth-user", JSON.stringify(json.data.user));
+          window.dispatchEvent(new Event("auth-stored"));
+          window.location.reload();
+          return;
+        }
+      } catch {
+        /* server not ready */
+      }
+      setTimeout(poll, 1500);
+    };
+    poll();
+    setLoading(false);
+  }, [claimId, nonce]);
 
   const handleGoogleAuth = async () => {
     setLoading(true);
@@ -481,27 +564,37 @@ function GoogleOAuthButton() {
       }
 
       const redirectTo = `${window.location.origin}/auth/callback`;
-      const url = `${baseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&prompt=select_account`;
-
       const isElectron = window.chithraDesktop?.isDesktopApp;
 
       if (isElectron) {
+        const claimResp = await fetch(`${getApiBase()}/api/v1/auth/create-claim`, {
+          method: "POST",
+        });
+        const claimJson = await claimResp.json();
+        if (!claimJson.success || !claimJson.data) {
+          setLoading(false);
+          return;
+        }
+        setClaimId(claimJson.data.claimId);
+        setNonce(claimJson.data.nonce);
+
+        const url = `${baseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&state=${claimJson.data.claimId}&prompt=select_account`;
         const opened = await window.chithraDesktop?.openExternal?.(url);
         if (!opened) {
           // eslint-disable-next-line react-hooks/immutability
           window.location.href = url;
-          return;
         }
-        startPolling();
-      } else {
-        const popup = window.open(url, "google-auth", "width=600,height=700");
-        if (!popup) {
-          // eslint-disable-next-line react-hooks/immutability
-          window.location.href = url;
-          return;
-        }
-        pollPopupToken(popup);
+        return;
       }
+
+      const url = `${baseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&prompt=select_account`;
+      const popup = window.open(url, "google-auth", "width=600,height=700");
+      if (!popup) {
+        // eslint-disable-next-line react-hooks/immutability
+        window.location.href = url;
+        return;
+      }
+      pollPopupToken(popup);
     } catch (err) {
       console.error("Google OAuth error:", err);
       setLoading(false);
@@ -532,27 +625,6 @@ function GoogleOAuthButton() {
         /* cross-origin */
       }
     }, 300);
-  };
-
-  const startPolling = () => {
-    const poll = async () => {
-      try {
-        const resp = await fetch(`${getApiBase()}/api/v1/auth/claim-session`);
-        const json = await resp.json();
-        if (json.success && json.data) {
-          localStorage.setItem("chithra-auth-token", json.data.accessToken);
-          localStorage.setItem("chithra-auth-user", JSON.stringify(json.data.user));
-          window.dispatchEvent(new Event("auth-stored"));
-          window.location.reload();
-          return;
-        }
-      } catch {
-        /* server not ready */
-      }
-      setTimeout(startPolling, 1500);
-    };
-    poll();
-    setLoading(false);
   };
 
   const finalizeOAuth = async (accessToken: string) => {
