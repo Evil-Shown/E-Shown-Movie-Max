@@ -155,12 +155,12 @@ export function stripFrameBlockingHeaders(headers: HeaderMap = {}): HeaderMap {
   return next;
 }
 
-export function addCorsHeaders(headers: HeaderMap = {}): HeaderMap {
+export function addCorsHeaders(headers: HeaderMap = {}, origin?: string): HeaderMap {
   return {
     ...headers,
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": origin || "*",
     "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Allow-Headers": origin ? "Range, Content-Type, Origin, Referer" : "*",
   };
 }
 

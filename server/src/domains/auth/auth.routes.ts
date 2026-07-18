@@ -9,9 +9,9 @@ import { createPendingClaim, getPendingNonce, storeSession, claimSession } from 
 
 const router = Router();
 
-router.post("/register", validate(registerSchema), controller.register);
-router.post("/login", validate(loginSchema), controller.login);
-router.post("/oauth", validate(oauthSchema), controller.oauth);
+router.post("/register", strictRateLimit, validate(registerSchema), controller.register);
+router.post("/login", strictRateLimit, validate(loginSchema), controller.login);
+router.post("/oauth", strictRateLimit, validate(oauthSchema), controller.oauth);
 router.post("/logout", authMiddleware, controller.logout);
 router.get("/me", authMiddleware, controller.me);
 

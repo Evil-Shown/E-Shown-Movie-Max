@@ -27,7 +27,7 @@ export async function proxy(req: Request, res: Response, next: NextFunction): Pr
       "X-Embed-Proxy-Cache": proxied.fromCache ? "HIT" : "MISS",
     });
 
-    res.set(addCorsHeaders(outgoing));
+    res.set(addCorsHeaders(outgoing, String(req.headers.origin || "")));
     if (Buffer.isBuffer(proxied.body)) {
       res.send(proxied.body);
       return;

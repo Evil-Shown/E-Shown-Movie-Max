@@ -38,15 +38,9 @@ export async function heartbeat(req: Request, res: Response, next: NextFunction)
 
 export async function stats(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const providedSecret =
-      (req.query.secret as string | undefined) || (req.headers["x-admin-secret"] as string | undefined);
-    const stats = telemetryService.getStats(providedSecret);
+    const stats = telemetryService.getStats();
     success(res, stats);
   } catch (error) {
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
-      next(new AppError(403, "FORBIDDEN", error.message));
-      return;
-    }
     next(error);
   }
 }
