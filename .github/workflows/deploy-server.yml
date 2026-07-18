@@ -1,4 +1,4 @@
-name: Deploy Server
+name: Deploy Server (Koyeb)
 
 on:
   push:
@@ -10,19 +10,10 @@ on:
       - ".dockerignore"
       - "package.json"
       - "package-lock.json"
-  pull_request:
-    branches: [main]
-    paths:
-      - "server/**"
-      - "packages/core/**"
-      - "Dockerfile"
-      - ".dockerignore"
-      - "package.json"
-      - "package-lock.json"
   workflow_dispatch:
 
 jobs:
-  ci:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
 
       - name: Install dependencies
@@ -47,22 +38,18 @@ jobs:
       - name: Build Docker image
         run: docker build -t chithra-cinema-api:${{ github.sha }} .
 
-  deploy:
-    needs: ci
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.sha }}
-
-      - name: Build Docker image
-        run: docker build -t chithra-cinema-api:${{ github.sha }} .
-
-      - name: Trigger Render deploy
+      - name: Deploy to Koyeb
+        env:
+          KOYEB_API_TOKEN: ${{ secrets.KOYEB_API_TOKEN }}
         run: |
-          echo "Deploy ready — Render auto-deploys from main branch."
-          echo "Alternatively, configure a Render Deploy Hook URL in secrets."
-          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
-            curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          if [ -z "$KOYEB_API_TOKEN" ]; then
+            echo "KOYEB_API_TOKEN not set — skipping Koyeb deploy."
+            echo "Push to main and Koyeb will auto-deploy via GitHub integration."
+            exit 0
           fi
+
+          KOYEB_APP="chithra-cinema-api"
+          curl -X POST "https://app.koyeb.com/v1/apps/$KOYEB_APP/deploy" \
+            -H "Authorization: Bearer $KOYEB_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"image":"chithra-cinema-api:'${{ github.sha }}'"}'

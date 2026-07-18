@@ -211,9 +211,7 @@ function SidebarNavLink({
       href={href}
       className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium ${active ? styles.sidebarLinkActive : ""}`}
     >
-      <span
-        className={`transition-colors ${active ? "text-[#ffb87a]" : "text-[#d4a574]/80 group-hover:text-[#e65100]"}`}
-      >
+      <span className={`transition-colors ${active ? "text-white/80" : "text-white/80 group-hover:text-white/80"}`}>
         <NavIcon name={icon} />
       </span>
       <span className="flex-1">{label}</span>
@@ -389,24 +387,65 @@ interface ActivityItem {
 }
 
 function ActivityRow({ item }: { item: ActivityItem }) {
-  const badgeLabel: Record<string, string> = {
-    watching: "STARTED WATCHING",
-    watchlist: "ADDED TO WATCHLIST",
-    completed: "COMPLETED",
-    downloaded: "DOWNLOADED",
+  const badgeCfg: Record<
+    string,
+    { label: string; icon: React.ReactNode; pill: string; iconBg: string; iconColor: string }
+  > = {
+    watching: {
+      label: "WATCHING",
+      icon: <polygon points="5 3 19 12 5 21 5 3" />,
+      pill: "bg-gradient-to-r from-[#e65100] to-[#ff8a4a] text-white shadow-[0_2px_10px_rgba(230,81,0,0.35)]",
+      iconBg: "bg-[#3e2723]",
+      iconColor: "text-[#ff8a4a]",
+    },
+    completed: {
+      label: "COMPLETED",
+      icon: <polyline points="20 6 9 17 4 12" />,
+      pill: "bg-gradient-to-r from-[#2e7d32] to-[#66bb6a] text-white shadow-[0_2px_10px_rgba(46,125,50,0.35)]",
+      iconBg: "bg-[#3e2723]",
+      iconColor: "text-[#66bb6a]",
+    },
+    watchlist: {
+      label: "ADDED",
+      icon: <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />,
+      pill: "bg-gradient-to-r from-[#b8860b] to-[#ffd54f] text-white shadow-[0_2px_10px_rgba(184,134,11,0.35)]",
+      iconBg: "bg-[#3e2723]",
+      iconColor: "text-[#ffd54f]",
+    },
+    downloaded: {
+      label: "DOWNLOADED",
+      icon: (
+        <>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </>
+      ),
+      pill: "bg-gradient-to-r from-[#1565c0] to-[#64b5f6] text-white shadow-[0_2px_10px_rgba(21,101,192,0.35)]",
+      iconBg: "bg-[#3e2723]",
+      iconColor: "text-[#64b5f6]",
+    },
   };
 
-  const badgeStyle: Record<string, string> = {
-    watching: "bg-[#fef0e6] text-[#cc4d00]",
-    watchlist: "bg-[#efe6db] text-[#3e2723]",
-    completed: "bg-[#f5efe8] text-[#6b4423]",
-    downloaded: "bg-[#f5efe8] text-[#6b4423]",
-  };
+  const cfg = badgeCfg[item.type] || badgeCfg.watching;
 
   return (
     <div className={`${styles.activityRow} flex items-center gap-4 px-5 py-4 rounded-[14px] bg-[#faf6f0]`}>
+      {/* Action Icon */}
+      <div className={`w-9 h-9 rounded-xl ${cfg.iconBg} flex items-center justify-center shrink-0`}>
+        <svg
+          className={`w-4 h-4 ${cfg.iconColor}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          {cfg.icon}
+        </svg>
+      </div>
+
       {/* Thumbnail */}
-      <div className="relative w-[88px] shrink-0">
+      <div className="relative w-[72px] shrink-0">
         <div className="aspect-[16/9] rounded-[10px] overflow-hidden bg-[#e8ddd0]">
           {item.posterPath ? (
             <img
@@ -425,16 +464,6 @@ function ActivityRow({ item }: { item: ActivityItem }) {
             </div>
           )}
         </div>
-        {/* Play overlay for watching */}
-        {item.type === "watching" && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-7 h-7 rounded-full bg-white/85 flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
-              <svg className="w-3 h-3 text-[#3e2723] ml-0.5" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Middle: metadata */}
@@ -446,12 +475,12 @@ function ActivityRow({ item }: { item: ActivityItem }) {
         </p>
       </div>
 
-      {/* Right: status badge */}
+      {/* Right: status pill */}
       <div className="shrink-0">
         <span
-          className={`inline-block text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-[0.5px] ${badgeStyle[item.type] || badgeStyle.watching}`}
+          className={`inline-block text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-[0.5px] ${cfg.pill}`}
         >
-          {badgeLabel[item.type] || "WATCHING"}
+          {cfg.label}
         </span>
       </div>
     </div>
@@ -728,33 +757,15 @@ export default function DashboardPage() {
         <aside className={`${styles.sidebar} fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col`}>
           <div className="px-6 py-6 border-b border-[#d4a574]/15">
             <div className="flex items-center gap-3">
-              <div
-                className={`${styles.eyeDeco} w-10 h-10 rounded-lg flex items-center justify-center relative`}
-                style={{
-                  background: "linear-gradient(135deg, #e65100 0%, #cc4d00 100%)",
-                  boxShadow: "0 2px 12px rgba(230, 81, 0, 0.4)",
-                }}
-              >
-                <svg
-                  className="w-5 h-5 text-[#fffbf5]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M12 19c-3.87 0-7-3.13-7-7 0-3.87 3.13-7 7-7 3.87 0 7 3.13 7 7 0 3.87-3.13 7-7 7z" />
-                  <circle cx="12" cy="12" r="3" fill="currentColor" />
-                </svg>
-              </div>
+              <div className={`${styles.eyeDeco} w-10 h-10 relative`} />
               <div>
                 <h1 className="font-cinzel text-xl font-bold text-[#fffbf5] leading-none">CHITHIRA</h1>
-                <p className="text-[10px] tracking-[0.2em] text-[#d4a574] font-semibold mt-1">THE GOD&apos;S EYE</p>
               </div>
             </div>
           </div>
 
           <nav className={`${styles.sidebarNav} flex-1 py-4 overflow-y-auto`}>
-            <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">Browse</p>
+            <p className="px-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-white/60 font-semibold">Browse</p>
             {browseNav.map((link) => (
               <SidebarNavLink
                 key={link.href}
@@ -764,9 +775,7 @@ export default function DashboardPage() {
               />
             ))}
 
-            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">
-              Library
-            </p>
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-white/60 font-semibold">Library</p>
             {libraryNav.map((link) => (
               <SidebarNavLink
                 key={link.label}
@@ -776,9 +785,7 @@ export default function DashboardPage() {
               />
             ))}
 
-            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-[#d4a574]/60 font-semibold">
-              Account
-            </p>
+            <p className="px-6 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] text-white/60 font-semibold">Account</p>
             {accountNav.map((link) => (
               <SidebarNavLink key={link.href} {...link} active={isActive(link.href)} />
             ))}
@@ -1112,6 +1119,13 @@ export default function DashboardPage() {
                           ))
                         )}
                       </div>
+                      <Link
+                        href="/notifications"
+                        onClick={() => setShowNotifications(false)}
+                        className="block w-full text-center px-4 py-2.5 text-xs font-semibold text-deep-orange hover:text-chocolate border-t border-tan/20 transition"
+                      >
+                        View all &rarr;
+                      </Link>
                     </div>
                   </>
                 )}
@@ -1146,80 +1160,70 @@ export default function DashboardPage() {
           </header>
 
           <div className="px-6 md:px-8 py-8 max-w-7xl mx-auto">
-            {/* Cinematic Greeting */}
+            {/* Cinematic Hero Section */}
             <section className={`mb-10 ${styles.fadeUp}`}>
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-faint-white via-faint-white to-cream border border-tan/20 p-6 md:p-8 shadow-sm">
-                <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-light-orange-faint/40 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="w-8 h-px bg-gradient-to-r from-deep-orange to-transparent" />
-                      <svg
-                        className="w-3 h-3 text-deep-orange"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      <span className="text-[10px] tracking-[0.3em] uppercase text-deep-orange font-semibold">
-                        The God&apos;s Eye Observes
-                      </span>
-                    </div>
-                    <h1
-                      className="font-cinzel text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
-                      style={{ textShadow: "0 2px 20px color-mix(in srgb, var(--deep-orange) 10%, transparent)" }}
-                    >
-                      Welcome back,
-                      <br />
-                      <span className="bg-gradient-to-r from-deep-orange via-light-orange to-deep-orange bg-clip-text text-transparent">
-                        {userName}
-                      </span>
-                    </h1>
-                    <p className="text-brown mt-4 max-w-lg text-sm leading-relaxed">
-                      Every story, carved in light. Pick up where you left off, or let the eye find your next obsession.
-                    </p>
-                    {resumeItems.length > 0 && (
-                      <Link
-                        href={`/movie/${resumeItems[0].id}`}
-                        className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 rounded-full bg-gradient-to-r from-deep-orange to-chocolate text-faint-white text-sm font-semibold hover:from-chocolate hover:to-chocolate transition-all shadow-lg shadow-deep-orange/20 hover:shadow-deep-orange/30"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                          <polygon points="5 3 19 12 5 21 5 3" />
-                        </svg>
-                        Continue Watching
-                      </Link>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4 bg-[#fdf8f0]/80 backdrop-blur-sm border border-[#d4a574]/30 rounded-xl px-5 py-3 shadow-lg">
-                    <svg
-                      className="w-8 h-8 text-[#e65100]"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M12 19c-3.87 0-7-3.13-7-7 0-3.87 3.13-7 7-7 3.87 0 7 3.13 7 7 0 3.87-3.13 7-7 7z" />
-                      <circle cx="12" cy="12" r="3" fill="currentColor" />
+              <div className={styles.heroSection}>
+                <img
+                  src="/dashboard/welcome.png"
+                  alt=""
+                  aria-hidden="true"
+                  className={styles.heroBgImage}
+                  loading="eager"
+                />
+                <div className={styles.heroAmbientGlow} />
+                <div className={styles.heroTopEdge} />
+                <div className={styles.heroContent}>
+                  <div className={styles.heroEyebrow}>
+                    <span className={styles.heroEyebrowLine} />
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    <div className="w-px h-10 bg-gradient-to-b from-[#d4a574]/60 to-transparent" />
-                    <div className="text-center">
-                      <p className="text-[9px] text-[#a0785a] uppercase tracking-[0.2em] font-semibold">Today</p>
-                      <p className="font-cinzel text-sm font-bold text-[#3e2723] mt-0.5">
-                        {new Date()
-                          .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                          .toUpperCase()}
-                      </p>
-                    </div>
-                    <div className="w-px h-10 bg-gradient-to-b from-[#d4a574]/60 to-transparent" />
-                    <div className="text-center">
-                      <p className="text-[9px] text-[#a0785a] uppercase tracking-[0.2em] font-semibold">Streak</p>
-                      <p className="font-cinzel text-lg font-bold text-[#e65100] mt-0.5">
-                        {streak} <span className="text-xs text-[#6b4423] font-medium">DAYS</span>
-                      </p>
-                    </div>
+                    <span>The God&apos;s Eye Observes</span>
+                  </div>
+                  <h2 className={styles.heroTitle}>
+                    Welcome back,
+                    <span className={styles.heroTitleName}>{userName}</span>
+                  </h2>
+                  <p className={styles.heroDescription}>
+                    Every story, carved in light. Pick up where you left off, or let the eye find your next obsession.
+                  </p>
+                  {resumeItems.length > 0 && (
+                    <Link href={`/movie/${resumeItems[0].id}`} className={styles.heroCtaButton}>
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                      Continue Watching
+                    </Link>
+                  )}
+                </div>
+                {/* Date & Streak Info Panel */}
+                <div className={styles.heroInfoPanel}>
+                  <svg
+                    className={styles.heroInfoEye}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M12 19c-3.87 0-7-3.13-7-7 0-3.87 3.13-7 7-7 3.87 0 7 3.13 7 7 0 3.87-3.13 7-7 7z" />
+                    <circle cx="12" cy="12" r="3" fill="currentColor" />
+                  </svg>
+                  <div className={styles.heroInfoDivider} />
+                  <div className="text-center">
+                    <p className={styles.heroInfoLabel}>Today</p>
+                    <p className={styles.heroInfoDate}>
+                      {new Date()
+                        .toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+                        .toUpperCase()}
+                    </p>
+                  </div>
+                  <div className={styles.heroInfoDivider} />
+                  <div className="text-center">
+                    <p className={styles.heroInfoLabel}>Streak</p>
+                    <p className={styles.heroInfoStreak}>
+                      {streak} <span className={styles.heroInfoStreakUnit}>days</span>
+                    </p>
                   </div>
                 </div>
               </div>

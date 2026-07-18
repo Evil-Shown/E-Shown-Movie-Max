@@ -9,7 +9,6 @@ import { corsOptions } from "./config/cors";
 
 import { errorHandler } from "./middleware/error-handler";
 import { redisRateLimit } from "./middleware/rate-limit";
-import { platformMiddleware } from "./middleware/platform";
 
 import healthRoutes from "./domains/health/health.routes";
 import authRoutes from "./domains/auth/auth.routes";
@@ -25,16 +24,10 @@ import securityRoutes from "./domains/security/security.routes";
 import mobileRoutes from "./domains/mobile/mobile.routes";
 import subscriptionRoutes from "./domains/subscription/subscription.routes";
 import tmdbRoutes from "./domains/tmdb/tmdb.routes";
-import omdbRoutes from "./domains/omdb/omdb.routes";
-import wyzieRoutes from "./domains/wyzie/wyzie.routes";
 
 import { prisma } from "./infrastructure/prisma";
 
 const app = express();
-
-// trust the first proxy (Render load balancer / reverse proxy)
-// required for req.ip to return the real client IP instead of the proxy IP
-app.set("trust proxy", 1);
 
 app.use(
   helmet({
@@ -63,7 +56,6 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "50kb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(platformMiddleware);
 
 // Platform health check (no rate limiting)
 app.get("/health", (_req, res) => {
@@ -89,8 +81,6 @@ app.use("/api/v1/security", securityRoutes);
 app.use("/api/v1/mobile", mobileRoutes);
 app.use("/api/v1/subscription", subscriptionRoutes);
 app.use("/api/v1/tmdb", tmdbRoutes);
-app.use("/api/v1/omdb", omdbRoutes);
-app.use("/api/v1/subtitles", wyzieRoutes);
 
 // Legacy route compatibility (redirect /api/* to /api/v1/*)
 app.use("/api/auth", authRoutes);
@@ -106,8 +96,6 @@ app.use("/api/security", securityRoutes);
 app.use("/api/mobile", mobileRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/tmdb", tmdbRoutes);
-app.use("/api/omdb", omdbRoutes);
-app.use("/api/subtitles", wyzieRoutes);
 app.get("/api/health", (_req, res) => {
   res.json({ success: true, data: { status: "ok" } });
 });
@@ -127,46 +115,46 @@ app.use((_req, res) => {
 app.use(errorHandler);
 
 async function main() {
-  // -- Database connectivity check --
+  // ── Database connectivity check ──────────────────────────────────
   try {
     await prisma.$queryRaw`SELECT 1`;
-    logger.info("[OK] PostgreSQL database connected successfully");
+    logger.info("✔ PostgreSQL database connected successfully");
     const versionResult = await prisma.$queryRaw`SELECT version() as version`;
     const dbVersion = Array.isArray(versionResult) ? (versionResult[0] as { version?: string })?.version : "unknown";
     if (dbVersion && dbVersion !== "unknown") {
       logger.info(`  Database: ${dbVersion}`);
     }
   } catch (dbError) {
-    logger.error({ err: dbError }, "[FAIL] Failed to connect to PostgreSQL database");
+    logger.error({ err: dbError }, "✘ Failed to connect to PostgreSQL database");
     logger.error("  Check your DATABASE_URL in server/.env");
     process.exit(1);
   }
 
-  // -- Supabase Auth check --
+  // ── Supabase Auth check ─────────────────────────────────────────
   const supabaseUrlOk = env.SUPABASE_URL?.startsWith("http");
   const supabaseKeyOk = env.SUPABASE_ANON_KEY?.length > 20;
   const supabaseSecretOk = env.SUPABASE_SERVICE_ROLE_KEY?.length > 20;
   if (supabaseUrlOk && supabaseKeyOk && supabaseSecretOk) {
-    logger.info("[OK] Supabase Auth configured");
+    logger.info("✔ Supabase Auth configured");
   } else {
-    logger.warn("[WARN] Supabase Auth not fully configured - auth endpoints will fail");
+    logger.warn("✘ Supabase Auth not fully configured — auth endpoints will fail");
   }
 
-  // -- Redis check --
+  // ── Redis check ─────────────────────────────────────────────────
   if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
-    logger.info("[OK] Upstash Redis configured");
+    logger.info("✔ Upstash Redis configured");
   } else {
-    logger.warn("[WARN] Upstash Redis not configured - using in-memory cache fallback");
+    logger.warn("○ Upstash Redis not configured — using in-memory cache fallback");
   }
 
-  // -- Start HTTP server --
+  // ── Start HTTP server ───────────────────────────────────────────
   const PORT = Number(env.PORT) || 5000;
   app.listen(PORT, () => {
-    logger.info(`------------------------------------------`);
+    logger.info(`──────────────────────────────────────────`);
     logger.info(`  Server running on http://localhost:${PORT}`);
     logger.info(`  Environment: ${env.NODE_ENV}`);
     logger.info(`  API base:    http://localhost:${PORT}/api/v1`);
-    logger.info(`------------------------------------------`);
+    logger.info(`──────────────────────────────────────────`);
   });
 }
 
