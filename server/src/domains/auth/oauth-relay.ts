@@ -30,7 +30,7 @@ export function createPendingClaim(): { claimId: string; nonce: string } {
   purgeExpired();
 
   if (pending.length >= MAX_PENDING_CLAIMS) {
-    logger.warn({ poolSize: pending.length }, "OAuth claim pool full — rejecting new claim");
+    logger.warn({ poolSize: pending.length }, "OAuth claim pool full - rejecting new claim");
     throw new Error("Too many pending claims. Try again.");
   }
 

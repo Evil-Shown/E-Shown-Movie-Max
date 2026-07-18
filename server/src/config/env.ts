@@ -8,7 +8,7 @@ function notEmptyOrPlaceholder(msg: string) {
     .string()
     .min(1, msg)
     .refine((val) => !/^(your_|YOUR_|placeholder|changeme)/i.test(val), {
-      message: `${msg} contains a placeholder value — set a real key`,
+      message: `${msg} contains a placeholder value - set a real key`,
     });
 }
 
@@ -51,12 +51,12 @@ const envSchema = z.object({
   PAYHERE_MERCHANT_ID: z.string().optional().default(""),
   PAYHERE_SECRET: z.string().optional().default(""),
   PAYHERE_API_URL: URL_OR_DEFAULT(
-    "PAYHERE_API_URL is required in production — set to https://payhere.lk",
+    "PAYHERE_API_URL is required in production - set to https://payhere.lk",
     "https://sandbox.payhere.lk"
   ),
 
-  APP_URL: URL_OR_DEFAULT("APP_URL is required in production — set to your frontend domain", "http://localhost:3000"),
-  API_URL: URL_OR_DEFAULT("API_URL is required in production — set to your backend domain", "http://localhost:5000"),
+  APP_URL: URL_OR_DEFAULT("APP_URL is required in production - set to your frontend domain", "http://localhost:3000"),
+  API_URL: URL_OR_DEFAULT("API_URL is required in production - set to your backend domain", "http://localhost:5000"),
 
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
