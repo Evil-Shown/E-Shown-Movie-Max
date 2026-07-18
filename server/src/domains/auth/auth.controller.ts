@@ -1,23 +1,44 @@
 import type { Request, Response, NextFunction } from "express";
 import { success } from "../../utils/response";
+import { logger } from "../../config/logger";
 import * as authService from "./auth.service";
 import { toAuthUser } from "./auth.types";
 import type { LoginInput, RegisterInput, OAuthInput } from "./auth.types";
 
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const result = await authService.register(req.body as RegisterInput, req.ip);
+    const body = req.body as RegisterInput;
+    logger.info(
+      { origin: req.headers.origin, platform: req.headers["x-platform"], email: body?.email },
+      "auth.register request"
+    );
+    const result = await authService.register(body, req.ip);
+    logger.info({ email: body?.email, userId: result.user?.id }, "auth.register success");
     success(res, result, 201);
   } catch (error) {
+    logger.warn(
+      { origin: req.headers.origin, err: error instanceof Error ? error.message : error },
+      "auth.register failed"
+    );
     next(error);
   }
 }
 
 export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const result = await authService.login(req.body as LoginInput, req.ip);
+    const body = req.body as LoginInput;
+    logger.info(
+      { origin: req.headers.origin, platform: req.headers["x-platform"], email: body?.email },
+      "auth.login request"
+    );
+    const result = await authService.login(body, req.ip);
+    logger.info({ email: body?.email, userId: result.user?.id }, "auth.login success");
     success(res, result);
   } catch (error) {
+    logger.warn(
+      { origin: req.headers.origin, err: error instanceof Error ? error.message : error },
+      "auth.login failed"
+    );
     next(error);
   }
 }

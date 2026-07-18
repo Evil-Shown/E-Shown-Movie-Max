@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveApiBase } from "@/lib/api-base";
 
 export interface SubtitleTrack {
   id: string;
@@ -8,7 +9,7 @@ export interface SubtitleTrack {
   format: string;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+const API_BASE = resolveApiBase() || "https://chithra-cinema-api.onrender.com";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

@@ -6,6 +6,12 @@ const appRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const monorepoRoot = path.join(appRoot, "..");
 
+const backendApi = (
+  process.env.BACKEND_API_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "https://chithra-cinema-api.onrender.com"
+).replace(/\/$/, "");
+
 const nextConfig: NextConfig = {
   transpilePackages: ["@chithra/core"],
   turbopack: {
@@ -27,6 +33,15 @@ const nextConfig: NextConfig = {
         source: "/LiveTV",
         destination: "/live-tv",
         permanent: true,
+      },
+    ];
+  },
+  async rewrites() {
+    // Browser calls same-origin /api/v1/*; Vercel proxies to Render (avoids localhost + CORS).
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: `${backendApi}/api/v1/:path*`,
       },
     ];
   },

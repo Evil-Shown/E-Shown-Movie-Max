@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_BASE, api } from "@/lib/api";
+import { api, getApiBase } from "@/lib/api";
 
 const styles = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -59,7 +59,7 @@ export default function AuthCallbackPage() {
         const { user, tokens } = result.data;
 
         if (isElectron && claimId) {
-          await fetch(`${API_BASE}/api/v1/auth/store-session`, {
+          await fetch(`${getApiBase()}/api/v1/auth/store-session`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ accessToken: tokens.accessToken, user, claimId }),

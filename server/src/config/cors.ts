@@ -37,5 +37,5 @@ export const corsOptions: CorsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "x-admin-secret"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Platform", "x-platform", "x-admin-secret"],
 };

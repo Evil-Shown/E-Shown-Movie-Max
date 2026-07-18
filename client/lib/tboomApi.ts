@@ -1,9 +1,6 @@
-export type TboomErrorCode =
-  | "TIMEOUT"
-  | "NO_RESULTS"
-  | "RATE_LIMITED"
-  | "NETWORK_ERROR"
-  | "PARSE_ERROR";
+import { resolveApiBase } from "./api-base";
+
+export type TboomErrorCode = "TIMEOUT" | "NO_RESULTS" | "RATE_LIMITED" | "NETWORK_ERROR" | "PARSE_ERROR";
 
 export type TboomApiError = {
   success: false;
@@ -17,11 +14,7 @@ export type SearchApiResponse = {
   meta?: { providersUsed?: string[]; providersFailed?: string[] };
 };
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_GODS_EYE_API_URL ??
-  process.env.NEXT_PUBLIC_TBOOM_API_URL ??
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
-  "http://localhost:5000";
+const BASE_URL = resolveApiBase() || "https://chithra-cinema-api.onrender.com";
 
 const TIMEOUT_MS = 12000;
 const RETRY_DELAYS = [500, 1000, 2000];
@@ -33,7 +26,7 @@ function mapHttpToError(status: number, bodyMessage?: string): TboomApiError {
       success: false,
       errorCode: "RATE_LIMITED",
       message: "Too many requests. Please wait a moment and try again.",
-      retryable: true
+      retryable: true,
     };
   }
   if (status >= 500) {
@@ -41,14 +34,14 @@ function mapHttpToError(status: number, bodyMessage?: string): TboomApiError {
       success: false,
       errorCode: "NETWORK_ERROR",
       message: bodyMessage || "Search service is temporarily unavailable.",
-      retryable: true
+      retryable: true,
     };
   }
   return {
     success: false,
     errorCode: "NO_RESULTS",
     message: bodyMessage || "Search failed. Try different keywords.",
-    retryable: false
+    retryable: false,
   };
 }
 
@@ -63,8 +56,8 @@ async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Respon
       signal: controller.signal,
       headers: {
         Accept: "application/json",
-        ...(init?.headers ?? {})
-      }
+        ...(init?.headers ?? {}),
+      },
     });
     const elapsed = Date.now() - started;
     if (elapsed > 3000) {
@@ -77,14 +70,14 @@ async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Respon
         success: false,
         errorCode: "TIMEOUT" as const,
         message: "Search timed out. Check your connection and try again.",
-        retryable: true
+        retryable: true,
       } satisfies TboomApiError;
     }
     throw {
       success: false,
       errorCode: "NETWORK_ERROR" as const,
       message: "Unable to connect to search service.",
-      retryable: true
+      retryable: true,
     } satisfies TboomApiError;
   } finally {
     clearTimeout(timer);
@@ -122,7 +115,7 @@ async function fetchWithRetry<T>(url: string, init?: RequestInit): Promise<T> {
           success: false,
           errorCode: "PARSE_ERROR",
           message: "Received an invalid response from the search service.",
-          retryable: false
+          retryable: false,
         } satisfies TboomApiError;
       }
     } catch (err) {
@@ -142,7 +135,7 @@ async function fetchWithRetry<T>(url: string, init?: RequestInit): Promise<T> {
       success: false,
       errorCode: "NETWORK_ERROR",
       message: "Search failed after multiple attempts.",
-      retryable: true
+      retryable: true,
     }
   );
 }
@@ -191,12 +184,14 @@ export async function tboomResolveMagnet(payload: {
   return fetchWithRetry(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
 }
 
 export function isTboomError(value: unknown): value is TboomApiError {
-  return Boolean(value && typeof value === "object" && "success" in value && (value as TboomApiError).success === false);
+  return Boolean(
+    value && typeof value === "object" && "success" in value && (value as TboomApiError).success === false
+  );
 }
 
 export function normalizeSearchPayload(
