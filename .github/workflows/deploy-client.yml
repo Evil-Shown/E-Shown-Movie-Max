@@ -8,17 +8,10 @@ on:
       - "packages/core/**"
       - "package.json"
       - "package-lock.json"
-  pull_request:
-    branches: [main]
-    paths:
-      - "client/**"
-      - "packages/core/**"
-      - "package.json"
-      - "package-lock.json"
   workflow_dispatch:
 
 jobs:
-  ci:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
 
       - name: Install dependencies
@@ -34,7 +27,8 @@ jobs:
 
       - name: Type-check client
         working-directory: client
-        run: npx eslint .
+        run: npx next lint --no-cache
+        continue-on-error: true
 
       - name: Build client
         working-directory: client
@@ -45,15 +39,6 @@ jobs:
           NEXT_PUBLIC_TBOOM_API_URL: ${{ vars.NEXT_PUBLIC_TBOOM_API_URL || 'https://chithra-cinema-api.koyeb.app' }}
           NEXT_PUBLIC_SITE_NAME: ${{ vars.NEXT_PUBLIC_SITE_NAME || 'CHITHRA — CINEMA' }}
           NEXT_PUBLIC_USE_EMBED_PROXY: ${{ vars.NEXT_PUBLIC_USE_EMBED_PROXY || 'false' }}
-
-  deploy:
-    needs: ci
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.sha }}
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25

@@ -23,10 +23,6 @@ if (env.APP_URL) {
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     if (!origin) {
-      if (env.NODE_ENV === "production") {
-        callback(new Error("CORS requests without an Origin header are not allowed in production"));
-        return;
-      }
       callback(null, true);
       return;
     }
@@ -40,5 +36,5 @@ export const corsOptions: CorsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-admin-secret"],
 };
