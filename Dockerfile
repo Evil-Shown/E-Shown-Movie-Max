@@ -28,7 +28,8 @@ COPY package.json package-lock.json ./
 COPY server/package.json ./server/package.json
 COPY packages/core/package.json ./packages/core/package.json
 
-RUN npm ci --omit=dev && npm cache clean --force
+# HUSKY=0 skips the prepare script; husky is a devDependency and missing with --omit=dev
+RUN HUSKY=0 npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/server/dist ./server/dist
 COPY --from=builder /app/server/prisma ./server/prisma

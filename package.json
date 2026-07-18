@@ -14,7 +14,7 @@
     "lint": "turbo run lint && eslint server packages",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "package": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1",
     "package:current": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1 -NoIncrement",
     "package:version": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1 -Version",
