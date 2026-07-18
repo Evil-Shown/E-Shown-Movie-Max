@@ -1108,6 +1108,13 @@ export default function DashboardPage() {
                           ))
                         )}
                       </div>
+                      <Link
+                        href="/notifications"
+                        onClick={() => setShowNotifications(false)}
+                        className="block w-full text-center px-4 py-2.5 text-xs font-semibold text-deep-orange hover:text-chocolate border-t border-tan/20 transition"
+                      >
+                        View all &rarr;
+                      </Link>
                     </div>
                   </>
                 )}

@@ -67,6 +67,10 @@ export function markAllNotificationsRead() {
   save(list);
 }
 
+export function clearAllNotifications() {
+  save([]);
+}
+
 export function getUnreadCount(): number {
   return getNotifications().filter((n) => !n.read).length;
 }
