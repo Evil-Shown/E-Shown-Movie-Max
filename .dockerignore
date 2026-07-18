@@ -10,9 +10,10 @@
 **/.turbo/
 **/dist/
 **/release/
-**/desktop/
-**/mobile/
-**/client/
+# Only exclude root app packages — not server/src/domains/mobile/
+/desktop/
+/mobile/
+/client/
 *.md
 *.log
 .env

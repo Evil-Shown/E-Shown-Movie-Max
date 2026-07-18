@@ -30,9 +30,9 @@ COPY packages/core/package.json ./packages/core/package.json
 
 RUN npm ci --omit=dev && npm cache clean --force
 
+# Prisma client lives in dist/generated/prisma (custom schema output + copy-generated.mjs)
 COPY --from=builder /app/server/dist ./server/dist
 COPY --from=builder /app/server/prisma ./server/prisma
-COPY --from=builder /app/server/node_modules/.prisma ./server/node_modules/.prisma
 
 WORKDIR /app/server
 
