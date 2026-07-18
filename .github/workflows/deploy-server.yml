@@ -1,0 +1,55 @@
+name: Deploy Server (Koyeb)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - "packages/core/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check server
+        working-directory: server
+        run: npm run lint
+
+      - name: Build server
+        working-directory: server
+        run: npm run build
+
+      - name: Build Docker image
+        run: docker build -t chithra-cinema-api:${{ github.sha }} .
+
+      - name: Deploy to Koyeb
+        env:
+          KOYEB_API_TOKEN: ${{ secrets.KOYEB_API_TOKEN }}
+        run: |
+          if [ -z "$KOYEB_API_TOKEN" ]; then
+            echo "KOYEB_API_TOKEN not set — skipping Koyeb deploy."
+            echo "Push to main and Koyeb will auto-deploy via GitHub integration."
+            exit 0
+          fi
+
+          KOYEB_APP="chithra-cinema-api"
+          curl -X POST "https://app.koyeb.com/v1/apps/$KOYEB_APP/deploy" \
+            -H "Authorization: Bearer $KOYEB_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"image":"chithra-cinema-api:'${{ github.sha }}'"}'

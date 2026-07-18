@@ -1,10 +1,23 @@
 import type { CorsOptions } from "cors";
 import { env } from "./env";
 
-const allowedOrigins = ["http://127.0.0.1:3000", "http://localhost:3000", "http://localhost:19006"];
+const allowedOrigins: string[] = [
+  "http://127.0.0.1:3000",
+  "http://localhost:3000",
+  "http://localhost:19006",
+  "https://chithra-cinema.vercel.app",
+];
 
-if (env.NODE_ENV === "production") {
-  // Add production origins here
+if (env.CORS_ORIGIN) {
+  for (const origin of env.CORS_ORIGIN.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)) {
+    allowedOrigins.push(origin);
+  }
+}
+
+if (env.APP_URL) {
+  allowedOrigins.push(env.APP_URL);
 }
 
 export const corsOptions: CorsOptions = {

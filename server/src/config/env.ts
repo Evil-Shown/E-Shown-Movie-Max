@@ -34,6 +34,8 @@ const envSchema = z.object({
   OMDB_API_KEY: z.string().optional(),
   WYZIE_API_KEY: z.string().optional(),
 
+  CORS_ORIGIN: z.string().optional(),
+
   PAYHERE_MERCHANT_ID: z.string().optional().default(""),
   PAYHERE_SECRET: z.string().optional().default(""),
   PAYHERE_API_URL: URL_OR_DEFAULT(

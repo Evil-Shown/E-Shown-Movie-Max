@@ -57,7 +57,11 @@ app.use(express.json({ limit: "50kb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Public health checks (no rate limiting)
+// Platform health check (no rate limiting)
+app.get("/health", (_req, res) => {
+  res.json({ success: true, data: { status: "ok", timestamp: new Date().toISOString() } });
+});
+
 app.use("/api/v1/health", healthRoutes);
 
 // Global rate limiting for API routes
@@ -168,3 +172,6 @@ async function shutdown(signal: string) {
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
+
+// Koyeb sends SIGTERM on stop; ensure clean exit
+process.on("SIGQUIT", () => shutdown("SIGQUIT"));
