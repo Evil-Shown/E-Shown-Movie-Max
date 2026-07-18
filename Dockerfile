@@ -1,4 +1,7 @@
-FROM node:22-alpine AS builder
+# Pin alpine3.20: Prisma 5 cannot detect OpenSSL on Alpine 3.21+ (/usr/lib vs /lib)
+FROM node:22-alpine3.20 AS builder
+
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
@@ -15,9 +18,9 @@ WORKDIR /app/server
 RUN npx prisma generate
 RUN npm run build
 
-FROM node:22-alpine AS production
+FROM node:22-alpine3.20 AS production
 
-RUN apk add --no-cache tini curl
+RUN apk add --no-cache tini curl openssl
 
 WORKDIR /app
 
