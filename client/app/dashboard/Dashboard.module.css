@@ -550,3 +550,63 @@
   -webkit-backdrop-filter: blur(12px) saturate(1.05);
   border: 0.5px solid rgba(212, 165, 116, 0.2);
 }
+
+/* ==========================================================================
+   RECENT ACTIVITY REDESIGN
+   ========================================================================== */
+.activityCard {
+  position: relative;
+  background: var(--faint-white);
+  border: 1px solid color-mix(in srgb, var(--tan) 25%, transparent);
+  border-radius: 20px;
+  box-shadow:
+    0 2px 12px color-mix(in srgb, var(--chocolate) 4%, transparent),
+    0 8px 32px color-mix(in srgb, var(--chocolate) 3%, transparent),
+    0 16px 48px color-mix(in srgb, var(--deep-orange) 3%, transparent);
+  overflow: hidden;
+}
+
+.activityCardAccent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--deep-orange), var(--light-orange));
+  border-radius: 4px 0 0 4px;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--deep-orange) 25%, transparent);
+}
+
+.filterPill {
+  background: var(--cream);
+  border: 1px solid color-mix(in srgb, var(--tan) 20%, transparent);
+  color: var(--brown);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+}
+
+.filterPill:hover {
+  border-color: color-mix(in srgb, var(--tan) 40%, transparent);
+  color: var(--deep-orange);
+}
+
+.filterPillActive {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--chocolate) 95%, var(--deep-orange) 5%),
+    var(--chocolate)
+  );
+  color: var(--faint-white);
+  border-color: transparent;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--chocolate) 15%, transparent);
+}
+
+.filterPillActive:hover {
+  color: var(--faint-white);
+  opacity: 0.9;
+}
