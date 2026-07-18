@@ -238,7 +238,7 @@ function GoogleOAuthButton({ onClose }: { onClose: () => void }) {
     setLoading(true);
     try {
       const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const isElectron = (window as Window & typeof globalThis).chithraDesktop?.isDesktopApp;
+      const isElectron = window.chithraDesktop?.isDesktopApp;
 
       if (isElectron) {
         const claimResp = await fetch("http://localhost:5000/api/v1/auth/create-claim", {
@@ -255,7 +255,7 @@ function GoogleOAuthButton({ onClose }: { onClose: () => void }) {
         const redirectTo = `${window.location.origin}/auth/callback`;
         const url = `${baseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&state=${claimJson.data.claimId}&prompt=select_account`;
 
-        const opened = await (window as Window & typeof globalThis).chithraDesktop!.openExternal(url);
+        const opened = await window.chithraDesktop?.openExternal?.(url);
         if (!opened) {
           window.location.href = url;
           return;

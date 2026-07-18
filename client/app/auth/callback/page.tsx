@@ -43,8 +43,7 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        const isElectron =
-          typeof window !== "undefined" && (window as Window & typeof globalThis).chithraDesktop?.isDesktopApp;
+        const isElectron = typeof window !== "undefined" && window.chithraDesktop?.isDesktopApp;
 
         const result = await api.post<{ user: Record<string, unknown>; tokens: { accessToken: string } }>(
           "/api/v1/auth/oauth",
