@@ -19,7 +19,6 @@ import type { LocalNotification } from "@/lib/storage/notifications";
 import { buildTasteProfile } from "@/lib/recommendations/taste-profile";
 import { getFeaturedMovie, getTrendingMovies } from "@/lib/movies";
 import type { Movie } from "@/lib/types";
-import { api } from "@/lib/api";
 import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
 import PricingModal from "@/components/dashboard/PricingModal";
 import styles from "./Dashboard.module.css";
@@ -403,26 +402,26 @@ function ActivityRow({ item }: { item: ActivityItem }) {
   };
 
   return (
-    <div className="group relative flex items-start gap-4 pl-6 py-4 rounded-xl hover:bg-faint-white transition-all duration-300">
-      <div
-        className={`absolute left-0 top-4 bottom-4 w-0.5 rounded-full ${a.bar} opacity-20 group-hover:opacity-40 transition-opacity`}
-      />
-      <div
-        className={`relative w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${a.box}`}
-      >
-        {icons[item.type]}
-        <div
-          className={`absolute -inset-0.5 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity ${a.bar}`}
-        />
-      </div>
-      <div className="flex-1 min-w-0 pt-1">
-        <div className="flex items-center gap-2 mb-1">
-          <span
-            className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${a.badge}`}
-          >
-            {labels[item.type]}
-          </span>
-          <span className="text-[11px] text-sandy/60">{timeAgo(item.timestamp)}</span>
+    <div className={`${styles.activityRow} flex items-center gap-4 px-5 py-4 rounded-[14px] bg-[#faf6f0]`}>
+      {/* Thumbnail */}
+      <div className="relative w-[88px] shrink-0">
+        <div className="aspect-[16/9] rounded-[10px] overflow-hidden bg-[#e8ddd0]">
+          {item.posterPath ? (
+            <img
+              src={posterUrl(item.posterPath, "w342")}
+              alt={item.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[#c4b5a5]">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="2" y="2" width="20" height="20" rx="3" />
+                <circle cx="9" cy="9" r="2" />
+                <path d="m21 15-5-5L5 21" />
+              </svg>
+            </div>
+          )}
         </div>
         {/* Play overlay for watching */}
         {item.type === "watching" && (
@@ -435,23 +434,74 @@ function ActivityRow({ item }: { item: ActivityItem }) {
           </div>
         )}
       </div>
-      <div className="flex-shrink-0 self-center">
-        <svg
-          className="w-4 h-4 text-tan/30 group-hover:text-tan/60 transition-colors"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
+
+      {/* Middle: metadata */}
+      <div className="flex-1 min-w-0">
+        <p className="text-[15px] font-bold text-[#3e2723] leading-tight truncate">{item.title}</p>
+        <p className="text-[12px] text-[#a0785a] mt-1.5 truncate">
+          {item.meta && <span>{item.meta} · </span>}
+          {timeAgo(item.timestamp)}
+        </p>
+      </div>
+
+      {/* Right: status badge */}
+      <div className="shrink-0">
+        <span
+          className={`inline-block text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-[0.5px] ${badgeStyle[item.type] || badgeStyle.watching}`}
         >
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+          {badgeLabel[item.type] || "WATCHING"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="min-h-screen font-sans text-chocolate" style={{ background: "#fdf8f0" }}>
+      <div className="flex min-h-screen">
+        <aside className="fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col bg-[#3e2723] animate-pulse">
+          <div className="px-6 py-6 border-b border-[#d4a574]/15">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#d4a574]/20" />
+              <div className="space-y-2">
+                <div className="h-4 w-24 rounded bg-[#d4a574]/20" />
+                <div className="h-2 w-16 rounded bg-[#d4a574]/10" />
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 px-4 py-4 space-y-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="h-10 rounded-lg bg-[#d4a574]/10" />
+            ))}
+          </div>
+        </aside>
+        <main className="flex-1 lg:ml-64 min-h-screen">
+          <div className="px-6 md:px-8 py-8 max-w-7xl mx-auto animate-pulse">
+            <div className="mb-10">
+              <div className="rounded-2xl bg-[#f5efe8] p-6 md:p-8">
+                <div className="h-3 w-40 rounded bg-[#d4a574]/20 mb-4" />
+                <div className="h-8 w-64 rounded bg-[#d4a574]/20 mb-2" />
+                <div className="h-8 w-48 rounded bg-[#d4a574]/20 mb-4" />
+                <div className="h-4 w-96 rounded bg-[#d4a574]/10" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-xl bg-[#f5efe8] h-40" />
+              ))}
+            </div>
+            <div className="rounded-2xl bg-[#f5efe8] h-48 mb-12" />
+            <div className="rounded-2xl bg-[#f5efe8] h-64 mb-12" />
+          </div>
+        </main>
       </div>
     </div>
   );
 }
 
 export default function DashboardPage() {
-  const { user, logout, isLoading: authLoading, token } = useAuth();
+  const { user, logout, isLoading: authLoading } = useAuth();
   const { watchlist, continueWatching, hydrated } = useUserLibrary();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -464,7 +514,6 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [notifications, setNotificationsState] = useState<LocalNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const notifGenerated = useRef(false);
   const router = useRouter();
 
@@ -612,16 +661,11 @@ export default function DashboardPage() {
 
   const isPro = user?.subscriptionTier === "PRO";
 
-  const totalWatchHours = useMemo(() => {
-    const totalSeconds = continueWatching.reduce((sum, item) => sum + (item.currentTime || 0), 0);
-    return Math.floor(totalSeconds / 3600);
-  }, [continueWatching]);
-
   const watchTimeProgress = useMemo(() => {
-    if (totalWatchHours <= 0) return 0;
-    const goal = Math.max(10, Math.ceil(totalWatchHours / 10) * 10);
-    return Math.min(100, Math.round((totalWatchHours / goal) * 100));
-  }, [totalWatchHours]);
+    if (hours <= 0) return 0;
+    const goal = Math.max(10, Math.ceil(hours / 10) * 10);
+    return Math.min(100, Math.round((hours / goal) * 100));
+  }, [hours]);
 
   const savedTitlesProgress = useMemo(() => {
     if (watchlist.length <= 0) return 0;
@@ -633,11 +677,6 @@ export default function DashboardPage() {
     setProfileIcon(icon);
     setProfileIconState(icon);
     setShowProfileSelector(false);
-
-    if (token) {
-      const avatarUrl = `/avatars/${icon}`;
-      api.patch("/api/v1/users/avatar", { avatarUrl }, token).catch(console.error);
-    }
   };
 
   const unread = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
@@ -730,7 +769,10 @@ export default function DashboardPage() {
             <button
               type="button"
               className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium text-left w-full border-none cursor-pointer bg-transparent`}
-              onClick={() => setShowLogoutConfirm(true)}
+              onClick={async () => {
+                await logout();
+                window.location.href = "/";
+              }}
             >
               <span className="text-[#d4a574]/80 group-hover:text-[#e65100] transition-colors">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -741,79 +783,6 @@ export default function DashboardPage() {
               </span>
               <span>Logout</span>
             </button>
-
-            {showLogoutConfirm && (
-              <div
-                className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-                style={{ background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(4px)" }}
-                onClick={() => setShowLogoutConfirm(false)}
-              >
-                <div
-                  className="relative w-full max-w-md rounded-2xl p-6 text-center"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(255, 250, 240, 0.98) 0%, rgba(255, 245, 230, 0.98) 100%)",
-                    backdropFilter: "blur(20px)",
-                    WebkitBackdropFilter: "blur(20px)",
-                    border: "1px solid rgba(212, 165, 116, 0.4)",
-                    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div
-                    className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                    style={{ background: "rgba(230, 81, 0, 0.15)" }}
-                  >
-                    <svg
-                      className="w-8 h-8"
-                      style={{ color: "#e65100" }}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                      <polyline points="16 17 21 12 16 7" />
-                      <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold mb-2" style={{ color: "#3d2a10" }}>
-                    Logout
-                  </h3>
-                  <p className="mb-6 text-base leading-relaxed" style={{ color: "#6b4a1e" }}>
-                    Are you sure you want to logout of your account? You&apos;ll need to sign in again to continue
-                    watching.
-                  </p>
-                  <div className="flex gap-3 justify-center">
-                    <button
-                      onClick={() => setShowLogoutConfirm(false)}
-                      className="px-6 py-2.5 rounded-xl font-medium text-sm transition-all"
-                      style={{
-                        background: "rgba(255, 255, 255, 0.8)",
-                        color: "#6b4a1e",
-                        border: "1px solid rgba(212, 165, 116, 0.3)",
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={async () => {
-                        await logout();
-                        window.location.href = "/";
-                      }}
-                      className="px-6 py-2.5 rounded-xl font-medium text-sm transition-all"
-                      style={{
-                        background: "linear-gradient(135deg, #e65100 0%, #cc4d00 100%)",
-                        color: "#fffbf5",
-                        border: "none",
-                        boxShadow: "0 4px 16px rgba(230, 81, 0, 0.4)",
-                      }}
-                    >
-                      Logout
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </nav>
 
           <div className="p-4 border-t border-[#d4a574]/15">
@@ -1400,61 +1369,107 @@ export default function DashboardPage() {
             </section>
 
             {/* Recent Activity */}
-            <section className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
-                    Recent Activity
-                  </h2>
-                  <p className="text-xs text-sandy mt-1 ml-4">Your latest actions</p>
-                </div>
-                <div className="flex bg-faint-white border border-tan/25 rounded-xl p-1 shadow-sm">
-                  {(["all", "watching", "watchlist", "completed"] as const).map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setActivityFilter(f)}
-                      className={`${styles.filterBtn} px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
-                        activityFilter === f
-                          ? "bg-chocolate text-faint-white shadow-md"
-                          : "text-brown hover:text-deep-orange hover:bg-light-orange-faint/50"
-                      }`}
-                    >
-                      {f === "all"
-                        ? "All"
-                        : f === "watching"
-                          ? "Watching"
-                          : f === "watchlist"
-                            ? "Watchlist"
-                            : "Completed"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-gradient-to-br from-faint-white via-faint-white to-cream border border-tan/20 rounded-2xl shadow-sm divide-y divide-tan/15">
-                {filteredActivities.length > 0 ? (
-                  filteredActivities.map((item, i) => <ActivityRow key={i} item={item} />)
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12 px-8">
-                    <div className="w-14 h-14 rounded-2xl bg-cream border border-tan/20 flex items-center justify-center mb-4">
-                      <svg
-                        className="w-6 h-6 text-sandy"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
+            <section id="recent-activity" className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>
+              {/* Main card container */}
+              <div className={styles.activityCard}>
+                {/* Left orange accent bar */}
+                <div className={styles.activityCardAccent} />
+
+                {/* Card content */}
+                <div className="p-6 md:p-8">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-cinzel text-lg font-bold text-[#3e2723] tracking-[0.5px]">RECENT ACTIVITY</h3>
+                    <div className="flex items-center gap-2">
+                      {(["all", "watching", "watchlist", "completed"] as const).map((f) => (
+                        <button
+                          type="button"
+                          key={f}
+                          onClick={() => setActivityFilter(f)}
+                          className={`${styles.filterPill} ${activityFilter === f ? styles.filterPillActive : ""}`}
+                        >
+                          {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
+                        </button>
+                      ))}
+                      <Link
+                        href="/dashboard?tab=activity"
+                        className="text-[12px] font-semibold text-[#6b4423] hover:text-[#e65100] transition-colors whitespace-nowrap"
                       >
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                      </svg>
+                        View All &rarr;
+                      </Link>
                     </div>
-                    <p className="text-sm font-semibold text-chocolate mb-1">No activity yet</p>
-                    <p className="text-xs text-sandy text-center max-w-xs">
-                      Start watching movies or TV series to see your activity history here.
-                    </p>
                   </div>
-                )}
+
+                  {/* Activity rows */}
+                  <div className="space-y-3">
+                    {filteredActivities.length > 0 ? (
+                      filteredActivities.map((item) => (
+                        <ActivityRow key={`${item.type}-${item.title}-${item.timestamp}`} item={item} />
+                      ))
+                    ) : (
+                      <div className="p-8 text-center bg-[#faf6f0] rounded-[14px]">
+                        <p className="text-sm text-[#a0785a] mb-4">
+                          No activity yet. Start watching to see your history here.
+                        </p>
+                        <Link
+                          href="/browse"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-deep-orange to-chocolate text-faint-white text-xs font-semibold hover:from-chocolate hover:to-chocolate transition-all shadow-lg shadow-deep-orange/20"
+                        >
+                          Start Exploring
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </section>
+
+            {/* Recommended For You */}
+            {(!recsLoading || recommendations.length > 0) && (
+              <section className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
+                    Recommended For You
+                  </h2>
+                  <Link
+                    href="/browse"
+                    className="text-sm font-semibold text-deep-orange hover:text-chocolate transition flex items-center gap-1"
+                  >
+                    View All
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                  </Link>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {recsLoading
+                    ? Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className={`${styles.archiveCard} animate-pulse`}>
+                          <div className="w-full h-full bg-[#f5efe8]" />
+                          <div className={`${styles.archiveOverlay}`}>
+                            <div className="h-3 w-3/4 rounded bg-[#d4a574]/30 mt-2" />
+                            <div className="h-2 w-1/2 rounded bg-[#d4a574]/20 mt-2" />
+                          </div>
+                        </div>
+                      ))
+                    : recommendations.map((movie) => (
+                        <Link key={movie.id} href={`/movie/${movie.id}`} className={`${styles.archiveCard}`}>
+                          <img src={posterUrl(movie.posterPath, "w342")} alt={movie.title} loading="lazy" />
+                          <div className={`${styles.archiveOverlay}`}>
+                            <h3 className={`${styles.archiveTitle} font-cinzel font-bold text-sm mt-2`}>
+                              {movie.title}
+                            </h3>
+                            <p className={`${styles.archiveMeta} mt-1`}>
+                              {movie.year}
+                              {movie.genres?.length ? ` · ${movie.genres.slice(0, 2).join(", ")}` : ""}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                </div>
+              </section>
+            )}
 
             <footer className="mt-12 py-6 border-t border-tan/30">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
