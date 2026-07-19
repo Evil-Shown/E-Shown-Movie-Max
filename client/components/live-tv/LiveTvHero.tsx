@@ -4,6 +4,7 @@ import { getStreamableChannelCount } from "@/lib/live-tv/channels";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { fadeUpVariant } from "@/lib/motion";
+import allChannelsArt from "@/assets/images/Allchaneels.webp";
 
 export default function LiveTvHero() {
   const prefersReducedMotion = useReducedMotion();
@@ -152,12 +153,13 @@ export default function LiveTvHero() {
                 }}
               />
               <Image
-                src="/Allchaneels.png"
+                src={allChannelsArt}
                 alt=""
                 fill
                 priority
                 className="object-contain object-center"
                 sizes="460px"
+                placeholder="blur"
               />
             </div>
           </motion.div>

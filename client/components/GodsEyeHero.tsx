@@ -1,6 +1,13 @@
 "use client";
 
+import { Oswald } from "next/font/google";
 import type { GodsEyeSearch } from "./gods-eye/hooks/useGodsEyeSearch";
+
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["300", "500"],
+  display: "swap",
+});
 
 type GodsEyeHeroProps = Pick<
   GodsEyeSearch,
@@ -76,7 +83,7 @@ export default function GodsEyeHero({
           THE GOD&apos;S <span className="text-[#E65100]">EYE</span>
         </h1>
 
-        <p className="mb-3 mt-3 font-[var(--font-oswald)] text-sm font-light uppercase tracking-[0.25em] text-[#5D4037] sm:mb-4 sm:mt-4 sm:text-base">
+        <p className={`${oswald.className} mb-3 mt-3 text-sm font-light uppercase tracking-[0.25em] text-[#5D4037] sm:mb-4 sm:mt-4 sm:text-base`}>
           Every Story, Carved In Light
         </p>
 
@@ -139,8 +146,7 @@ export default function GodsEyeHero({
             }}
             onBlur={() => window.setTimeout(() => setSearchFocused(false), 150)}
             placeholder="Search for your next obsession..."
-            className="h-12 flex-1 bg-transparent px-4 text-sm uppercase tracking-wider text-[#3E2723] outline-none placeholder:text-[#8D6E63] sm:h-14 sm:px-6 sm:text-base"
-            style={{ fontFamily: "var(--font-oswald), var(--font-inter), Inter, sans-serif" }}
+            className={`${oswald.className} h-12 flex-1 bg-transparent px-4 text-sm uppercase tracking-wider text-[#3E2723] outline-none placeholder:text-[#8D6E63] sm:h-14 sm:px-6 sm:text-base`}
           />
           <button
             id="search-button"

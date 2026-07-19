@@ -350,7 +350,7 @@
    ========================================================================== */
 .eyeDeco {
   position: relative;
-  background-image: url("/dashboard/hero-bg.png");
+  background-image: url("/dashboard/hero-bg.webp");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

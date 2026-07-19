@@ -4,7 +4,7 @@ import ConnectionIndicator from "@/components/ConnectionIndicator";
 import InstantSearch from "@/components/InstantSearch";
 import ProtectedLink from "@/components/ProtectedLink";
 import UserDashboard from "@/components/UserDashboard";
-import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { useWatchlistLibrary } from "@/components/UserLibraryProvider";
 import { BRAND_NAME, BRAND_NAME_SINHALA } from "@/lib/brand";
 import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
 import Link from "next/link";
@@ -79,7 +79,7 @@ function NavLink({
 export default function Header() {
   const pathname = usePathname();
   const isDashboard = pathname === "/dashboard" || pathname === "/settings" || pathname === "/notifications";
-  const { watchlistCount } = useUserLibrary();
+  const { watchlistCount } = useWatchlistLibrary();
   const afterHydration = useAfterHydration();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -92,23 +92,31 @@ export default function Header() {
   }, [isDashboard]);
 
   useEffect(() => {
+    let ticking = false;
+
     const onScroll = () => {
-      const currentY = window.scrollY;
-      const delta = currentY - lastScrollY.current;
+      if (ticking) return;
+      ticking = true;
 
-      setScrolled(currentY > 24);
+      window.requestAnimationFrame(() => {
+        const currentY = window.scrollY;
+        const delta = currentY - lastScrollY.current;
 
-      if (menuOpen) {
-        setHidden(false);
-      } else if (currentY < 80) {
-        setHidden(false);
-      } else if (delta > 6) {
-        setHidden(true);
-      } else if (delta < -6) {
-        setHidden(false);
-      }
+        setScrolled(currentY > 24);
 
-      lastScrollY.current = currentY;
+        if (menuOpen) {
+          setHidden(false);
+        } else if (currentY < 80) {
+          setHidden(false);
+        } else if (delta > 6) {
+          setHidden(true);
+        } else if (delta < -6) {
+          setHidden(false);
+        }
+
+        lastScrollY.current = currentY;
+        ticking = false;
+      });
     };
 
     onScroll();

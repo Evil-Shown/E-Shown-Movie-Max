@@ -3,7 +3,7 @@ import type { StreamProvider } from "@/lib/providers";
 import { backdropUrl, formatDisplayYear, posterUrl } from "@/lib/movies";
 import { getMovieEmbedUrl, getRawMovieEmbedUrl, isTvShow } from "@/lib/streaming";
 import { getTrailerId } from "@/lib/trailers";
-import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { useUserLibraryActions } from "@/components/UserLibraryProvider";
 import { isEmbedNearEnd, isEmbedPlaybackEnded } from "@/lib/embed-events";
 import { exitAnyFullscreen, getActiveFullscreenElement, requestElementFullscreen } from "@/lib/fullscreen";
 import {
@@ -46,7 +46,7 @@ export function useVideoPlayer({
   onClose,
   onSeasonEpisodeChange,
 }: UseVideoPlayerOptions) {
-  const { savePlayback, setProvider } = useUserLibrary();
+  const { savePlayback, setProvider } = useUserLibraryActions();
   const isTrailer = mode === "trailer";
   const isTvPlayer = !isTrailer && isTvShow(movie);
 
@@ -174,18 +174,27 @@ export function useVideoPlayer({
 
     // Make the request synchronously so it stays within the user-gesture
     // activation window (required by mobile Chrome / Safari).
-    try {
-      const result = requestElementFullscreen(stage);
-      setIsFullscreen(true);
-      focusPlayer();
-      if (result && typeof result.then === "function") {
-        result.catch(() => {
-          // Browser blocked fullscreen — user can still use the embed control.
-        });
+    const requestWithFallback = () => {
+      try {
+        const result = requestElementFullscreen(stage);
+        if (result && typeof result.then === "function") {
+          return result.catch(() => {
+            // Mobile Chrome may reject fullscreen on a div wrapping a
+            // cross-origin iframe. Fall back to fullscreening the iframe.
+            const iframe = iframeRef.current;
+            if (iframe) {
+              return requestElementFullscreen(iframe) ?? Promise.resolve();
+            }
+          });
+        }
+      } catch {
+        // Browser blocked fullscreen entirely.
       }
-    } catch {
-      // Browser blocked fullscreen — user can still use the embed control.
-    }
+    };
+
+    void requestWithFallback();
+    setIsFullscreen(true);
+    focusPlayer();
   }, [focusPlayer]);
 
   const openStreamInBrowserTab = useCallback(() => {

@@ -2,9 +2,11 @@
 
 import dynamic from "next/dynamic";
 import { Suspense, useEffect, useState } from "react";
-import { Canvas } from "@react-three/fiber";
 
-const ParticleField = dynamic(() => import("./ParticleField"), { ssr: false });
+const HeroParticlesCanvas = dynamic(() => import("./HeroParticlesCanvas"), {
+  ssr: false,
+  loading: () => null,
+});
 
 interface HeroParticlesProps {
   scrollProgress?: number;
@@ -25,13 +27,7 @@ export default function HeroParticles({ scrollProgress = 0 }: HeroParticlesProps
   return (
     <div className="pointer-events-none absolute inset-0 z-[1]">
       <Suspense fallback={null}>
-        <Canvas
-          camera={{ position: [0, 0, 5], fov: 75 }}
-          gl={{ antialias: true, alpha: true }}
-          style={{ position: "absolute", inset: 0 }}
-        >
-          <ParticleField count={count} scrollProgress={scrollProgress} />
-        </Canvas>
+        <HeroParticlesCanvas count={count} scrollProgress={scrollProgress} />
       </Suspense>
     </div>
   );

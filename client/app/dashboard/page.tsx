@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
@@ -23,6 +24,7 @@ import { api } from "@/lib/api";
 import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
 import PricingModal from "@/components/dashboard/PricingModal";
 import ProBadge from "@/components/dashboard/ProBadge";
+import welcomeHero from "@/assets/images/welcome.webp";
 import styles from "./Dashboard.module.css";
 
 function formatDuration(seconds: number) {
@@ -1113,12 +1115,14 @@ export default function DashboardPage() {
             {/* Cinematic Hero Section */}
             <section className={`mb-6 md:mb-10 ${styles.fadeUp}`}>
               <div className={styles.heroSection}>
-                <img
-                  src="/dashboard/welcome.png"
+                <Image
+                  src={welcomeHero}
                   alt=""
                   aria-hidden="true"
                   className={styles.heroBgImage}
-                  loading="eager"
+                  priority
+                  sizes="100vw"
+                  placeholder="blur"
                 />
                 <div className={styles.heroAmbientGlow} />
                 <div className={styles.heroTopEdge} />

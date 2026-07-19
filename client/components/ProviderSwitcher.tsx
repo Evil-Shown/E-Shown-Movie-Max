@@ -1,14 +1,15 @@
 "use client";
 
 import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from "@/lib/providers";
-import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { usePlaybackLibrary, useUserLibraryActions } from "@/components/UserLibraryProvider";
 
 interface ProviderSwitcherProps {
   className?: string;
 }
 
 export default function ProviderSwitcher({ className = "" }: ProviderSwitcherProps) {
-  const { preferredProvider, setProvider } = useUserLibrary();
+  const { preferredProvider } = usePlaybackLibrary();
+  const { setProvider } = useUserLibraryActions();
 
   return (
     <div className={className}>

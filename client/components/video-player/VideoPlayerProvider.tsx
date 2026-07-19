@@ -7,7 +7,7 @@ import { warmStreamProvidersForPlayback } from "@/lib/stream-optimizer";
 import { isTvShow } from "@/lib/streaming";
 import { useAuth } from "@/components/AuthProvider";
 import { useAuthModal } from "@/components/AuthModalProvider";
-import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { usePlaybackLibrary, useUserLibraryActions } from "@/components/UserLibraryProvider";
 import { AnimatePresence } from "framer-motion";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import VideoPlayerModal from "./VideoPlayerModal";
@@ -32,7 +32,8 @@ export type { OpenMovieOptions } from "./types";
 export default function VideoPlayerProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, setPendingAction } = useAuth();
   const { openAuthModal } = useAuthModal();
-  const { preferredProvider, getResumeTime } = useUserLibrary();
+  const { preferredProvider } = usePlaybackLibrary();
+  const { getResumeTime } = useUserLibraryActions();
   const [active, setActive] = useState<ActivePlayer | null>(null);
 
   const doOpenMovie = useCallback(
@@ -102,7 +103,7 @@ export default function VideoPlayerProvider({ children }: { children: React.Reac
   return (
     <VideoPlayerContext.Provider value={{ openMovie, openTrailer, closePlayer }}>
       {children}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {active && (
           <VideoPlayerModal
             active={active}

@@ -6,12 +6,11 @@ import { BRAND_NAME } from "@/lib/brand";
 import { isTvShow } from "@/lib/streaming";
 import { getMovieEmbedUrl } from "@/lib/streaming";
 import { getTrailerId } from "@/lib/trailers";
-import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { useUserLibraryActions } from "@/components/UserLibraryProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { useAuthModal } from "@/components/AuthModalProvider";
 import PlayerTvSelector from "@/components/PlayerTvSelector";
 import PlayerNextEpisodeOverlay from "@/components/PlayerNextEpisodeOverlay";
-import PlayerSubtitlePicker from "@/components/PlayerSubtitlePicker";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { isSlowConnection } from "@/lib/stream-optimizer";
@@ -40,7 +39,7 @@ export default function VideoPlayerModal({
   const { isAuthenticated } = useAuth();
   const { openAuthModal } = useAuthModal();
   const { movie, mode, season, episode, provider, resumeSeconds } = active;
-  const { setProvider } = useUserLibrary();
+  const { setProvider } = useUserLibraryActions();
   const [playerEngaged, setPlayerEngaged] = useState(false);
   const setLoadedRef = useRef<(value: boolean) => void>(() => {});
 
@@ -223,40 +222,6 @@ export default function VideoPlayerModal({
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              {iframeSrc && fallback.loaded && (
-                <div className="flex items-center gap-1 sm:hidden">
-                  {!isTrailer ? (
-                    <PlayerSubtitlePicker
-                      value={subtitles.subtitleLang}
-                      loading={subtitles.subtitleLoading}
-                      disabled={!fallback.loaded}
-                      tracks={subtitles.subtitleTracks}
-                      autoSinhalaAvailable={subtitles.autoSinhalaAvailable}
-                      onSearch={() => void subtitles.refreshSubtitleTracks()}
-                      onChange={subtitles.handleSubtitleChange}
-                      onTrackSelect={(track) => {
-                        void subtitles.handleSubtitleChange(track.language);
-                      }}
-                    />
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={toggleFullscreen}
-                    aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white active:scale-95"
-                  >
-                    {isFullscreen ? (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
-                        <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
-                        <path d="M4 9V4h5M15 4h5v5M4 15v5h5M20 15v5h-5" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              )}
               <button
                 type="button"
                 onClick={onClose}
@@ -304,55 +269,6 @@ export default function VideoPlayerModal({
                           {isTrailer ? "Trailer" : isTvShow(movie) ? "Streaming · TV" : "Now Playing"}
                         </span>
                       </div>
-                    </div>
-                  )}
-
-                  {iframeSrc && fallback.loaded && (
-                    <div className="absolute top-2 right-2 z-[20] hidden items-center gap-2 pointer-events-auto sm:flex">
-                      {!isTrailer ? (
-                        <PlayerSubtitlePicker
-                          value={subtitles.subtitleLang}
-                          loading={subtitles.subtitleLoading}
-                          disabled={!fallback.loaded}
-                          tracks={subtitles.subtitleTracks}
-                          autoSinhalaAvailable={subtitles.autoSinhalaAvailable}
-                          onSearch={() => void subtitles.refreshSubtitleTracks()}
-                          onChange={subtitles.handleSubtitleChange}
-                          onTrackSelect={(track) => {
-                            void subtitles.handleSubtitleChange(track.language);
-                          }}
-                        />
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={toggleFullscreen}
-                        aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white backdrop-blur transition hover:border-[#f4c27a] hover:bg-[#f4c27a] hover:text-stone-950"
-                      >
-                        {isFullscreen ? (
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            className="h-5 w-5 sm:h-4 sm:w-4"
-                            aria-hidden
-                          >
-                            <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" />
-                          </svg>
-                        ) : (
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            className="h-5 w-5 sm:h-4 sm:w-4"
-                            aria-hidden
-                          >
-                            <path d="M4 9V4h5M15 4h5v5M4 15v5h5M20 15v5h-5" />
-                          </svg>
-                        )}
-                      </button>
                     </div>
                   )}
 
@@ -538,6 +454,25 @@ export default function VideoPlayerModal({
             </div>
           ) : null}
           <div className="flex flex-wrap items-center justify-end gap-2">
+            {iframeSrc && (
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                className="flex min-h-[40px] items-center gap-1.5 rounded-full border border-[var(--border-strong)] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
+              >
+                {isFullscreen ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
+                    <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
+                    <path d="M4 9V4h5M15 4h5v5M4 15v5h5M20 15v5h-5" />
+                  </svg>
+                )}
+                <span className="hidden sm:inline">{isFullscreen ? "Exit" : "Fullscreen"}</span>
+              </button>
+            )}
             {!isTrailer && iframeSrc && (
               <>
                 <button

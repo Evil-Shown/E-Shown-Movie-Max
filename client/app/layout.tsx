@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Cinzel, Inter, Noto_Sans_Sinhala, Oswald, Playfair_Display } from "next/font/google";
+import { Cinzel, Inter, Noto_Sans_Sinhala, Playfair_Display } from "next/font/google";
 import { Suspense } from "react";
 import AuthActionHandler from "@/components/AuthActionHandler";
 import AuthModalProvider from "@/components/AuthModalProvider";
@@ -41,13 +41,6 @@ const cinzel = Cinzel({
   display: "swap",
 });
 
-const oswald = Oswald({
-  variable: "--font-oswald",
-  subsets: ["latin"],
-  weight: ["300", "500", "700"],
-  display: "swap",
-});
-
 const notoSinhala = Noto_Sans_Sinhala({
   variable: "--font-sinhala",
   subsets: ["sinhala"],
@@ -83,8 +76,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-scroll-behavior="smooth"
-      className={`${inter.variable} ${playfair.variable} ${cinzel.variable} ${oswald.variable} ${notoSinhala.variable} h-full antialiased`}
+      className={`${inter.variable} ${playfair.variable} ${cinzel.variable} ${notoSinhala.variable} h-full antialiased`}
     >
       <head>
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
