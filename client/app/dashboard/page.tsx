@@ -24,6 +24,7 @@ import { api } from "@/lib/api";
 import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
 import PricingModal from "@/components/dashboard/PricingModal";
 import ProBadge from "@/components/dashboard/ProBadge";
+import ThemeSelect from "@/components/ThemeSelect";
 import welcomeHero from "@/assets/images/welcome.webp";
 import styles from "./Dashboard.module.css";
 
@@ -1112,6 +1113,26 @@ export default function DashboardPage() {
           </header>
 
           <div className="px-4 py-6 md:px-8 md:py-8 max-w-7xl mx-auto min-w-0">
+            {/* Appearance */}
+            <section className={`mb-6 ${styles.fadeUp}`}>
+              <div className={`${styles.cardGlass} rounded-2xl border border-[var(--border-strong)] p-4 sm:p-5`}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
+                      Appearance
+                    </p>
+                    <h2 className="font-cinzel text-lg font-bold text-[var(--text-primary)]">Theme</h2>
+                    <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                      Switch between Daylight, Midnight, and Theater Dim.
+                    </p>
+                  </div>
+                  <div className="w-full sm:max-w-xs">
+                    <ThemeSelect />
+                  </div>
+                </div>
+              </div>
+            </section>
+
             {/* Cinematic Hero Section */}
             <section className={`mb-6 md:mb-10 ${styles.fadeUp}`}>
               <div className={styles.heroSection}>

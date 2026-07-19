@@ -51,12 +51,20 @@ export default function VideoPlayerModal({
   const { setProvider } = useUserLibraryActions();
   const [playerEngaged, setPlayerEngaged] = useState(false);
   const [isMobileTouch, setIsMobileTouch] = useState(false);
+  const [showOverlayFs, setShowOverlayFs] = useState(false);
   const setLoadedRef = useRef<(value: boolean) => void>(() => {});
   const lastTapRef = useRef(0);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const overlayFsTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     setIsMobileTouch(isMobileTouchBrowser());
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (overlayFsTimerRef.current) clearTimeout(overlayFsTimerRef.current);
+    };
   }, []);
 
   // Auth gate: block playback if not authenticated
@@ -352,6 +360,30 @@ export default function VideoPlayerModal({
                     </>
                   )}
 
+                  {isMobileTouch && showOverlayFs && fallback.loaded && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFullscreen();
+                        setShowOverlayFs(false);
+                        if (overlayFsTimerRef.current) clearTimeout(overlayFsTimerRef.current);
+                      }}
+                      aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                      className="absolute bottom-3 right-3 z-[15] flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white backdrop-blur active:scale-95"
+                    >
+                      {isFullscreen ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
+                          <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
+                          <path d="M4 9V4h5M15 4h5v5M4 15v5h5M20 15v5h-5" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+
                   {iframeSrc ? (
                     <>
                       {!fallback.loaded && (
@@ -412,6 +444,11 @@ export default function VideoPlayerModal({
                         onPointerDown={() => {
                           focusPlayer();
                           setPlayerEngaged(true);
+                          if (isMobileTouch) {
+                            setShowOverlayFs(true);
+                            if (overlayFsTimerRef.current) clearTimeout(overlayFsTimerRef.current);
+                            overlayFsTimerRef.current = setTimeout(() => setShowOverlayFs(false), 3000);
+                          }
                         }}
                         className="player-embed-iframe absolute inset-0 z-[1] h-full w-full border-0"
                       />
