@@ -6,11 +6,32 @@ const appRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const monorepoRoot = path.join(appRoot, "..");
 
-const backendApi = (
-  process.env.BACKEND_API_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "https://chithra-cinema-api.onrender.com"
-).replace(/\/$/, "");
+const RENDER_API = "https://chithra-cinema-api.onrender.com";
+
+function resolveBackendForRewrites(): string {
+  const candidates = [
+    process.env.BACKEND_API_URL,
+    process.env.NEXT_PUBLIC_API_BASE_URL,
+    process.env.NEXT_PUBLIC_GODS_EYE_API_URL,
+    process.env.NEXT_PUBLIC_TBOOM_API_URL,
+  ];
+
+  for (const raw of candidates) {
+    const url = (raw || "").trim().replace(/\/$/, "");
+    if (!url) continue;
+    // Never proxy to localhost/private IPs on Vercel (causes DNS_HOSTNAME_RESOLVED_PRIVATE)
+    if (/localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2\d|3[0-1])\./i.test(url)) {
+      continue;
+    }
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+  }
+
+  return RENDER_API;
+}
+
+const backendApi = resolveBackendForRewrites();
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@chithra/core"],
@@ -20,7 +41,6 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["framer-motion", "@react-three/fiber", "@react-three/drei"],
   },
-  // Prevent native torrent deps from entering the server/client SSR graph if referenced elsewhere.
   serverExternalPackages: ["webtorrent", "node-datachannel", "puppeteer"],
   async redirects() {
     return [
@@ -37,7 +57,6 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    // Browser calls same-origin /api/v1/*; Vercel proxies to Render (avoids localhost + CORS).
     return [
       {
         source: "/api/v1/:path*",
