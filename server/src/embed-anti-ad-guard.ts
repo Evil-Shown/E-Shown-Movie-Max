@@ -1,32 +1,20 @@
 /**
  * Injected into proxied embed HTML (Express + mirrored in workers/embed-proxy).
  * Blocks popups / clickunders without sandboxing the player iframe.
+ *
+ * Keep this conservative: aggressive DOM hiding / script stripping breaks
+ * SPA embeds (VidFast etc.) and leaves them stuck on "Fetching…".
  */
-
-const SAFE_SCRIPT_HOST_RE =
-  /(^|\.)(vidsrc|vidfast|vidlink|2embed|multiembed|autoembed|embedsu|superembed|oviesphere|googlevideo|youtube|ytimg|jwplatform|jwpcdn|cloudflare|cloudfront|fastly|akamai|bunnycdn|jsdelivr|unpkg|jquery|googleapis|gstatic|bootstrapcdn|fontawesome|plyr|hls\.js|cdnjs)(\.|$)/i;
 
 const KNOWN_AD_SCRIPT_RE =
   /<script[^>]*src=["'][^"']*(popads|propellerads|adsterra|adskeeper|exoclick|onclickads|popcash|juicyads|clickunder|trafficjunky|doubleclick|googlesyndication|adnxs|pubmatic|openx|rubiconproject|moatads|outbrain|taboola)[^"']*["'][^>]*>\s*<\/script>/gi;
 
-/** Strip known ad networks + third-party scripts not on the stream allowlist. */
+/** Strip known ad-network scripts only (do not remove provider/CDN player JS). */
 export function stripAdScripts(html: string): string {
-  let out = String(html || "");
-  out = out.replace(KNOWN_AD_SCRIPT_RE, "");
-  out = out.replace(/<script[^>]*\bsrc=["']([^"']+)["'][^>]*>\s*<\/script>/gi, (match, src: string) => {
-    try {
-      const host = new URL(src, "https://example.invalid").hostname.toLowerCase();
-      if (!host || host === "example.invalid") return match; // relative → keep (provider)
-      if (SAFE_SCRIPT_HOST_RE.test(host)) return match;
-      return "";
-    } catch {
-      return match;
-    }
-  });
-  return out;
+  return String(html || "").replace(KNOWN_AD_SCRIPT_RE, "");
 }
 
-/** Early <head> guard: popup blockers, overlay hide, nested iframe FS perms. */
+/** Early <head> guard: popup blockers + nested iframe FS perms. */
 export function buildAntiAdGuardScript(): string {
   return `
 <script data-chithra-guard="1">
@@ -37,13 +25,6 @@ export function buildAntiAdGuardScript(): string {
     function lockOpen(win) {
       if (!win) return;
       try { win.open = noop; } catch (_) {}
-      try {
-        Object.defineProperty(win, "open", {
-          configurable: false,
-          writable: false,
-          value: noop
-        });
-      } catch (_) {}
     }
 
     lockOpen(window);
@@ -56,8 +37,6 @@ export function buildAntiAdGuardScript(): string {
       HTMLAnchorElement.prototype.click = function () {
         var target = String(this.getAttribute("target") || "").toLowerCase();
         if (target === "_blank" || target === "_parent" || target === "_top") return;
-        var href = String(this.getAttribute("href") || "");
-        if (/^https?:/i.test(href) && target === "_blank") return;
         return origClick.apply(this, arguments);
       };
     } catch (_) {}
@@ -77,42 +56,11 @@ export function buildAntiAdGuardScript(): string {
       var a = e.target && e.target.closest ? e.target.closest("a") : null;
       if (!a) return;
       var target = String(a.getAttribute("target") || "").toLowerCase();
-      var href = String(a.getAttribute("href") || "").toLowerCase();
       if (target === "_blank" || target === "_parent" || target === "_top") {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-      if (!href || href.charAt(0) === "#" || href.indexOf("javascript:") === 0) return;
-      if (/^https?:/i.test(href) && target === "_blank") {
         e.preventDefault();
         e.stopPropagation();
       }
     }, true);
-
-    function isPlayerSurface(el) {
-      if (!el || !el.closest) return false;
-      if (el.tagName === "VIDEO" || el.tagName === "IFRAME") return true;
-      return Boolean(
-        el.closest("video, iframe, .jwplayer, .plyr, [class*='player'], [id*='player'], [class*='video']")
-      );
-    }
-
-    function hideAdOverlay(el) {
-      if (!el || el.nodeType !== 1 || isPlayerSurface(el)) return;
-      var style;
-      try { style = window.getComputedStyle(el); } catch (_) { return; }
-      var z = parseInt(style.zIndex, 10) || 0;
-      if (z < 9999) return;
-      var pos = style.position;
-      if (pos !== "fixed" && pos !== "absolute") return;
-      var r = el.getBoundingClientRect();
-      if (r.width < window.innerWidth * 0.7 || r.height < window.innerHeight * 0.7) return;
-      if (el.querySelector && el.querySelector("video, iframe")) return;
-      el.style.setProperty("display", "none", "important");
-      el.style.setProperty("pointer-events", "none", "important");
-      el.setAttribute("data-chithra-ad-hidden", "1");
-    }
 
     function patchFrame(el) {
       if (!el || !el.tagName || el.tagName.toUpperCase() !== "IFRAME") return;
@@ -128,7 +76,6 @@ export function buildAntiAdGuardScript(): string {
     function scan(root) {
       if (!root || !root.querySelectorAll) return;
       root.querySelectorAll("iframe").forEach(patchFrame);
-      root.querySelectorAll("div, a, iframe").forEach(hideAdOverlay);
     }
 
     function boot() {
@@ -139,7 +86,6 @@ export function buildAntiAdGuardScript(): string {
           m.addedNodes.forEach(function (node) {
             if (!node || node.nodeType !== 1) return;
             if (node.tagName && node.tagName.toUpperCase() === "IFRAME") patchFrame(node);
-            hideAdOverlay(node);
             scan(node);
           });
         });
@@ -197,16 +143,6 @@ export function buildAntiAdGuardScript(): string {
         Document.prototype.webkitExitFullscreen = wrapExit(Document.prototype.webkitExitFullscreen);
         Document.prototype.mozCancelFullScreen = wrapExit(Document.prototype.mozCancelFullScreen);
         Document.prototype.msExitFullscreen = wrapExit(Document.prototype.msExitFullscreen);
-      } catch (_) {}
-      try {
-        if (window.HTMLVideoElement && HTMLVideoElement.prototype) {
-          HTMLVideoElement.prototype.webkitEnterFullscreen = wrapEnter(
-            HTMLVideoElement.prototype.webkitEnterFullscreen
-          );
-          HTMLVideoElement.prototype.webkitExitFullscreen = wrapExit(
-            HTMLVideoElement.prototype.webkitExitFullscreen
-          );
-        }
       } catch (_) {}
     }
   } catch (_) {}

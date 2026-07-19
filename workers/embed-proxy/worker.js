@@ -1,13 +1,13 @@
 /**
- * Cloudflare Worker: nuclear embed HTML proxy (popups + ad overlays).
+ * Cloudflare Worker: embed HTML proxy (conservative).
  *
- * Deploy: Cloudflare Dashboard → Workers → paste this file.
- * Then set in client:
+ * NOTE: Proxying SPA embeds (VidFast etc.) changes the document origin and can
+ * leave players stuck on "Fetching…". Prefer NEXT_PUBLIC_USE_EMBED_PROXY=false
+ * unless you've verified the provider works through this Worker.
+ *
+ * Deploy + set:
  *   NEXT_PUBLIC_EMBED_PROXY_WORKER_URL=https://embed-proxy.<you>.workers.dev
  *   NEXT_PUBLIC_USE_EMBED_PROXY=true
- *
- * Locally, the Express proxy (server/src/embed-proxy.ts) is preferred when
- * the API is online — same hardening logic.
  */
 
 const ALLOWED_SUFFIXES = [
@@ -29,9 +29,6 @@ const ALLOWED_SUFFIXES = [
   "oviesphere.xyz",
 ];
 
-const SAFE_SCRIPT_HOST_RE =
-  /(^|\.)(vidsrc|vidfast|vidlink|2embed|multiembed|autoembed|embedsu|superembed|oviesphere|googlevideo|youtube|ytimg|jwplatform|jwpcdn|cloudflare|cloudfront|fastly|akamai|bunnycdn|jsdelivr|unpkg|jquery|googleapis|gstatic|bootstrapcdn|fontawesome|plyr|cdnjs)(\.|$)/i;
-
 const KNOWN_AD_SCRIPT_RE =
   /<script[^>]*src=["'][^"']*(popads|propellerads|adsterra|adskeeper|exoclick|onclickads|popcash|juicyads|clickunder|trafficjunky|doubleclick|googlesyndication|adnxs|pubmatic|openx|rubiconproject|moatads|outbrain|taboola)[^"']*["'][^>]*>\s*<\/script>/gi;
 
@@ -42,9 +39,6 @@ const ANTI_AD_GUARD = `<script data-chithra-guard="1">
     function lockOpen(win) {
       if (!win) return;
       try { win.open = noop; } catch (_) {}
-      try {
-        Object.defineProperty(win, "open", { configurable: false, writable: false, value: noop });
-      } catch (_) {}
     }
     lockOpen(window);
     try { lockOpen(window.top); } catch (_) {}
@@ -59,17 +53,6 @@ const ANTI_AD_GUARD = `<script data-chithra-guard="1">
       };
     } catch (_) {}
 
-    try {
-      var origDispatch = HTMLAnchorElement.prototype.dispatchEvent;
-      HTMLAnchorElement.prototype.dispatchEvent = function (evt) {
-        if (evt && String(evt.type).toLowerCase() === "click") {
-          var target = String(this.getAttribute("target") || "").toLowerCase();
-          if (target === "_blank" || target === "_parent" || target === "_top") return false;
-        }
-        return origDispatch.call(this, evt);
-      };
-    } catch (_) {}
-
     document.addEventListener("click", function (e) {
       var a = e.target && e.target.closest ? e.target.closest("a") : null;
       if (!a) return;
@@ -79,26 +62,6 @@ const ANTI_AD_GUARD = `<script data-chithra-guard="1">
         e.stopPropagation();
       }
     }, true);
-
-    function isPlayerSurface(el) {
-      if (!el || !el.closest) return false;
-      if (el.tagName === "VIDEO" || el.tagName === "IFRAME") return true;
-      return Boolean(el.closest("video, iframe, .jwplayer, .plyr, [class*='player'], [id*='player'], [class*='video']"));
-    }
-
-    function hideAdOverlay(el) {
-      if (!el || el.nodeType !== 1 || isPlayerSurface(el)) return;
-      var style;
-      try { style = window.getComputedStyle(el); } catch (_) { return; }
-      var z = parseInt(style.zIndex, 10) || 0;
-      if (z < 9999) return;
-      if (style.position !== "fixed" && style.position !== "absolute") return;
-      var r = el.getBoundingClientRect();
-      if (r.width < window.innerWidth * 0.7 || r.height < window.innerHeight * 0.7) return;
-      if (el.querySelector && el.querySelector("video, iframe")) return;
-      el.style.setProperty("display", "none", "important");
-      el.style.setProperty("pointer-events", "none", "important");
-    }
 
     function patchFrame(el) {
       if (!el || !el.tagName || el.tagName.toUpperCase() !== "IFRAME") return;
@@ -114,7 +77,6 @@ const ANTI_AD_GUARD = `<script data-chithra-guard="1">
     function scan(root) {
       if (!root || !root.querySelectorAll) return;
       root.querySelectorAll("iframe").forEach(patchFrame);
-      root.querySelectorAll("div, a, iframe").forEach(hideAdOverlay);
     }
 
     function boot() {
@@ -125,7 +87,6 @@ const ANTI_AD_GUARD = `<script data-chithra-guard="1">
           m.addedNodes.forEach(function (node) {
             if (!node || node.nodeType !== 1) return;
             if (node.tagName && node.tagName.toUpperCase() === "IFRAME") patchFrame(node);
-            hideAdOverlay(node);
             scan(node);
           });
         });
@@ -153,29 +114,9 @@ const ANTI_AD_GUARD = `<script data-chithra-guard="1">
           } catch (_) { return postFs("fullscreen"); }
         };
       }
-      function wrapExit(orig) {
-        return function () {
-          var ctx = this, args = arguments;
-          if (typeof orig !== "function") return postFs("exit-fullscreen");
-          try {
-            var result = orig.apply(ctx, args);
-            if (result && typeof result.then === "function") {
-              return result.catch(function () { return postFs("exit-fullscreen"); });
-            }
-            return result;
-          } catch (_) { return postFs("exit-fullscreen"); }
-        };
-      }
       try {
         Element.prototype.requestFullscreen = wrapEnter(Element.prototype.requestFullscreen);
         Element.prototype.webkitRequestFullscreen = wrapEnter(Element.prototype.webkitRequestFullscreen);
-        Element.prototype.webkitRequestFullScreen = wrapEnter(Element.prototype.webkitRequestFullScreen);
-        Element.prototype.mozRequestFullScreen = wrapEnter(Element.prototype.mozRequestFullScreen);
-        Element.prototype.msRequestFullscreen = wrapEnter(Element.prototype.msRequestFullscreen);
-        Document.prototype.exitFullscreen = wrapExit(Document.prototype.exitFullscreen);
-        Document.prototype.webkitExitFullscreen = wrapExit(Document.prototype.webkitExitFullscreen);
-        Document.prototype.mozCancelFullScreen = wrapExit(Document.prototype.mozCancelFullScreen);
-        Document.prototype.msExitFullscreen = wrapExit(Document.prototype.msExitFullscreen);
       } catch (_) {}
     }
   } catch (_) {}
@@ -185,22 +126,6 @@ const ANTI_AD_GUARD = `<script data-chithra-guard="1">
 function isAllowedHost(hostname) {
   const host = String(hostname || "").toLowerCase();
   return ALLOWED_SUFFIXES.some((suffix) => host === suffix || host.endsWith("." + suffix));
-}
-
-function stripAdScripts(html) {
-  let out = String(html || "");
-  out = out.replace(KNOWN_AD_SCRIPT_RE, "");
-  out = out.replace(/<script[^>]*\bsrc=["']([^"']+)["'][^>]*>\s*<\/script>/gi, (match, src) => {
-    try {
-      const host = new URL(src, "https://example.invalid").hostname.toLowerCase();
-      if (!host || host === "example.invalid") return match;
-      if (SAFE_SCRIPT_HOST_RE.test(host)) return match;
-      return "";
-    } catch {
-      return match;
-    }
-  });
-  return out;
 }
 
 function ensureIframeFullscreen(html) {
@@ -224,7 +149,7 @@ function ensureIframeFullscreen(html) {
 function hardenHtml(html, origin) {
   let out = String(html || "");
   out = out.replace(/<meta[^>]+http-equiv=["']content-security-policy["'][^>]*>/gi, "");
-  out = stripAdScripts(out);
+  out = out.replace(KNOWN_AD_SCRIPT_RE, "");
   out = ensureIframeFullscreen(out);
   if (!/<base\s/i.test(out)) {
     out = out.replace(/<head([^>]*)>/i, `<head$1><base href="${origin}/">`);
@@ -285,13 +210,14 @@ export default {
     }
 
     const html = hardenHtml(await upstream.text(), target.origin);
-    const headers = new Headers({
-      "Content-Type": "text/html; charset=utf-8",
-      "Access-Control-Allow-Origin": "*",
-      "Cache-Control": "public, max-age=120",
-      "X-Embed-Proxy": "cloudflare-worker",
+    return new Response(html, {
+      status: upstream.status,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=120",
+        "X-Embed-Proxy": "cloudflare-worker",
+      },
     });
-
-    return new Response(html, { status: upstream.status, headers });
   },
 };
