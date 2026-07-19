@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, .dim, .dim *));
 
 :root {
   --faint-white: #fffbf5;
@@ -45,6 +46,100 @@
   --shadow-sm: 0 2px 12px rgba(62, 39, 35, 0.06);
   --shadow-md: 0 10px 32px rgba(62, 39, 35, 0.08);
   --shadow-lg: 0 24px 64px rgba(62, 39, 35, 0.2);
+}
+
+.dark {
+  --faint-white: #1a1614;
+  --cream: #0c0a09;
+  --chocolate: #faf3e8;
+  --deep-orange: #ff8a3d;
+  --light-orange-faint: rgba(255, 138, 61, 0.14);
+  --light-orange: #ffb87a;
+  --tan: #d4a574;
+  --brown: #d7ccc8;
+  --sandy: #a1887f;
+
+  --bg-primary: #0c0a09;
+  --bg-secondary: #1a1614;
+  --bg-dark: #050403;
+  --bg-card: #1c1917;
+
+  --accent-primary: #ff8a3d;
+  --accent-warm: #ffb87a;
+
+  --text-primary: #faf3e8;
+  --text-secondary: #d7ccc8;
+  --text-muted: #a1887f;
+  --text-inverse: #0c0a09;
+
+  --border: rgba(250, 243, 232, 0.08);
+  --border-strong: rgba(250, 243, 232, 0.16);
+
+  --bg-base: var(--bg-primary);
+  --bg-surface: var(--bg-secondary);
+  --bg-elevated: var(--bg-card);
+  --bg-section-alt: var(--bg-secondary);
+  --bg-void: var(--bg-primary);
+  --bg-footer: var(--bg-secondary);
+  --gold-primary: var(--accent-primary);
+  --gold-bright: var(--accent-warm);
+  --gold-dim: rgba(255, 138, 61, 0.14);
+  --gold-glow: rgba(255, 138, 61, 0.24);
+  --text-dim: var(--text-muted);
+  --border-subtle: var(--border);
+  --border-mid: var(--border-strong);
+  --border-hot: rgba(255, 138, 61, 0.45);
+  --divider: var(--border);
+  --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 10px 32px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.55);
+}
+
+.dim {
+  --faint-white: #221c18;
+  --cream: #161210;
+  --chocolate: #f3ebe1;
+  --deep-orange: #f07a2e;
+  --light-orange-faint: rgba(240, 122, 46, 0.12);
+  --light-orange: #e8a86a;
+  --tan: #c4a07a;
+  --brown: #cbb8a8;
+  --sandy: #9a8576;
+
+  --bg-primary: #161210;
+  --bg-secondary: #221c18;
+  --bg-dark: #0d0a08;
+  --bg-card: #2a231e;
+
+  --accent-primary: #f07a2e;
+  --accent-warm: #e8a86a;
+
+  --text-primary: #f3ebe1;
+  --text-secondary: #cbb8a8;
+  --text-muted: #9a8576;
+  --text-inverse: #161210;
+
+  --border: rgba(243, 235, 225, 0.08);
+  --border-strong: rgba(243, 235, 225, 0.16);
+
+  --bg-base: var(--bg-primary);
+  --bg-surface: var(--bg-secondary);
+  --bg-elevated: var(--bg-card);
+  --bg-section-alt: var(--bg-secondary);
+  --bg-void: var(--bg-primary);
+  --bg-footer: var(--bg-secondary);
+  --gold-primary: var(--accent-primary);
+  --gold-bright: var(--accent-warm);
+  --gold-dim: rgba(240, 122, 46, 0.12);
+  --gold-glow: rgba(240, 122, 46, 0.22);
+  --text-dim: var(--text-muted);
+  --border-subtle: var(--border);
+  --border-mid: var(--border-strong);
+  --border-hot: rgba(240, 122, 46, 0.45);
+  --divider: var(--border);
+  --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 10px 32px rgba(0, 0, 0, 0.38);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.48);
 }
 
 @theme inline {
@@ -112,9 +207,33 @@ body {
 }
 
 button,
-a {
+a,
+input,
+select,
+textarea,
+[role="button"],
+[tabindex] {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+}
+
+.icon-button {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-section,
+.modal-fullscreen {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.modal-fullscreen {
+  height: 100vh;
+  height: 100dvh;
 }
 
 section[id] {

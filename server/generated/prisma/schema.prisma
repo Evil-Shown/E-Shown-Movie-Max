@@ -2,8 +2,11 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  provider      = "prisma-client-js"
+  output        = "../generated/prisma"
+  // Alpine (Render/Docker) ships OpenSSL 3; without this Prisma 5 defaults to
+  // openssl-1.1.x and crashes at runtime with missing libssl.so.1.1.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -83,6 +86,7 @@ model UserSettings {
   subtitleLang      String?  @default("en")
   quality           String?  @default("auto")
   notifications     Boolean  @default(true)
+  theme             String   @default("light")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

@@ -24,6 +24,7 @@ export interface AuthUser {
     subtitleLang: string | null;
     quality: string | null;
     notifications: boolean;
+    theme?: string | null;
   } | null;
   createdAt: string;
 }

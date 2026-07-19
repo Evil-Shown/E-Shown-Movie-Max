@@ -35,14 +35,15 @@ export async function upsertSettings(
     subtitleLang: string;
     quality: string;
     notifications: boolean;
+    theme: string;
   }>
 ) {
   return prisma.userSettings.upsert({
     where: { userId },
-    update: data,
+    update: data as never,
     create: {
       userId,
       ...data,
-    },
+    } as never,
   });
 }

@@ -13,6 +13,7 @@ import NavigationProgress from "@/components/NavigationProgress";
 import PageTransition from "@/components/PageTransition";
 import QueryProvider from "@/components/QueryProvider";
 import QuickViewProvider from "@/components/QuickViewProvider";
+import ThemeProvider from "@/components/ThemeProvider";
 import UserLibraryProvider from "@/components/UserLibraryProvider";
 import VideoPlayerProvider from "@/components/VideoPlayerProvider";
 import { BRAND_DESCRIPTION, BRAND_NAME } from "@/lib/brand";
@@ -61,7 +62,11 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#3e2723",
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fffbf5" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0a09" },
+  ],
 };
 
 function HeaderFallback() {
@@ -76,6 +81,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${playfair.variable} ${cinzel.variable} ${notoSinhala.variable} h-full antialiased`}
     >
       <head>
@@ -83,30 +89,32 @@ export default function RootLayout({
         <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="anonymous" />
       </head>
       <body className="flex min-h-full flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
-        <StartupSplashLoader />
-        <AuthProvider>
-          <AuthModalProvider>
-            <AuthActionHandler />
-            <QueryProvider>
-              <UserLibraryProvider>
-                <VideoPlayerProvider>
-                  <QuickViewProvider>
-                    <NavigationProgress />
-                    <Suspense fallback={<HeaderFallback />}>
-                      <Header />
-                    </Suspense>
-                    <main className="site-main flex-1">
-                      <PageTransition>{children}</PageTransition>
-                    </main>
-                    <Footer />
-                    <BackToTop />
-                  </QuickViewProvider>
-                  <DesktopMediaPauseHandler />
-                </VideoPlayerProvider>
-              </UserLibraryProvider>
-            </QueryProvider>
-          </AuthModalProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <StartupSplashLoader />
+          <AuthProvider>
+            <AuthModalProvider>
+              <AuthActionHandler />
+              <QueryProvider>
+                <UserLibraryProvider>
+                  <VideoPlayerProvider>
+                    <QuickViewProvider>
+                      <NavigationProgress />
+                      <Suspense fallback={<HeaderFallback />}>
+                        <Header />
+                      </Suspense>
+                      <main className="site-main flex-1">
+                        <PageTransition>{children}</PageTransition>
+                      </main>
+                      <Footer />
+                      <BackToTop />
+                    </QuickViewProvider>
+                    <DesktopMediaPauseHandler />
+                  </VideoPlayerProvider>
+                </UserLibraryProvider>
+              </QueryProvider>
+            </AuthModalProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

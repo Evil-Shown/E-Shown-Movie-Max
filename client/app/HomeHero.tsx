@@ -5,8 +5,14 @@ import MovieRow from "@/components/MovieRow";
 import PickedForYouRow from "@/components/PickedForYouRow";
 import { getHomeCatalogEssential } from "@/lib/movie-service";
 
-export default async function HomeHero() {
-  const { heroMovies, trending, trendingDay } = await getHomeCatalogEssential();
+type EssentialCatalog = Awaited<ReturnType<typeof getHomeCatalogEssential>>;
+
+export default async function HomeHero({
+  dataPromise,
+}: {
+  dataPromise?: Promise<EssentialCatalog>;
+}) {
+  const { heroMovies, trending, trendingDay } = await (dataPromise ?? getHomeCatalogEssential());
 
   return (
     <>

@@ -86,6 +86,7 @@ model UserSettings {
   subtitleLang      String?  @default("en")
   quality           String?  @default("auto")
   notifications     Boolean  @default(true)
+  theme             String   @default("light")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

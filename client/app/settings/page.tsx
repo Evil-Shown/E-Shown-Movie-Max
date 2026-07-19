@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import ThemeSelect from "@/components/ThemeSelect";
 import { api } from "@/lib/api";
 import { getProfileIcon, PROFILE_ICONS, setProfileIcon } from "@/lib/storage/profile-icon";
 
@@ -155,6 +156,15 @@ export default function SettingsPage() {
           </header>
 
           <div className="p-6 md:p-8 max-w-4xl mx-auto">
+            {/* Appearance */}
+            <section className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-6 mb-6">
+              <h2 className="font-cinzel text-lg font-bold text-[var(--text-primary)] mb-4">Appearance</h2>
+              <p className="mb-4 text-sm text-[var(--text-secondary)]">
+                Choose Daylight, Midnight, or Theater Dim. Your preference syncs when you&apos;re signed in.
+              </p>
+              <ThemeSelect />
+            </section>
+
             {/* Profile Icon Section */}
             <section className="bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-6 mb-6">
               <h2 className="font-cinzel text-lg font-bold text-[#3E2723] mb-4">Profile Icon</h2>

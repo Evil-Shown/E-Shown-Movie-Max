@@ -3,9 +3,16 @@ import MovieRow from "@/components/MovieRow";
 import CtaBanner from "@/components/CtaBanner";
 import { getHomeCatalogExtended } from "@/lib/movie-service";
 
-export default async function HomeMoreRows() {
-  const { trending, newReleases, topRated, popularTv, sinhalaCinema, sciFi, drama, stats } =
-    await getHomeCatalogExtended();
+type ExtendedCatalog = Awaited<ReturnType<typeof getHomeCatalogExtended>>;
+
+export default async function HomeMoreRows({
+  dataPromise,
+}: {
+  dataPromise?: Promise<ExtendedCatalog>;
+}) {
+  const { trending, newReleases, topRated, popularTv, sinhalaCinema, sciFi, drama, stats } = await (
+    dataPromise ?? getHomeCatalogExtended()
+  );
 
   return (
     <>

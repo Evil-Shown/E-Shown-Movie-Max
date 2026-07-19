@@ -12,7 +12,7 @@ import { useAuthModal } from "@/components/AuthModalProvider";
 import PlayerTvSelector from "@/components/PlayerTvSelector";
 import PlayerNextEpisodeOverlay from "@/components/PlayerNextEpisodeOverlay";
 import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { isSlowConnection } from "@/lib/stream-optimizer";
 import PlayerLoadingOverlay from "./PlayerLoadingOverlay";
 import { useProviderFallback } from "./hooks/useProviderFallback";
@@ -20,6 +20,15 @@ import { useResumeTime } from "./hooks/useResumeTime";
 import { useSubtitles } from "./hooks/useSubtitles";
 import { useVideoPlayer } from "./hooks/useVideoPlayer";
 import type { ActivePlayer, PlayerMode } from "./types";
+
+function isMobileTouchBrowser(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  const isMobileChrome = /Android/i.test(ua) && /Chrome/i.test(ua) && /Mobile/i.test(ua);
+  const isMobileSafari = /iPhone|iPad|iPod/i.test(ua) && /Safari/i.test(ua) && !/Chrome/i.test(ua);
+  return isMobile && (isMobileChrome || isMobileSafari);
+}
 
 interface VideoPlayerModalProps {
   active: ActivePlayer;
@@ -41,7 +50,14 @@ export default function VideoPlayerModal({
   const { movie, mode, season, episode, provider, resumeSeconds } = active;
   const { setProvider } = useUserLibraryActions();
   const [playerEngaged, setPlayerEngaged] = useState(false);
+  const [isMobileTouch, setIsMobileTouch] = useState(false);
   const setLoadedRef = useRef<(value: boolean) => void>(() => {});
+  const lastTapRef = useRef(0);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  useEffect(() => {
+    setIsMobileTouch(isMobileTouchBrowser());
+  }, []);
 
   // Auth gate: block playback if not authenticated
   useEffect(() => {
@@ -132,6 +148,53 @@ export default function VideoPlayerModal({
   });
 
   const slowConnection = isSlowConnection();
+
+  const handleGestureAreaTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      const now = Date.now();
+      const timeSinceLastTap = now - lastTapRef.current;
+
+      if (timeSinceLastTap > 0 && timeSinceLastTap < 300) {
+        // Double tap detected
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFullscreen();
+        lastTapRef.current = 0;
+        touchStartRef.current = null;
+        return;
+      }
+
+      lastTapRef.current = now;
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: now,
+      };
+    },
+    [toggleFullscreen]
+  );
+
+  const handleGestureAreaTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (!touchStartRef.current) return;
+
+      const touch = e.changedTouches[0];
+      const { x: startX, y: startY, time: startTime } = touchStartRef.current;
+      const duration = Date.now() - startTime;
+      const deltaY = startY - touch.clientY;
+      const deltaX = Math.abs(touch.clientX - startX);
+
+      // Swipe up: vertical distance > 60px, horizontal distance < 40px, duration < 300ms
+      if (deltaY > 60 && deltaX < 40 && duration < 300) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFullscreen();
+      }
+
+      touchStartRef.current = null;
+    },
+    [toggleFullscreen]
+  );
 
   return (
     <motion.div
@@ -270,6 +333,23 @@ export default function VideoPlayerModal({
                         </span>
                       </div>
                     </div>
+                  )}
+
+                  {isMobileTouch && iframeSrc && fallback.loaded && (
+                    <>
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-y-0 left-0 z-[10] w-12 touch-none"
+                        onTouchStart={handleGestureAreaTouchStart}
+                        onTouchEnd={handleGestureAreaTouchEnd}
+                      />
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-y-0 right-0 z-[10] w-12 touch-none"
+                        onTouchStart={handleGestureAreaTouchStart}
+                        onTouchEnd={handleGestureAreaTouchEnd}
+                      />
+                    </>
                   )}
 
                   {iframeSrc ? (
@@ -454,25 +534,6 @@ export default function VideoPlayerModal({
             </div>
           ) : null}
           <div className="flex flex-wrap items-center justify-end gap-2">
-            {iframeSrc && (
-              <button
-                type="button"
-                onClick={toggleFullscreen}
-                aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                className="flex min-h-[40px] items-center gap-1.5 rounded-full border border-[var(--border-strong)] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
-              >
-                {isFullscreen ? (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
-                    <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
-                    <path d="M4 9V4h5M15 4h5v5M4 15v5h5M20 15v5h-5" />
-                  </svg>
-                )}
-                <span className="hidden sm:inline">{isFullscreen ? "Exit" : "Fullscreen"}</span>
-              </button>
-            )}
             {!isTrailer && iframeSrc && (
               <>
                 <button

@@ -161,6 +161,7 @@ exports.Prisma.UserSettingsScalarFieldEnum = {
   subtitleLang: 'subtitleLang',
   quality: 'quality',
   notifications: 'notifications',
+  theme: 'theme',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

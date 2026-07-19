@@ -2,6 +2,7 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import compression from "compression";
 
 import { env } from "./config/env";
 import { logger } from "./config/logger";
@@ -29,6 +30,9 @@ import tmdbRoutes from "./domains/tmdb/tmdb.routes";
 import { prisma } from "./infrastructure/prisma";
 
 const app = express();
+
+app.set("trust proxy", 1);
+app.use(compression());
 
 app.use(
   helmet({

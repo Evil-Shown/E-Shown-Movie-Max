@@ -15,5 +15,6 @@ export const updatePreferencesSchema = {
     subtitleLang: z.string().optional(),
     quality: z.string().optional(),
     notifications: z.boolean().optional(),
+    theme: z.enum(["light", "dark", "dim"]).optional(),
   }),
 };

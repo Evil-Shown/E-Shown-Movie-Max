@@ -21,7 +21,7 @@ export default function MovieCardPoster({ movie, priority = false, imageClassNam
         title={movie.title}
         priority={priority}
         className={imageClassName}
-        sizes="(max-width: 640px) 152px, (max-width: 768px) 176px, 200px"
+        sizes="(max-width: 640px) 45vw, (max-width: 1024px) 22vw, 200px"
         onLoad={() => setLoaded(true)}
       />
     </>
