@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveApiBase } from "@/lib/api-base";
+import { resolveApiBaseAbsolute } from "@/lib/api-base";
 
 export interface SubtitleTrack {
   id: string;
@@ -9,7 +9,7 @@ export interface SubtitleTrack {
   format: string;
 }
 
-const API_BASE = resolveApiBase() || "https://chithra-cinema-api.onrender.com";
+const API_BASE = resolveApiBaseAbsolute();
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

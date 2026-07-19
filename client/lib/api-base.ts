@@ -18,30 +18,39 @@ function isLocalUrl(url: string): boolean {
 }
 
 export function resolveApiBase(): string {
-  let fromEnv = (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.BACKEND_API_URL || "").trim().replace(/\/$/, "");
+  let fromEnv = (
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_GODS_EYE_API_URL ||
+    process.env.NEXT_PUBLIC_TBOOM_API_URL ||
+    process.env.BACKEND_API_URL ||
+    ""
+  )
+    .trim()
+    .replace(/\/$/, "");
 
   if (typeof window !== "undefined") {
     const onLocalSite = isLocalHost(window.location.hostname);
 
-    // Vercel (or any live host) must never keep a baked-in localhost API URL
+    // Live site must never keep a baked-in localhost API URL
     if (!onLocalSite && fromEnv && isLocalUrl(fromEnv)) {
       console.warn(
-        `[chithra-api] Ignoring localhost API env on ${window.location.host}. Using same-origin /api/v1 proxy.`
+        `[chithra-api] Ignoring localhost API env on ${window.location.host}. Using same-origin /api/v1 proxy → Render.`
       );
       fromEnv = "";
     }
 
     if (fromEnv) return fromEnv;
     if (!onLocalSite) {
-      // Hit Vercel same-origin; next.config rewrites /api/v1/* → Render
+      // Same-origin /api/v1/* → Vercel rewrite → Render
       return "";
     }
     return "http://localhost:5000";
   }
 
-  // Server (SSR / Route Handlers / rewrites)
-  if (fromEnv && !(process.env.VERCEL && isLocalUrl(fromEnv))) {
-    return fromEnv;
+  // Server (SSR / Route Handlers)
+  if (fromEnv && !isLocalUrl(fromEnv)) return fromEnv;
+  if (fromEnv && isLocalUrl(fromEnv) && (process.env.VERCEL || process.env.NODE_ENV === "production")) {
+    return RENDER_API;
   }
 
   if (process.env.VERCEL || process.env.NODE_ENV === "production") {
@@ -49,6 +58,12 @@ export function resolveApiBase(): string {
   }
 
   return fromEnv || "http://localhost:5000";
+}
+
+/** Absolute API URL — never empty. Use when a full URL is required (embeds, external tools). */
+export function resolveApiBaseAbsolute(): string {
+  const base = resolveApiBase();
+  return base || RENDER_API;
 }
 
 export const DEFAULT_PRODUCTION_API = RENDER_API;

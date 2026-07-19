@@ -35,7 +35,7 @@ export default function GodsEyeHero({
 
   return (
     <section
-      className="relative flex min-h-[100vh] flex-col items-center justify-center overflow-hidden bg-[#FFFFFF] px-6 pb-20 pt-32 text-center sm:px-10 sm:pb-24 sm:pt-36"
+      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#FFFFFF] px-6 pb-20 pt-32 text-center sm:px-10 sm:pb-24 sm:pt-36"
       aria-labelledby="gods-eye-title"
     >
       {/* Ambient light orange glow */}

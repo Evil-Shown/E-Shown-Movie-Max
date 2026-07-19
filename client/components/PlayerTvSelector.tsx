@@ -117,7 +117,7 @@ export default function PlayerTvSelector({
   const displayYear = formatDisplayYear(movie.year);
 
   return (
-    <aside className="flex h-full max-h-[min(50vh,460px)] min-h-0 w-full flex-col rounded-none border-l border-[rgba(201,106,43,0.2)] bg-[linear-gradient(180deg,#fffdf9,#f6efe4)] lg:max-h-none lg:w-[380px] lg:shrink-0 xl:w-[420px]">
+    <aside className="flex h-full max-h-[min(40dvh,380px)] min-h-0 w-full flex-col rounded-none border-t border-[rgba(201,106,43,0.2)] bg-[linear-gradient(180deg,#fffdf9,#f6efe4)] lg:max-h-none lg:w-[380px] lg:shrink-0 lg:border-t-0 lg:border-l xl:w-[420px]">
       <div className="shrink-0 border-b border-[rgba(201,106,43,0.12)] px-3 py-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
           Now playing
@@ -149,7 +149,7 @@ export default function PlayerTvSelector({
                     type="button"
                     disabled={disabled}
                     onClick={() => onChange(s.season_number, 1)}
-                    className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
+                    className={`min-h-[44px] min-w-[44px] rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
                       active
                         ? "bg-[var(--accent-primary)] text-white shadow-sm"
                         : "border border-[var(--border)] bg-white text-[var(--text-primary)] hover:border-[var(--accent-primary)]"

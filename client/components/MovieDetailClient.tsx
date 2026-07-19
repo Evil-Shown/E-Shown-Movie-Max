@@ -90,12 +90,12 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
         background: "linear-gradient(to bottom, transparent, var(--bg-base) 15%)",
       }}
     >
-      <div className="relative -mt-40 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-sm)] sm:p-8">
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-end">
+      <div className="relative -mt-24 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-[var(--shadow-sm)] sm:-mt-40 sm:p-8">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:gap-10">
           <div className="mx-auto shrink-0 lg:mx-0 lg:w-1/3">
             <FloatingCard>
               <div className="animate-float">
-                <div className="mx-auto h-[390px] w-[260px] overflow-hidden rounded-xl bg-[var(--bg-secondary)] shadow-[0_24px_64px_rgba(28,25,23,0.2)]">
+                <div className="mx-auto h-[280px] w-[186px] overflow-hidden rounded-xl bg-[var(--bg-secondary)] shadow-[0_24px_64px_rgba(28,25,23,0.2)] sm:h-[390px] sm:w-[260px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={posterUrl(movie.posterPath, "w500")}
@@ -105,7 +105,7 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
                     className="h-full w-full object-cover"
                   />
                 </div>
-                <div className="poster-reflection relative mx-auto mt-2 h-20 w-[260px] overflow-hidden">
+                <div className="poster-reflection relative mx-auto mt-2 hidden h-20 w-[260px] overflow-hidden sm:block">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={posterUrl(movie.posterPath, "w500")}
@@ -126,11 +126,11 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
             <Link
               href="/browse"
               data-cursor="link"
-              className="mb-4 inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-1 text-sm text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--accent-primary)] active:scale-95"
+              className="mb-4 inline-flex min-h-[44px] items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-1 text-sm text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--accent-primary)] active:scale-95"
             >
               ← Back to browse
             </Link>
-            <h1 className="font-[var(--font-playfair)] text-4xl font-bold text-[var(--text-primary)] sm:text-5xl lg:text-7xl">
+            <h1 className="font-[var(--font-playfair)] text-[clamp(1.75rem,6vw,4.5rem)] font-bold text-[var(--text-primary)]">
               {movie.title}
             </h1>
             {movie.mediaType === "tv" && (
@@ -197,10 +197,12 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
               ))}
             </div>
 
-            <div className="mt-8 flex flex-wrap justify-center gap-4 lg:justify-start">
+            <div className="mt-8 flex w-full flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
               <PlayButton movie={movie} label={showTv ? "Play S1 E1" : "Play Film"} />
               <TrailerButton movie={movie} label="Watch Trailer" />
-              <WatchlistButton movie={movie} className="!h-12 !w-12" />
+              <div className="flex justify-center sm:contents">
+                <WatchlistButton movie={movie} className="!h-12 !w-12" />
+              </div>
             </div>
 
             <div className="mt-6 max-w-xs">
@@ -210,7 +212,7 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
         </div>
       </div>
 
-      <div className="mt-10 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-[var(--shadow-sm)]">
+      <div className="mt-8 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-sm)] sm:mt-10 sm:p-8">
         <h2 className="font-[var(--font-playfair)] text-xl text-[var(--text-primary)]">Synopsis</h2>
         <p className={`mt-4 text-base leading-relaxed text-[var(--text-secondary)] ${overviewExpanded ? "" : "line-clamp-4"}`}>
           {movie.overview}
@@ -219,7 +221,7 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
           <button
             type="button"
             onClick={() => setOverviewExpanded((v) => !v)}
-            className="mt-2 text-sm font-medium text-[var(--accent-primary)] hover:underline"
+            className="mt-2 min-h-[44px] text-sm font-medium text-[var(--accent-primary)] hover:underline"
           >
             {overviewExpanded ? "Show less" : "Read more"}
           </button>
@@ -228,11 +230,11 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
 
       {showTv && <TvSeasonPicker movie={movie} />}
 
-      <section className="mt-8 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] px-8 py-6 shadow-[var(--shadow-sm)]">
-        <h2 className="border-l-2 border-[var(--accent-primary)] pl-4 font-[var(--font-playfair)] text-2xl text-[var(--text-primary)]">
+      <section className="mt-8 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-5 shadow-[var(--shadow-sm)] sm:px-8 sm:py-6">
+        <h2 className="border-l-2 border-[var(--accent-primary)] pl-4 font-[var(--font-playfair)] text-xl text-[var(--text-primary)] sm:text-2xl">
           Cast
         </h2>
-        <div className="mt-6 grid grid-cols-2 gap-6 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
           {movie.cast.map((member) => (
             <div key={member.name} className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg-card)] ring-1 ring-[var(--border-strong)]">

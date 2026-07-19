@@ -92,15 +92,39 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-inter), system-ui, sans-serif;
+  overflow-x: hidden;
+  max-width: 100vw;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Mobile Chrome / iOS viewport: prefer dynamic viewport height */
+.h-screen {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.min-h-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+section[id] {
+  scroll-margin-top: 5.5rem;
 }
 
 .site-main {
-  padding-top: 96px;
+  padding-top: calc(72px + env(safe-area-inset-top, 0px));
 }
 
 @media (min-width: 640px) {
   .site-main {
-    padding-top: 118px;
+    padding-top: calc(118px + env(safe-area-inset-top, 0px));
   }
 }
 

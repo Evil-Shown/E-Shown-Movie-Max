@@ -10,7 +10,7 @@ const styles = `
     background: #f2f4f8 !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
     display: flex; align-items: center; justify-content: center;
-    min-height: 100vh;
+    min-height: 100dvh;
   }
   @keyframes spin { to { transform: rotate(360deg) } }
 `;

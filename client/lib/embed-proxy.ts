@@ -1,12 +1,26 @@
+import { resolveApiBaseAbsolute } from "./api-base";
+
 function getEmbedProxyApiBase(): string | null {
-  const base =
+  const raw =
     process.env.NEXT_PUBLIC_EMBED_PROXY_API_URL ??
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     process.env.NEXT_PUBLIC_GODS_EYE_API_URL ??
     process.env.NEXT_PUBLIC_TBOOM_API_URL;
 
-  if (!base) return null;
-  return base.replace(/\/$/, "");
+  if (raw && !/localhost|127\.0\.0\.1/i.test(raw)) {
+    return raw.replace(/\/$/, "");
+  }
+
+  // Live hosts: never proxy via localhost
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host && host !== "localhost" && host !== "127.0.0.1") {
+      return resolveApiBaseAbsolute();
+    }
+  }
+
+  if (!raw) return null;
+  return raw.replace(/\/$/, "");
 }
 
 export function isEmbedProxyEnabled(): boolean {
