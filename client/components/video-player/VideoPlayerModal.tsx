@@ -141,7 +141,7 @@ export default function VideoPlayerModal({
       exit={{ opacity: 0 }}
       className={`fixed inset-0 z-[200] flex overflow-hidden bg-[rgba(18,15,12,0.96)] ${
         slowConnection ? "" : "backdrop-blur-xl"
-      } ${isTvPlayer ? "p-0" : "items-center justify-center p-2 sm:p-4"}`}
+      } ${isTvPlayer ? "p-0" : "items-center justify-center p-0 sm:p-2 md:p-4"}`}
       onClick={onClose}
     >
       {!isTvPlayer ? (
@@ -163,7 +163,7 @@ export default function VideoPlayerModal({
         className={`relative flex w-full flex-col overflow-hidden bg-[rgba(247,244,239,0.98)] ${
           isTvPlayer
             ? "h-[100dvh] max-h-[100dvh] rounded-none border-0 shadow-none"
-            : "h-[92dvh] max-h-[92dvh] max-w-6xl rounded-[1.25rem] border border-[rgba(232,164,74,0.34)] shadow-[0_30px_120px_rgba(0,0,0,0.55)]"
+            : "h-[100dvh] max-h-[100dvh] max-w-none rounded-none border-0 shadow-none sm:h-[92dvh] sm:max-h-[92dvh] sm:max-w-6xl sm:rounded-[1.25rem] sm:border sm:border-[rgba(232,164,74,0.34)] sm:shadow-[0_30px_120px_rgba(0,0,0,0.55)]"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -177,7 +177,7 @@ export default function VideoPlayerModal({
             style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center" }}
           />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,249,0.94),rgba(255,253,249,0.78),rgba(255,253,249,0.94))]" />
-          <div className="relative flex items-center justify-between gap-4">
+            <div className="relative flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <div className="hidden h-12 w-8 overflow-hidden rounded-md border border-[rgba(201,106,43,0.2)] bg-white shadow-sm sm:block">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -201,45 +201,81 @@ export default function VideoPlayerModal({
                   {displayYear ? (
                     <>
                       <span>{displayYear}</span>
-                      <span>/</span>
+                      <span className="hidden sm:inline">/</span>
                     </>
                   ) : null}
                   {movie.runtime > 0 ? (
                     <>
-                      <span>{movie.runtime} min</span>
-                      <span>/</span>
+                      <span className="hidden sm:inline">{movie.runtime} min</span>
+                      <span className="hidden sm:inline">/</span>
                     </>
                   ) : null}
-                  <span>{movie.genres.slice(0, 2).join(", ") || "Series"}</span>
-                  <span>/</span>
+                  <span className="hidden sm:inline">{movie.genres.slice(0, 2).join(", ") || "Series"}</span>
+                  <span className="hidden sm:inline">/</span>
                   <span className="font-semibold text-[var(--accent-primary)]">Rating {movie.rating.toFixed(1)}</span>
                   {resume.showResumeBadge && resume.formattedResumeTime ? (
                     <>
-                      <span>/</span>
-                      <span className="text-[var(--accent-primary)]">Resume {resume.formattedResumeTime}</span>
+                      <span className="hidden sm:inline">/</span>
+                      <span className="hidden sm:inline text-[var(--accent-primary)]">Resume {resume.formattedResumeTime}</span>
                     </>
                   ) : null}
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close player"
-              title="Close"
-              className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white active:scale-95"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                className="h-5 w-5"
-                aria-hidden
+            <div className="flex shrink-0 items-center gap-2">
+              {iframeSrc && fallback.loaded && (
+                <div className="flex items-center gap-1 sm:hidden">
+                  {!isTrailer ? (
+                    <PlayerSubtitlePicker
+                      value={subtitles.subtitleLang}
+                      loading={subtitles.subtitleLoading}
+                      disabled={!fallback.loaded}
+                      tracks={subtitles.subtitleTracks}
+                      autoSinhalaAvailable={subtitles.autoSinhalaAvailable}
+                      onSearch={() => void subtitles.refreshSubtitleTracks()}
+                      onChange={subtitles.handleSubtitleChange}
+                      onTrackSelect={(track) => {
+                        void subtitles.handleSubtitleChange(track.language);
+                      }}
+                    />
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={toggleFullscreen}
+                    aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white active:scale-95"
+                  >
+                    {isFullscreen ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
+                        <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
+                        <path d="M4 9V4h5M15 4h5v5M4 15v5h5M20 15v5h-5" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close player"
+                title="Close"
+                className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white active:scale-95"
               >
-                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-              </svg>
-            </button>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  className="h-5 w-5"
+                  aria-hidden
+                >
+                  <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -272,7 +308,7 @@ export default function VideoPlayerModal({
                   )}
 
                   {iframeSrc && fallback.loaded && (
-                    <div className="absolute top-2 right-2 z-[20] flex items-center gap-2 pointer-events-auto">
+                    <div className="absolute top-2 right-2 z-[20] hidden items-center gap-2 pointer-events-auto sm:flex">
                       {!isTrailer ? (
                         <PlayerSubtitlePicker
                           value={subtitles.subtitleLang}
@@ -299,7 +335,7 @@ export default function VideoPlayerModal({
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="1.8"
-                            className="h-4 w-4"
+                            className="h-5 w-5 sm:h-4 sm:w-4"
                             aria-hidden
                           >
                             <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" />
@@ -310,7 +346,7 @@ export default function VideoPlayerModal({
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="1.8"
-                            className="h-4 w-4"
+                            className="h-5 w-5 sm:h-4 sm:w-4"
                             aria-hidden
                           >
                             <path d="M4 9V4h5M15 4h5v5M4 15v5h5M20 15v5h-5" />
@@ -370,13 +406,17 @@ export default function VideoPlayerModal({
                         title={isTrailer ? `${movie.title} trailer` : `${movie.title} stream`}
                         tabIndex={0}
                         referrerPolicy="strict-origin-when-cross-origin"
+                        loading="eager"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share"
                         allowFullScreen
                         onLoad={() => {
                           fallback.handleIframeLoad();
                           handleIframeLoadComplete();
                         }}
-                        onPointerDown={focusPlayer}
+                        onPointerDown={() => {
+                          focusPlayer();
+                          setPlayerEngaged(true);
+                        }}
                         className="player-embed-iframe absolute inset-0 z-[1] h-full w-full border-0"
                       />
                       {!isTrailer && subtitles.activeSubtitleCue ? (
@@ -396,26 +436,26 @@ export default function VideoPlayerModal({
                         </div>
                       ) : null}
                       {!isTrailer && fallback.loaded && !playerEngaged && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPlayerEngaged(true);
-                            focusPlayer();
-                          }}
-                          className="absolute inset-0 z-[6] flex flex-col items-center justify-center gap-3 bg-black/55 px-6 text-center backdrop-blur-[2px] transition hover:bg-black/45"
-                        >
-                          <span className="flex h-14 w-14 items-center justify-center rounded-full border border-[#f4c27a]/50 bg-[#f4c27a]/15 text-[#f4c27a]">
+                        <div className="hidden sm:flex absolute inset-0 z-[6] flex-col items-center justify-center gap-3 bg-black/55 px-6 text-center backdrop-blur-[2px] transition hover:bg-black/45 pointer-events-none">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPlayerEngaged(true);
+                              focusPlayer();
+                            }}
+                            className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#f4c27a]/50 bg-[#f4c27a]/15 text-[#f4c27a] active:scale-95"
+                          >
                             <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7" aria-hidden>
                               <path d="M8 5v14l11-7z" />
                             </svg>
-                          </span>
-                          <span className="text-sm font-semibold uppercase tracking-[0.16em] text-stone-100">
+                          </button>
+                          <span className="pointer-events-none text-sm font-semibold uppercase tracking-[0.16em] text-stone-100">
                             Click to start watching
                           </span>
-                          <span className="max-w-xs text-xs text-stone-200">
-                            Tap once to focus the player. Pause ad blockers for localhost if video never starts.
+                          <span className="pointer-events-none max-w-xs text-xs text-stone-200">
+                            Click the video or this button to focus the player.
                           </span>
-                        </button>
+                        </div>
                       )}
                       {isTvPlayer && nextEpisodeTarget ? (
                         <PlayerNextEpisodeOverlay
@@ -484,11 +524,11 @@ export default function VideoPlayerModal({
           className={`shrink-0 border-t border-[var(--border-subtle)] bg-[linear-gradient(180deg,var(--bg-card),var(--bg-secondary))] ${
             isTvPlayer
               ? "flex items-center justify-end gap-2 px-3 py-2 sm:px-4"
-              : "grid gap-3 px-4 py-3 lg:grid-cols-[1fr_auto] lg:px-5"
+              : "flex flex-col gap-2 px-3 py-2 sm:px-4 lg:grid lg:grid-cols-[1fr_auto] lg:gap-3 lg:px-5"
           }`}
         >
           {!isTvPlayer ? (
-            <div>
+            <div className="hidden lg:block">
               <p className="line-clamp-1 font-[var(--font-playfair)] text-base italic text-[var(--text-primary)]">
                 &ldquo;{movie.tagline || movie.title}&rdquo;
               </p>
@@ -497,13 +537,13 @@ export default function VideoPlayerModal({
               </p>
             </div>
           ) : null}
-          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {!isTrailer && iframeSrc && (
               <>
                 <button
                   type="button"
                   onClick={fallback.handleProviderSwitch}
-                  className="rounded-full border border-[var(--border-strong)] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
+                  className="min-h-[40px] rounded-full border border-[var(--border-strong)] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
                 >
                   Not working? Switch
                 </button>
@@ -511,7 +551,7 @@ export default function VideoPlayerModal({
                   <button
                     type="button"
                     onClick={openStreamInBrowserTab}
-                    className="rounded-full border border-[var(--border-strong)] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
+                    className="min-h-[40px] rounded-full border border-[var(--border-strong)] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
                   >
                     Open in Tab
                   </button>
@@ -521,7 +561,7 @@ export default function VideoPlayerModal({
             <button
               type="button"
               onClick={() => onModeChange("movie")}
-              className={`rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+              className={`min-h-[40px] rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${
                 !isTrailer
                   ? "bg-[var(--accent-primary)] text-[var(--text-inverse)]"
                   : "border border-[var(--border-strong)] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
@@ -532,7 +572,7 @@ export default function VideoPlayerModal({
             <button
               type="button"
               onClick={() => onModeChange("trailer")}
-              className={`rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+              className={`min-h-[40px] rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${
                 isTrailer
                   ? "bg-[var(--accent-primary)] text-[var(--text-inverse)]"
                   : "border border-[var(--border-strong)] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"

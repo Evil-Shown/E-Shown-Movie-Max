@@ -80,7 +80,7 @@ export default function PlayerSubtitlePicker({
         onClick={() => setOpen((current) => !current)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="pointer-events-auto flex h-8 items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur transition hover:border-[#f4c27a] hover:bg-[#f4c27a] hover:text-stone-950 disabled:cursor-not-allowed disabled:opacity-50"
+        className="pointer-events-auto flex h-10 items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur transition hover:border-[#f4c27a] hover:bg-[#f4c27a] hover:text-stone-950 disabled:cursor-not-allowed disabled:opacity-50 sm:h-8"
       >
         <svg
           viewBox="0 0 24 24"

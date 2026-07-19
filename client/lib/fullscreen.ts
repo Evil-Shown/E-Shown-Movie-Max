@@ -49,22 +49,19 @@ export async function exitAnyFullscreen(): Promise<void> {
   }
 }
 
-export async function requestElementFullscreen(element: HTMLElement): Promise<void> {
+export function requestElementFullscreen(element: HTMLElement): Promise<void> | void {
   const target = element as FullscreenElement;
 
   if (target.requestFullscreen) {
-    await target.requestFullscreen();
-    return;
+    return target.requestFullscreen();
   }
   if (target.webkitRequestFullscreen) {
-    await target.webkitRequestFullscreen();
-    return;
+    return target.webkitRequestFullscreen();
   }
   if (target.mozRequestFullScreen) {
-    await target.mozRequestFullScreen();
-    return;
+    return target.mozRequestFullScreen();
   }
   if (target.msRequestFullscreen) {
-    await target.msRequestFullscreen();
+    return target.msRequestFullscreen();
   }
 }

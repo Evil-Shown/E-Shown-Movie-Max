@@ -12,7 +12,7 @@ import {
   type TvEpisodeSummary,
   type TvSeasonSummary,
 } from "@/lib/tv-episodes";
-import { getStabilityTip, isEmbedPlaybackMessage, warmStreamProviders } from "@/lib/stream-optimizer";
+import { getStabilityTip, isEmbedPlaybackMessage, warmEmbedUrl, warmStreamProviders } from "@/lib/stream-optimizer";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlayerMode } from "../types";
 import { NEXT_EPISODE_COUNTDOWN_SECONDS } from "../types";
@@ -161,19 +161,28 @@ export function useVideoPlayer({
     setShowKeyboardHint(false);
   }, []);
 
-  const toggleFullscreen = useCallback(async () => {
+  const toggleFullscreen = useCallback(() => {
     const stage = stageRef.current;
     if (!stage) return;
 
+    const active = getActiveFullscreenElement();
+    if (active) {
+      void exitAnyFullscreen();
+      setIsFullscreen(false);
+      return;
+    }
+
+    // Make the request synchronously so it stays within the user-gesture
+    // activation window (required by mobile Chrome / Safari).
     try {
-      if (getActiveFullscreenElement()) {
-        await exitAnyFullscreen();
-        setIsFullscreen(false);
-        return;
-      }
-      await requestElementFullscreen(stage);
+      const result = requestElementFullscreen(stage);
       setIsFullscreen(true);
       focusPlayer();
+      if (result && typeof result.then === "function") {
+        result.catch(() => {
+          // Browser blocked fullscreen — user can still use the embed control.
+        });
+      }
     } catch {
       // Browser blocked fullscreen — user can still use the embed control.
     }
@@ -190,8 +199,9 @@ export function useVideoPlayer({
 
   useEffect(() => {
     warmStreamProviders();
+    warmEmbedUrl(iframeSrc);
     setPlayerEngaged(false);
-  }, [movie.id, mode]);
+  }, [movie.id, mode, iframeSrc, setPlayerEngaged]);
 
   useEffect(() => {
     if (!isTvPlayer) return;
@@ -321,7 +331,7 @@ export function useVideoPlayer({
 
   useEffect(() => {
     setPlayerEngaged(false);
-  }, [season, episode, provider, iframeSrc]);
+  }, [season, episode, provider, iframeSrc, setPlayerEngaged]);
 
   useEffect(() => {
     if (!isTrailer && loaded && movieEmbedUrl) {

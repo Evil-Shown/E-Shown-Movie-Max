@@ -33,17 +33,29 @@ export function isSlowConnection(): boolean {
   return false;
 }
 
+export function isMobileDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 export function getStreamLoadTimeoutMs(provider?: StreamProvider): number {
-  const base = isSlowConnection() ? 14_000 : 10_000;
+  const mobile = isMobileDevice();
+  const slow = isSlowConnection();
   if (provider === "vidsrc" || provider === "vidsrcpm") {
-    return isSlowConnection() ? 12_000 : 8_000;
+    if (slow) return 10_000;
+    if (mobile) return 5_500;
+    return 7_000;
   }
-  return base;
+  if (slow) return 12_000;
+  if (mobile) return 6_000;
+  return 8_000;
 }
 
 /** How long to wait after iframe shell loads before switching if playback never starts. */
 export function getPlaybackConfirmTimeoutMs(): number {
-  return isSlowConnection() ? 28_000 : 16_000;
+  const mobile = isMobileDevice();
+  if (isSlowConnection()) return mobile ? 22_000 : 28_000;
+  return mobile ? 11_000 : 16_000;
 }
 
 /** Warm only the fastest providers on slow links to avoid connection churn. */
@@ -83,6 +95,38 @@ export function warmStreamProviders(providers: StreamProvider[] = STREAM_PROVIDE
       dns.href = origin;
       document.head.appendChild(dns);
     }
+  }
+}
+
+const preloadedUrls = new Set<string>();
+
+/** Preconnect to a specific embed URL's origin and hint the document. */
+export function warmEmbedUrl(url: string | null) {
+  if (typeof document === "undefined" || !url) return;
+
+  try {
+    const parsed = new URL(url);
+    const origin = parsed.origin;
+    if (!warmedOrigins.has(origin)) {
+      warmedOrigins.add(origin);
+      const preconnect = document.createElement("link");
+      preconnect.rel = "preconnect";
+      preconnect.href = origin;
+      preconnect.crossOrigin = "anonymous";
+      document.head.appendChild(preconnect);
+    }
+
+    if (!preloadedUrls.has(url)) {
+      preloadedUrls.add(url);
+      const preload = document.createElement("link");
+      preload.rel = "preload";
+      preload.href = url;
+      preload.as = "document";
+      preload.crossOrigin = "anonymous";
+      document.head.appendChild(preload);
+    }
+  } catch {
+    // Invalid URL — ignore.
   }
 }
 

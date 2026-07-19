@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cinzel, Inter, Noto_Sans_Sinhala, Oswald, Playfair_Display } from "next/font/google";
 import { Suspense } from "react";
 import AuthActionHandler from "@/components/AuthActionHandler";
@@ -62,6 +62,13 @@ export const metadata: Metadata = {
   },
   description: BRAND_DESCRIPTION,
   applicationName: BRAND_NAME,
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#3e2723",
 };
 
 function HeaderFallback() {
