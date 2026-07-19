@@ -1,20 +1,20 @@
 /**
- * Injected into proxied embed HTML (Express + mirrored in workers/embed-proxy).
- * Blocks popups / clickunders without sandboxing the player iframe.
- *
- * Keep this conservative: aggressive DOM hiding / script stripping breaks
- * SPA embeds (VidFast etc.) and leaves them stuck on "Fetching…".
+ * Injected into proxied embed HTML (Express + Cloudflare Worker).
+ * No sandbox on the app iframe — popup kill happens inside the proxied document.
  */
 
 const KNOWN_AD_SCRIPT_RE =
   /<script[^>]*src=["'][^"']*(popads|propellerads|adsterra|adskeeper|exoclick|onclickads|popcash|juicyads|clickunder|trafficjunky|doubleclick|googlesyndication|adnxs|pubmatic|openx|rubiconproject|moatads|outbrain|taboola)[^"']*["'][^>]*>\s*<\/script>/gi;
 
-/** Strip known ad-network scripts only (do not remove provider/CDN player JS). */
+/** Strip known ad-network scripts only (keep provider/CDN player JS). */
 export function stripAdScripts(html: string): string {
   return String(html || "").replace(KNOWN_AD_SCRIPT_RE, "");
 }
 
-/** Early <head> guard: popup blockers + nested iframe FS perms. */
+/**
+ * Nuclear anti-popup: window.open + fake <a>.click() + target=_blank + capture-phase link kills.
+ * Does not touch <video> / button clicks.
+ */
 export function buildAntiAdGuardScript(): string {
   return `
 <script data-chithra-guard="1">
@@ -25,43 +25,72 @@ export function buildAntiAdGuardScript(): string {
     function lockOpen(win) {
       if (!win) return;
       try { win.open = noop; } catch (_) {}
+      try {
+        Object.defineProperty(win, "open", {
+          configurable: false,
+          writable: false,
+          value: noop
+        });
+      } catch (_) {
+        try { win.open = noop; } catch (e2) {}
+      }
     }
 
     lockOpen(window);
     try { lockOpen(window.top); } catch (_) {}
     try { lockOpen(window.parent); } catch (_) {}
 
-    // Fake <a target=_blank>.click() / dispatchEvent clickunders
+    // B. Fake anchor .click() clickunders
     try {
-      var origClick = HTMLAnchorElement.prototype.click;
+      var nativeClick = HTMLAnchorElement.prototype.click;
       HTMLAnchorElement.prototype.click = function () {
-        var target = String(this.getAttribute("target") || "").toLowerCase();
+        var target = String(this.getAttribute("target") || this.target || "").toLowerCase();
+        var href = String(this.getAttribute("href") || this.href || "");
         if (target === "_blank" || target === "_parent" || target === "_top") return;
-        return origClick.apply(this, arguments);
+        if (/^https?:/i.test(href)) return;
+        return nativeClick.apply(this, arguments);
       };
     } catch (_) {}
 
     try {
-      var origDispatch = HTMLAnchorElement.prototype.dispatchEvent;
+      var nativeDispatch = HTMLAnchorElement.prototype.dispatchEvent;
       HTMLAnchorElement.prototype.dispatchEvent = function (evt) {
         if (evt && String(evt.type).toLowerCase() === "click") {
           var target = String(this.getAttribute("target") || "").toLowerCase();
           if (target === "_blank" || target === "_parent" || target === "_top") return false;
+          var href = String(this.getAttribute("href") || "");
+          if (/^https?:/i.test(href)) return false;
         }
-        return origDispatch.call(this, evt);
+        return nativeDispatch.call(this, evt);
       };
     } catch (_) {}
 
+    // C. Force links to stay inside the iframe
+    try {
+      Object.defineProperty(HTMLAnchorElement.prototype, "target", {
+        configurable: true,
+        enumerable: true,
+        get: function () { return "_self"; },
+        set: function () {
+          try { this.setAttribute("target", "_self"); } catch (_) {}
+        }
+      });
+    } catch (_) {}
+
+    // D. Capture-phase: kill real clicks on <a> (ads). Video/button controls unaffected.
     document.addEventListener("click", function (e) {
-      var a = e.target && e.target.closest ? e.target.closest("a") : null;
-      if (!a) return;
-      var target = String(a.getAttribute("target") || "").toLowerCase();
-      if (target === "_blank" || target === "_parent" || target === "_top") {
-        e.preventDefault();
-        e.stopPropagation();
+      var node = e.target;
+      while (node && node.tagName !== "A") {
+        node = node.parentElement;
       }
+      if (!node) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+      return false;
     }, true);
 
+    // Nested player iframes → fullscreen permission
     function patchFrame(el) {
       if (!el || !el.tagName || el.tagName.toUpperCase() !== "IFRAME") return;
       el.setAttribute("allowfullscreen", "");
@@ -72,12 +101,10 @@ export function buildAntiAdGuardScript(): string {
         el.setAttribute("allow", allow ? allow + "; fullscreen" : "fullscreen");
       }
     }
-
     function scan(root) {
       if (!root || !root.querySelectorAll) return;
       root.querySelectorAll("iframe").forEach(patchFrame);
     }
-
     function boot() {
       scan(document);
       if (!window.MutationObserver) return;
@@ -91,11 +118,10 @@ export function buildAntiAdGuardScript(): string {
         });
       }).observe(document.documentElement, { childList: true, subtree: true });
     }
-
     if (document.body) boot();
     else document.addEventListener("DOMContentLoaded", boot);
 
-    // Fullscreen: try native, else ask parent stage (header FS path).
+    // Fullscreen bridge → parent stage (header FS path) if native fails
     if (window.parent && window.parent !== window) {
       function postFs(eventName) {
         try {
@@ -118,31 +144,12 @@ export function buildAntiAdGuardScript(): string {
           }
         };
       }
-      function wrapExit(orig) {
-        return function () {
-          var ctx = this, args = arguments;
-          if (typeof orig !== "function") return postFs("exit-fullscreen");
-          try {
-            var result = orig.apply(ctx, args);
-            if (result && typeof result.then === "function") {
-              return result.catch(function () { return postFs("exit-fullscreen"); });
-            }
-            return result;
-          } catch (_) {
-            return postFs("exit-fullscreen");
-          }
-        };
-      }
       try {
         Element.prototype.requestFullscreen = wrapEnter(Element.prototype.requestFullscreen);
         Element.prototype.webkitRequestFullscreen = wrapEnter(Element.prototype.webkitRequestFullscreen);
         Element.prototype.webkitRequestFullScreen = wrapEnter(Element.prototype.webkitRequestFullScreen);
         Element.prototype.mozRequestFullScreen = wrapEnter(Element.prototype.mozRequestFullScreen);
         Element.prototype.msRequestFullscreen = wrapEnter(Element.prototype.msRequestFullscreen);
-        Document.prototype.exitFullscreen = wrapExit(Document.prototype.exitFullscreen);
-        Document.prototype.webkitExitFullscreen = wrapExit(Document.prototype.webkitExitFullscreen);
-        Document.prototype.mozCancelFullScreen = wrapExit(Document.prototype.mozCancelFullScreen);
-        Document.prototype.msExitFullscreen = wrapExit(Document.prototype.msExitFullscreen);
       } catch (_) {}
     }
   } catch (_) {}

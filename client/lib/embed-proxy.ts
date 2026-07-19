@@ -1,12 +1,13 @@
 /**
- * Route stream iframes through an HTML-rewriting proxy that:
+ * Route stream iframes through an HTML-rewriting proxy:
  * - strips known ad scripts
- * - injects aggressive anti-popup / overlay guards
+ * - injects nuclear anti-popup guards (window.open / fake <a>.click / capture)
  *
  * Priority:
- * 1) NEXT_PUBLIC_EMBED_PROXY_WORKER_URL (Cloudflare Worker)
- * 2) Same-origin /api/v1/embed/proxy (Next rewrite → Express)
- * 3) Absolute API base (SSR / non-browser)
+ * 1) NEXT_PUBLIC_EMBED_PROXY_WORKER_URL (Cloudflare Worker) — preferred
+ * 2) Same-origin /api/v1/embed/proxy (Next → Express) — local fallback
+ *
+ * No sandbox / no shell on the React iframe — only the proxied HTML is hardened.
  */
 
 import { resolveApiBaseAbsolute } from "./api-base";
@@ -43,7 +44,7 @@ export function isEmbedProxyEnabled(): boolean {
   return process.env.NEXT_PUBLIC_USE_EMBED_PROXY === "true";
 }
 
-/** Route embed iframe loads through CF Worker or backend proxy. */
+/** Route embed iframe loads through CF Worker (preferred) or Express fallback. */
 export function proxifyEmbedUrl(directUrl: string): string {
   if (!directUrl || !isEmbedProxyEnabled()) return directUrl;
 
@@ -52,13 +53,17 @@ export function proxifyEmbedUrl(directUrl: string): string {
     return `${workerBase}/?url=${encodeURIComponent(directUrl)}`;
   }
 
-  // Browser: same-origin Next rewrite — avoids iframe hitting dead :5000 directly
-  // ("localhost refused to connect") when the API briefly restarts.
+  // No Worker URL yet — use Express only off localhost (SPA embeds often break
+  // when the document origin becomes localhost via the local API proxy).
   if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") {
+      return directUrl;
+    }
     return `/api/v1/embed/proxy?url=${encodeURIComponent(directUrl)}`;
   }
 
   const apiBase = getApiProxyBase();
-  if (!apiBase) return directUrl;
+  if (!apiBase || /localhost|127\.0\.0\.1/i.test(apiBase)) return directUrl;
   return `${apiBase}/api/v1/embed/proxy?url=${encodeURIComponent(directUrl)}`;
 }

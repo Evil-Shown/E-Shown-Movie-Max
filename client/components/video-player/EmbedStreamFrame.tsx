@@ -26,9 +26,9 @@ function applyFullscreenPermissions(el: HTMLIFrameElement) {
 }
 
 /**
- * Direct provider iframe — no sandbox, no shell.
- * Providers detect ancestor sandbox and show "please disable sandbox";
- * popup ads can only be reduced via parent window.open guard (see block-ad-nav).
+ * Clean provider iframe — NO sandbox, NO shell.
+ * When NEXT_PUBLIC_USE_EMBED_PROXY=true, `src` is already the Worker/API
+ * proxied URL (see proxifyEmbedUrl) with nuclear anti-popup inject.
  */
 export default function EmbedStreamFrame({ src, title, iframeRef, onLoad }: EmbedStreamFrameProps) {
   useLayoutEffect(() => {
