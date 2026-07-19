@@ -4,7 +4,12 @@ const path = require("path");
 const http = require("http");
 const fs = require("fs");
 const { setupAutoUpdater, checkForUpdates } = require("./updater");
-const { isBlockedAdUrl, isEmbedProviderUrl, shouldCancelNetworkRequest } = require("./block-ad-nav");
+const {
+  isBlockedAdUrl,
+  isEmbedProviderUrl,
+  isAuthAllowUrl,
+  shouldCancelNetworkRequest,
+} = require("./block-ad-nav");
 const { EMBED_HOST_PATTERNS, getStableUserAgent, getRefererForUrl } = require("./embed-headers");
 const { setupTelemetry } = require("./telemetry");
 
@@ -326,7 +331,11 @@ function registerDevToolsShortcuts(window) {
 }
 
 function attachWindowGuards(window) {
+  // Deny ALL popups except stream embeds + OAuth — kills iframe window.open at OS level.
   window.webContents.setWindowOpenHandler(({ url }) => {
+    if (isAuthAllowUrl(url)) {
+      return { action: "allow" };
+    }
     if (isBlockedAdUrl(url)) {
       console.warn("[CHITHRA] Blocked ad popup:", url);
       return { action: "deny" };
@@ -334,19 +343,15 @@ function attachWindowGuards(window) {
     if (isEmbedProviderUrl(url)) {
       return { action: "allow" };
     }
-    // Allow Supabase OAuth popup for Google sign-in
-    const parsed = new URL(url);
-    if (parsed.hostname.endsWith(".supabase.co") && parsed.pathname.startsWith("/auth/v1/authorize")) {
-      return { action: "allow" };
-    }
-    if (parsed.hostname === "accounts.google.com") {
-      return { action: "allow" };
-    }
+    console.warn("[CHITHRA] Denied popup:", url);
     return { action: "deny" };
   });
 
+  // Stop top-level redirects off the app (ads / gambling / random sites).
   window.webContents.on("will-navigate", (event, url) => {
+    if (isAuthAllowUrl(url)) return;
     if (isBlockedAdUrl(url) || !isAllowedAppUrl(url)) {
+      console.warn("[CHITHRA] Blocked navigation:", url);
       event.preventDefault();
     }
   });

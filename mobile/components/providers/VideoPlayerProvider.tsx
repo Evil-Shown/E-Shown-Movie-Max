@@ -16,6 +16,7 @@ import PlayerLoadingOverlay from '@/components/player/PlayerLoadingOverlay';
 import { colors, fonts, radii, spacing } from '@/constants/theme';
 import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from '@chithra/core/providers';
 import { fetchMovieSources } from '@/lib/api/movies';
+import { createEmbedShouldStartLoad } from '@/lib/block-ad-nav';
 import { isTvShow } from '@/lib/streaming';
 import { getTrailerId } from '@/lib/trailers';
 import {
@@ -269,6 +270,8 @@ function VideoPlayerModal({
                 mediaPlaybackRequiresUserAction={false}
                 javaScriptEnabled
                 domStorageEnabled
+                setSupportMultipleWindows={false}
+                onShouldStartLoadWithRequest={createEmbedShouldStartLoad(embedSrc)}
                 onLoadEnd={() => {
                   setLoaded(true);
                   setLoadFailed(false);

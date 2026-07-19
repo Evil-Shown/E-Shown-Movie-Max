@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, type RefObject } from "react";
+import { getEmbedIframeSandbox } from "@/lib/block-ad-nav";
 
 interface EmbedStreamFrameProps {
   src: string;
@@ -26,11 +27,14 @@ function applyFullscreenPermissions(el: HTMLIFrameElement) {
 }
 
 /**
- * Clean provider iframe — NO sandbox, NO shell.
- * When NEXT_PUBLIC_USE_EMBED_PROXY=true, `src` is already the Worker/API
- * proxied URL (see proxifyEmbedUrl) with nuclear anti-popup inject.
+ * Hybrid sandbox embed:
+ * - VidFast: no sandbox (detects it and hangs)
+ * - Other providers: sandbox without allow-popups (kills iframe popups in browsers)
+ * Desktop/mobile add native request blocking on top of this shared iframe.
  */
 export default function EmbedStreamFrame({ src, title, iframeRef, onLoad }: EmbedStreamFrameProps) {
+  const sandboxAttr = getEmbedIframeSandbox(src);
+
   useLayoutEffect(() => {
     const el = iframeRef.current;
     if (el) applyFullscreenPermissions(el);
@@ -46,6 +50,7 @@ export default function EmbedStreamFrame({ src, title, iframeRef, onLoad }: Embe
       loading="eager"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen *"
       allowFullScreen
+      {...(sandboxAttr ? { sandbox: sandboxAttr } : {})}
       onLoad={(e) => {
         applyFullscreenPermissions(e.currentTarget);
         onLoad?.();

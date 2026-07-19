@@ -8,6 +8,7 @@
     "./types": "./src/types.ts",
     "./movies": "./src/movies.ts",
     "./providers": "./src/providers.ts",
+    "./ad-block": "./src/ad-block.ts",
     "./cache": "./src/cache.ts",
     "./tmdb": "./src/tmdb/index.ts",
     "./tmdb/client": "./src/tmdb/client.ts",

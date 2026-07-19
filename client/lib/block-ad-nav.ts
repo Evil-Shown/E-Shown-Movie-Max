@@ -1,76 +1,28 @@
-/** Block ad popups from embed players — never blocks in-iframe stream/CDN traffic. */
+/**
+ * Web fallback ad popup guard.
+ * Cross-origin iframe popups need hybrid sandbox (EmbedStreamFrame) or
+ * native shells (Electron / RN WebView) — this only covers parent window.open.
+ */
 
-const BLOCKED_HOST_PATTERNS = [
-  /(^|\.)1xbet\./i,
-  /(^|\.)xbet\./i,
-  /(^|\.)melbet\./i,
-  /(^|\.)betway\./i,
-  /(^|\.)stake\.com$/i,
-  /(^|\.)parimatch\./i,
-  /(^|\.)bet365\./i,
-  /(^|\.)pin-up\./i,
-  /(^|\.)mostbet\./i,
-  /(^|\.)linebet\./i,
-  /(^|\.)22bet\./i,
-  /(^|\.)betwinner\./i,
-  /(^|\.)1win\./i,
-  /(^|\.)clickunder/i,
-  /(^|\.)popads\./i,
-  /(^|\.)propellerads\./i,
-  /(^|\.)exoclick\./i,
-  /(^|\.)adsterra\./i,
-  /(^|\.)popcash\./i,
-  /(^|\.)juicyads\./i,
-  /(^|\.)trafficjunky\./i,
-  /(^|\.)doubleclick\./i,
-  /(^|\.)googlesyndication\./i,
-];
+import {
+  isAllowedStreamPopupUrl as sharedIsAllowedStreamPopupUrl,
+  isBlockedAdUrl as sharedIsBlockedAdUrl,
+} from "@chithra/core/ad-block";
 
-const BLOCKED_PATH_PATTERNS = [/clickunder/i, /popunder/i, /[?&]tag=d_/i, /\/ads?\//i];
-
-/** Known stream / trailer hosts — allowed even in strict player mode. */
-const ALLOWED_POPUP_HOST_PATTERNS = [
-  /(^|\.)vidfast\./i,
-  /(^|\.)vidlink\.pro$/i,
-  /(^|\.)multiembed\.mov$/i,
-  /(^|\.)autoembed\.co$/i,
-  /(^|\.)vidsrc\.(pm|cc|to|me|xyz|net)$/i,
-  /(^|\.)youtube\.com$/i,
-  /(^|\.)youtube-nocookie\.com$/i,
-  /(^|\.)youtu\.be$/i,
-  /(^|\.)googlevideo\.com$/i,
-  /(^|\.)www\.youtube\.com$/i,
-];
+export {
+  getEmbedIframeSandbox,
+  shouldBypassEmbedSandbox,
+  EMBED_IFRAME_SANDBOX,
+} from "@chithra/core/ad-block";
 
 export function isBlockedAdUrl(raw: string): boolean {
-  if (!raw || typeof raw !== "string") return false;
-
-  try {
-    const url = new URL(raw, typeof window !== "undefined" ? window.location.origin : "https://localhost");
-    const host = url.hostname.toLowerCase();
-    const href = url.href.toLowerCase();
-
-    if (BLOCKED_HOST_PATTERNS.some((pattern) => pattern.test(host))) return true;
-    if (BLOCKED_PATH_PATTERNS.some((pattern) => pattern.test(href))) return true;
-    return false;
-  } catch {
-    const lower = raw.toLowerCase();
-    return lower.includes("1xbet") || lower.includes("clickunder") || lower.includes("xbet.lk");
-  }
+  return sharedIsBlockedAdUrl(raw);
 }
 
 export function isAllowedStreamPopupUrl(raw: string): boolean {
-  if (!raw || typeof raw !== "string") return false;
-
-  try {
-    const url = new URL(raw, typeof window !== "undefined" ? window.location.origin : "https://localhost");
-    const host = url.hostname.toLowerCase();
-
-    if (typeof window !== "undefined" && host === window.location.hostname) return true;
-    return ALLOWED_POPUP_HOST_PATTERNS.some((pattern) => pattern.test(host));
-  } catch {
-    return false;
-  }
+  const sameOrigin =
+    typeof window !== "undefined" ? window.location.hostname : undefined;
+  return sharedIsAllowedStreamPopupUrl(raw, sameOrigin);
 }
 
 function isBlankPopupUrl(url: unknown): boolean {
@@ -88,7 +40,7 @@ type OpenGuardOptions = {
 /**
  * Only intercepts window.open from the parent page (and some embed-initiated
  * opens that bubble to the top window). Cross-origin iframe popups cannot be
- * fully blocked without sandbox/proxy — both break many providers.
+ * fully blocked without sandbox (non-VidFast) or a native shell.
  */
 export function installAdPopupBlocker(options: OpenGuardOptions = {}): () => void {
   if (typeof window === "undefined") return () => undefined;
@@ -116,7 +68,6 @@ export function installAdPopupBlocker(options: OpenGuardOptions = {}): () => voi
     return originalOpen(url, target, features);
   };
 
-  // If an ad still opens a tab (rare escape), refocus the player window.
   const onBlur = () => {
     window.setTimeout(() => {
       try {
@@ -133,4 +84,4 @@ export function installAdPopupBlocker(options: OpenGuardOptions = {}): () => voi
     window.open = originalOpen;
     window.removeEventListener("blur", onBlur);
   };
-}
+};
