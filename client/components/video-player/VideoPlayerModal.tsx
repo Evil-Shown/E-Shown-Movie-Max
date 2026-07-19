@@ -12,23 +12,15 @@ import { useAuthModal } from "@/components/AuthModalProvider";
 import PlayerTvSelector from "@/components/PlayerTvSelector";
 import PlayerNextEpisodeOverlay from "@/components/PlayerNextEpisodeOverlay";
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isSlowConnection } from "@/lib/stream-optimizer";
 import PlayerLoadingOverlay from "./PlayerLoadingOverlay";
+import EmbedStreamFrame from "./EmbedStreamFrame";
 import { useProviderFallback } from "./hooks/useProviderFallback";
 import { useResumeTime } from "./hooks/useResumeTime";
 import { useSubtitles } from "./hooks/useSubtitles";
 import { useVideoPlayer } from "./hooks/useVideoPlayer";
 import type { ActivePlayer, PlayerMode } from "./types";
-
-function isMobileTouchBrowser(): boolean {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent;
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-  const isMobileChrome = /Android/i.test(ua) && /Chrome/i.test(ua) && /Mobile/i.test(ua);
-  const isMobileSafari = /iPhone|iPad|iPod/i.test(ua) && /Safari/i.test(ua) && !/Chrome/i.test(ua);
-  return isMobile && (isMobileChrome || isMobileSafari);
-}
 
 interface VideoPlayerModalProps {
   active: ActivePlayer;
@@ -50,22 +42,7 @@ export default function VideoPlayerModal({
   const { movie, mode, season, episode, provider, resumeSeconds } = active;
   const { setProvider } = useUserLibraryActions();
   const [playerEngaged, setPlayerEngaged] = useState(false);
-  const [isMobileTouch, setIsMobileTouch] = useState(false);
-  const [showOverlayFs, setShowOverlayFs] = useState(false);
   const setLoadedRef = useRef<(value: boolean) => void>(() => {});
-  const lastTapRef = useRef(0);
-  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
-  const overlayFsTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => {
-    setIsMobileTouch(isMobileTouchBrowser());
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (overlayFsTimerRef.current) clearTimeout(overlayFsTimerRef.current);
-    };
-  }, []);
 
   // Auth gate: block playback if not authenticated
   useEffect(() => {
@@ -119,12 +96,14 @@ export default function VideoPlayerModal({
 
   const {
     isFullscreen,
+    isFauxFullscreen,
     showKeyboardHint,
     showNextEpisode,
     nextEpisodeCountdown,
     nextEpisodeProgress,
     nextEpisodeTarget,
     nextEpisodeSummary,
+    nextEpisodeAuto,
     stabilityTip,
     rawEmbedUrl,
     playerLabel,
@@ -134,7 +113,6 @@ export default function VideoPlayerModal({
     episodeLabel,
     stageRef,
     iframeRef,
-    focusPlayer,
     toggleFullscreen,
     openStreamInBrowserTab,
     playNextEpisode,
@@ -156,53 +134,6 @@ export default function VideoPlayerModal({
   });
 
   const slowConnection = isSlowConnection();
-
-  const handleGestureAreaTouchStart = useCallback(
-    (e: React.TouchEvent) => {
-      const now = Date.now();
-      const timeSinceLastTap = now - lastTapRef.current;
-
-      if (timeSinceLastTap > 0 && timeSinceLastTap < 300) {
-        // Double tap detected
-        e.preventDefault();
-        e.stopPropagation();
-        toggleFullscreen();
-        lastTapRef.current = 0;
-        touchStartRef.current = null;
-        return;
-      }
-
-      lastTapRef.current = now;
-      touchStartRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-        time: now,
-      };
-    },
-    [toggleFullscreen]
-  );
-
-  const handleGestureAreaTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
-      if (!touchStartRef.current) return;
-
-      const touch = e.changedTouches[0];
-      const { x: startX, y: startY, time: startTime } = touchStartRef.current;
-      const duration = Date.now() - startTime;
-      const deltaY = startY - touch.clientY;
-      const deltaX = Math.abs(touch.clientX - startX);
-
-      // Swipe up: vertical distance > 60px, horizontal distance < 40px, duration < 300ms
-      if (deltaY > 60 && deltaX < 40 && duration < 300) {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleFullscreen();
-      }
-
-      touchStartRef.current = null;
-    },
-    [toggleFullscreen]
-  );
 
   return (
     <motion.div
@@ -293,6 +224,29 @@ export default function VideoPlayerModal({
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              {iframeSrc ? (
+                <button
+                  type="button"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleFullscreen();
+                  }}
+                  aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                  title={isFullscreen ? "Exit fullscreen (F)" : "Fullscreen (F)"}
+                  className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white active:scale-95"
+                >
+                  {isFullscreen ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden>
+                      <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden>
+                      <path d="M4 9V4h5M15 4h5v5M4 15v5h5M20 15v5h-5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={onClose}
@@ -326,9 +280,12 @@ export default function VideoPlayerModal({
                 ref={stageRef}
                 className={`player-stage player-screen-glow relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black ${
                   isTvPlayer ? "rounded-none lg:rounded-xl" : "rounded-xl"
-                } ${isTrailer ? "border border-white/10" : "player-cinema-frame"}`}
+                } ${isTrailer ? "border border-white/10" : "player-cinema-frame"} ${
+                  isFauxFullscreen ? "player-stage--faux-fullscreen" : ""
+                }`}
               >
                 <div className="player-video-fit bg-[var(--bg-dark)]">
+                  {/* Decorative only — never sit above the embed hit target */}
                   {!isFullscreen && (
                     <div className="pointer-events-none absolute inset-x-0 top-0 z-[2]">
                       <div className={`player-cinema-bar ${isTrailer ? "player-cinema-bar--trailer" : ""}`} />
@@ -341,47 +298,6 @@ export default function VideoPlayerModal({
                         </span>
                       </div>
                     </div>
-                  )}
-
-                  {isMobileTouch && iframeSrc && fallback.loaded && (
-                    <>
-                      <div
-                        aria-hidden="true"
-                        className="absolute inset-y-0 left-0 z-[10] w-12 touch-none"
-                        onTouchStart={handleGestureAreaTouchStart}
-                        onTouchEnd={handleGestureAreaTouchEnd}
-                      />
-                      <div
-                        aria-hidden="true"
-                        className="absolute inset-y-0 right-0 z-[10] w-12 touch-none"
-                        onTouchStart={handleGestureAreaTouchStart}
-                        onTouchEnd={handleGestureAreaTouchEnd}
-                      />
-                    </>
-                  )}
-
-                  {isMobileTouch && showOverlayFs && fallback.loaded && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFullscreen();
-                        setShowOverlayFs(false);
-                        if (overlayFsTimerRef.current) clearTimeout(overlayFsTimerRef.current);
-                      }}
-                      aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                      className="absolute bottom-3 right-3 z-[15] flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white backdrop-blur active:scale-95"
-                    >
-                      {isFullscreen ? (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
-                          <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" />
-                        </svg>
-                      ) : (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
-                          <path d="M4 9V4h5M15 4h5v5M4 15v5h5M20 15v5h-5" />
-                        </svg>
-                      )}
-                    </button>
                   )}
 
                   {iframeSrc ? (
@@ -427,33 +343,19 @@ export default function VideoPlayerModal({
                           </div>
                         </div>
                       )}
-                      <iframe
-                        ref={iframeRef}
+                      <EmbedStreamFrame
                         key={`${provider}-${season ?? 0}-${episode ?? 0}-${iframeSrc}`}
                         src={iframeSrc}
                         title={isTrailer ? `${movie.title} trailer` : `${movie.title} stream`}
-                        tabIndex={0}
-                        referrerPolicy="strict-origin-when-cross-origin"
-                        loading="eager"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share"
-                        allowFullScreen
+                        iframeRef={iframeRef}
                         onLoad={() => {
                           fallback.handleIframeLoad();
                           handleIframeLoadComplete();
-                        }}
-                        onPointerDown={() => {
-                          focusPlayer();
                           setPlayerEngaged(true);
-                          if (isMobileTouch) {
-                            setShowOverlayFs(true);
-                            if (overlayFsTimerRef.current) clearTimeout(overlayFsTimerRef.current);
-                            overlayFsTimerRef.current = setTimeout(() => setShowOverlayFs(false), 3000);
-                          }
                         }}
-                        className="player-embed-iframe absolute inset-0 z-[1] h-full w-full border-0"
                       />
                       {!isTrailer && subtitles.activeSubtitleCue ? (
-                        <div className="pointer-events-none absolute inset-x-0 bottom-[13%] z-[7] flex justify-center px-4 sm:bottom-[11%]">
+                        <div className="pointer-events-none absolute inset-x-0 bottom-[13%] z-[11] flex justify-center px-4 sm:bottom-[11%]">
                           <div className="max-w-[88%] rounded-2xl border border-black/20 bg-black/65 px-4 py-2 text-center shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-md sm:max-w-3xl sm:px-5 sm:py-3">
                             <p className="whitespace-pre-line font-[var(--font-playfair)] text-[15px] leading-snug text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] sm:text-[18px]">
                               {subtitles.activeSubtitleCue.text}
@@ -468,28 +370,6 @@ export default function VideoPlayerModal({
                           </div>
                         </div>
                       ) : null}
-                      {!isTrailer && fallback.loaded && !playerEngaged && (
-                        <div className="hidden sm:flex absolute inset-0 z-[6] flex-col items-center justify-center gap-3 bg-black/55 px-6 text-center backdrop-blur-[2px] transition hover:bg-black/45 pointer-events-none">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPlayerEngaged(true);
-                              focusPlayer();
-                            }}
-                            className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#f4c27a]/50 bg-[#f4c27a]/15 text-[#f4c27a] active:scale-95"
-                          >
-                            <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7" aria-hidden>
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          </button>
-                          <span className="pointer-events-none text-sm font-semibold uppercase tracking-[0.16em] text-stone-100">
-                            Click to start watching
-                          </span>
-                          <span className="pointer-events-none max-w-xs text-xs text-stone-200">
-                            Click the video or this button to focus the player.
-                          </span>
-                        </div>
-                      )}
                       {isTvPlayer && nextEpisodeTarget ? (
                         <PlayerNextEpisodeOverlay
                           visible={showNextEpisode}
@@ -499,6 +379,7 @@ export default function VideoPlayerModal({
                           episode={nextEpisodeSummary}
                           countdown={nextEpisodeCountdown}
                           progress={nextEpisodeProgress}
+                          autoAdvance={nextEpisodeAuto}
                           onPlayNow={playNextEpisode}
                           onCancel={dismissNextEpisode}
                         />
@@ -571,6 +452,18 @@ export default function VideoPlayerModal({
             </div>
           ) : null}
           <div className="flex flex-wrap items-center justify-end gap-2">
+            {iframeSrc ? (
+              <button
+                type="button"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  toggleFullscreen();
+                }}
+                className="min-h-[40px] rounded-full border border-[var(--border-strong)] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
+              >
+                {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+              </button>
+            ) : null}
             {!isTrailer && iframeSrc && (
               <>
                 <button

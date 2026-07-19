@@ -47,10 +47,11 @@ export default function HeroCarousel({ movies }: HeroCarouselProps) {
           className={styles.backdropWrap}
         >
           <Image
-            src={backdropUrl(movie.backdropPath)}
+            src={backdropUrl(movie.backdropPath, "w1920")}
             alt=""
             fill
             priority
+            quality={95}
             sizes="100vw"
             className={styles.backdropImage}
           />

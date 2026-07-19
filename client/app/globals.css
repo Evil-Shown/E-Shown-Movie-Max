@@ -370,8 +370,8 @@ body::before {
   pointer-events: none;
   will-change: transform;
   background:
-    radial-gradient(ellipse 80% 50% at 10% -10%, var(--ambient-1) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 40% at 90% 100%, var(--ambient-2) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 50% at 10% -10%, var(--light-orange-faint) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, var(--brown) 0%, transparent 50%),
     var(--bg-primary);
   animation: ambientDrift 22s ease-in-out infinite alternate;
 }
@@ -383,12 +383,30 @@ body::after {
   z-index: -1;
   pointer-events: none;
   will-change: transform;
+  opacity: 0.22;
+  background:
+    radial-gradient(circle at 20% 20%, var(--light-orange-faint), transparent 24%),
+    radial-gradient(circle at 80% 30%, var(--tan), transparent 22%),
+    radial-gradient(circle at 50% 80%, var(--light-orange), transparent 28%);
+  animation: ambientGlowShift 18s ease-in-out infinite alternate;
+}
+
+/* Dark / Dim only — Daylight body wash stays exact */
+html.dark body::before,
+html.dim body::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, var(--ambient-1) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, var(--ambient-2) 0%, transparent 50%),
+    var(--bg-primary);
+}
+
+html.dark body::after,
+html.dim body::after {
   opacity: var(--ambient-glow-opacity);
   background:
     radial-gradient(circle at 20% 20%, var(--ambient-1), transparent 24%),
     radial-gradient(circle at 80% 30%, var(--ambient-3), transparent 22%),
     radial-gradient(circle at 50% 80%, var(--ambient-2), transparent 28%);
-  animation: ambientGlowShift 18s ease-in-out infinite alternate;
 }
 
 .font-cinzel {
@@ -609,6 +627,35 @@ body::after {
   height: 100%;
 }
 
+/* Fallback when browser Fullscreen API is blocked (common on mobile). */
+.player-stage--faux-fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 320;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: #000 !important;
+}
+
+.player-stage--faux-fullscreen .player-video-fit {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  aspect-ratio: auto !important;
+}
+
+.player-stage--faux-fullscreen .player-embed-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .player-loading-overlay {
   background: #0f0d0b;
 }
@@ -680,15 +727,29 @@ body::after {
 
 .browse-hero-bg {
   background:
-    radial-gradient(circle at 18% 18%, var(--ambient-1), transparent 18%),
-    radial-gradient(circle at 82% 12%, var(--ambient-3), transparent 16%),
-    linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 52%, var(--bg-primary) 100%);
+    radial-gradient(circle at 18% 18%, var(--light-orange-faint), transparent 18%),
+    radial-gradient(circle at 82% 12%, var(--tan), transparent 16%),
+    linear-gradient(135deg, var(--faint-white) 0%, var(--cream) 52%, var(--faint-white) 100%);
   background-size: 140% 140%;
   animation: browseHeroDrift 20s ease-in-out infinite alternate;
 }
 
+.dark .browse-hero-bg,
+.dim .browse-hero-bg {
+  background:
+    radial-gradient(circle at 18% 18%, var(--ambient-1), transparent 18%),
+    radial-gradient(circle at 82% 12%, var(--ambient-3), transparent 16%),
+    linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 52%, var(--bg-primary) 100%);
+  background-size: 140% 140%;
+}
+
 * {
   scrollbar-width: thin;
+  scrollbar-color: rgba(28, 25, 23, 0.24) var(--bg-primary);
+}
+
+.dark *,
+.dim * {
   scrollbar-color: var(--scrollbar-thumb) var(--bg-primary);
 }
 
@@ -751,11 +812,9 @@ input,
 @keyframes ambientDrift {
   0% {
     transform: scale(1) translate3d(0, 0, 0);
-    opacity: 1;
   }
   100% {
     transform: scale(1.03) translate3d(0, -0.5%, 0);
-    opacity: 0.92;
   }
 }
 
@@ -1054,10 +1113,18 @@ input,
   inset: 0;
   pointer-events: none;
   background:
+    radial-gradient(circle at 20% 20%, var(--light-orange-faint), transparent 22%),
+    radial-gradient(circle at 80% 10%, var(--tan), transparent 20%);
+  opacity: 0.65;
+  animation: ambientGlowShift 14s ease-in-out infinite alternate;
+}
+
+.dark .theme-cinema-ambient::before,
+.dim .theme-cinema-ambient::before {
+  background:
     radial-gradient(circle at 20% 20%, var(--ambient-1), transparent 22%),
     radial-gradient(circle at 80% 10%, var(--ambient-3), transparent 20%);
   opacity: var(--ambient-glow-opacity);
-  animation: ambientGlowShift 14s ease-in-out infinite alternate;
 }
 
 .section-heading {

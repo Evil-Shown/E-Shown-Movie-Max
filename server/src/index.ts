@@ -1,3 +1,17 @@
+// Sentry initialization (must be before all other imports)
+import * as Sentry from "@sentry/node";
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV || "development",
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+  profilesSampleRate: 0.1,
+  integrations: [
+    Sentry.expressIntegration(),
+    Sentry.prismaIntegration(),
+  ],
+});
+
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
@@ -117,6 +131,9 @@ app.use((_req, res) => {
     },
   });
 });
+
+// Sentry error handler (must be before Express error handler)
+Sentry.setupExpressErrorHandler(app);
 
 // Global error handler
 app.use(errorHandler);

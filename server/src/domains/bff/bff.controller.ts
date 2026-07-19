@@ -33,6 +33,16 @@ interface TmdbMovieSummary {
   genre_ids: number[];
 }
 
+/** Single movie summary (used for similar, trending, etc.) */
+type MovieSummary = {
+  id: string;
+  title: string;
+  posterUrl: string | null;
+  year: number;
+  rating: number;
+  genres: string[];
+};
+
 interface MoviePagePayload {
   movie: {
     id: string;
@@ -50,14 +60,7 @@ interface MoviePagePayload {
     trailerKey: string | null;
     mediaType: "movie";
   };
-  similar: {
-    id: string;
-    title: string;
-    posterUrl: string | null;
-    year: number;
-    rating: number;
-    genres: string[];
-  }[];
+  similar: MovieSummary[];
   meta: {
     cached: boolean;
     fetchedAt: string;
@@ -201,5 +204,195 @@ async function fetchMoviePageData(id: string): Promise<MoviePagePayload> {
     15 * 60 // 15 min
   );
 
+  return payload;
+}
+
+// ── Home Page BFF ─────────────────────────────────────────────────
+
+interface TmdbListResponse {
+  results: TmdbMovieSummary[];
+  total_pages: number;
+  total_results: number;
+}
+
+interface HomePagePayload {
+  hero: MoviePagePayload["movie"][];
+  trending: MovieSummary[];
+  trendingDay: MovieSummary[];
+  newReleases: MovieSummary[];
+  topRated: MovieSummary[];
+  popularTv: MovieSummary[];
+  meta: { cached: boolean; fetchedAt: string };
+}
+
+function mapSummary(m: TmdbMovieSummary): MovieSummary {
+  return {
+    id: String(m.id),
+    title: m.title,
+    posterUrl: getTmdbImageUrl(m.poster_path, "w500"),
+    year: m.release_date ? new Date(m.release_date).getFullYear() : 0,
+    rating: Math.round((m.vote_average ?? 0) * 10) / 10,
+    genres: mapGenreIds(m.genre_ids ?? []),
+  };
+}
+
+/**
+ * GET /api/v1/home-page
+ *
+ * Aggregates all home page data into a single response:
+ * - Hero movies (now playing)
+ * - Trending movies
+ * - Trending today
+ * - New releases
+ * - Top rated
+ * - Popular TV
+ */
+export async function getHomePage(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const cacheKey = "home-page";
+    const cached = await cacheGetJson<{ data: HomePagePayload; storedAt: number }>(redisKey("bff", cacheKey));
+
+    if (cached) {
+      const age = Date.now() - cached.storedAt;
+      const isStale = age > 15 * 60 * 1000;
+
+      res.setHeader("X-Cache", isStale ? "STALE" : "HIT");
+      res.setHeader("Cache-Control", "public, max-age=900, stale-while-revalidate=86400");
+      res.json({ success: true, data: cached.data });
+      if (!isStale) return;
+    }
+
+    const payload = await singleFlight("bff:home-page", fetchHomePageData, 900);
+
+    res.setHeader("X-Cache", cached ? "REVALIDATED" : "MISS");
+    res.setHeader("Cache-Control", "public, max-age=900, stale-while-revalidate=86400");
+    res.json({ success: true, data: payload });
+  } catch (error) {
+    logger.error({ err: error }, "BFF home-page failed");
+    next(error);
+  }
+}
+
+async function fetchHomePageData(): Promise<HomePagePayload> {
+  const [popular, nowPlaying, trendingDay, topRated, tvPopular] = await Promise.all([
+    withCircuitBreaker(tmdbCircuit, () => tmdbGet<TmdbListResponse>("/movie/popular", { page: "1" })),
+    withCircuitBreaker(tmdbCircuit, () => tmdbGet<TmdbListResponse>("/movie/now_playing", { page: "1" })),
+    withCircuitBreaker(tmdbCircuit, () => tmdbGet<TmdbListResponse>("/trending/all/day", { page: "1" })),
+    withCircuitBreaker(tmdbCircuit, () => tmdbGet<TmdbListResponse>("/movie/top_rated", { page: "1" })),
+    withCircuitBreaker(tmdbCircuit, () => tmdbGet<TmdbListResponse>("/tv/popular", { page: "1" })).catch(() => ({
+      results: [],
+      total_results: 0,
+    })),
+  ]);
+
+  const hero = nowPlaying.results.slice(0, 7).map((m) => ({
+    id: String(m.id),
+    title: m.title,
+    tagline: "",
+    overview: m.overview ?? "",
+    posterUrl: getTmdbImageUrl(m.poster_path, "w500"),
+    backdropUrl: getTmdbImageUrl(m.backdrop_path, "original"),
+    year: m.release_date ? new Date(m.release_date).getFullYear() : 0,
+    runtime: 0,
+    rating: Math.round((m.vote_average ?? 0) * 10) / 10,
+    genres: mapGenreIds(m.genre_ids ?? []),
+    director: "Unknown",
+    cast: [],
+    trailerKey: null,
+    mediaType: "movie" as const,
+  }));
+
+  const payload: HomePagePayload = {
+    hero,
+    trending: popular.results.slice(0, 20).map(mapSummary),
+    trendingDay: trendingDay.results.slice(0, 12).map(mapSummary),
+    newReleases: nowPlaying.results.slice(0, 20).map(mapSummary),
+    topRated: topRated.results.slice(0, 8).map(mapSummary),
+    popularTv: tvPopular.results.slice(0, 20).map(mapSummary),
+    meta: { cached: false, fetchedAt: new Date().toISOString() },
+  };
+
+  await cacheSetJson(redisKey("bff", "home-page"), { data: payload, storedAt: Date.now() }, 15 * 60);
+  return payload;
+}
+
+// ── Browse Page BFF ───────────────────────────────────────────────
+
+interface BrowsePagePayload {
+  movies: MovieSummary[];
+  totalPages: number;
+  totalResults: number;
+  genre: string;
+  sort: string;
+  meta: { cached: boolean; fetchedAt: string };
+}
+
+/**
+ * GET /api/v1/browse-page?genre=Action&sort=popular&page=1
+ *
+ * Aggregates browse/catalog data into a single response.
+ */
+export async function getBrowsePage(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const genre = String(req.query.genre ?? "");
+    const sort = String(req.query.sort ?? "popular");
+    const page = String(req.query.page ?? "1");
+
+    const cacheKey = `browse-page:${genre}:${sort}:${page}`;
+    const cached = await cacheGetJson<{ data: BrowsePagePayload; storedAt: number }>(redisKey("bff", cacheKey));
+
+    if (cached) {
+      const age = Date.now() - cached.storedAt;
+      const isStale = age > 15 * 60 * 1000;
+
+      res.setHeader("X-Cache", isStale ? "STALE" : "HIT");
+      res.setHeader("Cache-Control", "public, max-age=900, stale-while-revalidate=86400");
+      res.json({ success: true, data: cached.data });
+      if (!isStale) return;
+    }
+
+    const payload = await singleFlight(
+      `bff:browse-page:${genre}:${sort}:${page}`,
+      () => fetchBrowsePageData(genre, sort, page),
+      900
+    );
+
+    res.setHeader("X-Cache", cached ? "REVALIDATED" : "MISS");
+    res.setHeader("Cache-Control", "public, max-age=900, stale-while-revalidate=86400");
+    res.json({ success: true, data: payload });
+  } catch (error) {
+    logger.error({ err: error }, "BFF browse-page failed");
+    next(error);
+  }
+}
+
+async function fetchBrowsePageData(genre: string, sort: string, page: string): Promise<BrowsePagePayload> {
+  const params: Record<string, string> = { page };
+  if (sort === "top_rated") params.sort_by = "vote_average.desc";
+  else if (sort === "newest") params.sort_by = "primary_release_date.desc";
+  else params.sort_by = "popularity.desc";
+
+  // If genre is specified, use discover endpoint
+  const tmdbPath = genre ? "/discover/movie" : "/movie/popular";
+  if (genre) {
+    // Map genre name to ID
+    const genreId = Object.entries(GENRE_MAP).find(([, name]) => name.toLowerCase() === genre.toLowerCase())?.[0];
+    if (genreId) params.with_genres = genreId;
+  }
+
+  const response = await withCircuitBreaker(tmdbCircuit, () =>
+    tmdbGet<TmdbListResponse>(tmdbPath, params)
+  );
+
+  const payload: BrowsePagePayload = {
+    movies: response.results.map(mapSummary),
+    totalPages: response.total_pages ?? 1,
+    totalResults: response.total_results ?? 0,
+    genre,
+    sort,
+    meta: { cached: false, fetchedAt: new Date().toISOString() },
+  };
+
+  await cacheSetJson(redisKey("bff", `browse-page:${genre}:${sort}:${page}`), { data: payload, storedAt: Date.now() }, 15 * 60);
   return payload;
 }

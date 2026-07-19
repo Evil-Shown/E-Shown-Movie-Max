@@ -16,13 +16,14 @@ function resolveBackendForRewrites(): string {
     process.env.NEXT_PUBLIC_TBOOM_API_URL,
   ];
 
+  const onVercel = Boolean(process.env.VERCEL);
+
   for (const raw of candidates) {
     const url = (raw || "").trim().replace(/\/$/, "");
     if (!url) continue;
-    // Never proxy to localhost/private IPs on Vercel (causes DNS_HOSTNAME_RESOLVED_PRIVATE)
-    if (/localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2\d|3[0-1])\./i.test(url)) {
-      continue;
-    }
+    const isPrivate = /localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2\d|3[0-1])\./i.test(url);
+    // Vercel cannot reach private IPs — skip those there only.
+    if (isPrivate && onVercel) continue;
     if (url.startsWith("http://") || url.startsWith("https://")) {
       return url;
     }

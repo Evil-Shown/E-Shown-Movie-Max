@@ -25,8 +25,7 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
     offset: ["start start", "end start"],
   });
 
-  const backdropY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
-  const backdropScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
+  const backdropY = useTransform(scrollYProgress, [0, 1], ["0%", "12%"]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.55], [1, 0]);
   const scrollLabelOpacity = useTransform(scrollYProgress, [0.85, 1], [1, 0]);
 
@@ -35,15 +34,15 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
       <motion.div
         style={{
           y: prefersReducedMotion ? 0 : backdropY,
-          scale: prefersReducedMotion ? 1 : backdropScale,
         }}
         className={styles.backdropWrap}
       >
         <Image
-          src={backdropUrl(movie.backdropPath)}
+          src={backdropUrl(movie.backdropPath, "w1920")}
           alt=""
           fill
           priority
+          quality={95}
           sizes="100vw"
           className={styles.backdropImage}
         />

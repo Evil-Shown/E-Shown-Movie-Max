@@ -1,7 +1,7 @@
 .hero {
   position: relative;
-  min-height: min(62dvh, 640px);
-  max-height: 700px;
+  /* Natural landscape frame (≈16:9 of viewport width) — no tall stretch/upscale */
+  height: clamp(380px, 56.25vw, 720px);
   overflow: hidden;
   background: var(--bg-primary);
 }
@@ -17,9 +17,7 @@
 .backdropImage {
   object-fit: cover;
   object-position: center top;
-  opacity: 0.84;
-  transform: scale(1.06);
-  filter: blur(4px) contrast(1.14) saturate(1.12);
+  opacity: 1;
 }
 
 .gradientLeft {
@@ -61,8 +59,8 @@
 /* Dark / Dim only — light hero gradients stay exact */
 :global(.dark) .backdropImage,
 :global(.dim) .backdropImage {
-  opacity: 0.88;
-  filter: blur(3px) contrast(1.1) saturate(1.08) brightness(0.82);
+  opacity: 1;
+  filter: brightness(0.92);
 }
 
 :global(.dark) .gradientLeft,
@@ -91,7 +89,8 @@
   z-index: 10;
   margin: 0 auto;
   display: flex;
-  min-height: min(62dvh, 640px);
+  height: 100%;
+  min-height: 100%;
   max-width: 1280px;
   align-items: center;
   padding: 5rem 1rem 2.5rem;
@@ -565,8 +564,7 @@
     display: none;
   }
 
-  .hero,
-  .inner {
-    min-height: min(58dvh, 560px);
+  .hero {
+    height: clamp(360px, 62vw, 520px);
   }
 }

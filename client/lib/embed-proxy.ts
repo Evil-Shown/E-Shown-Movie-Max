@@ -1,6 +1,23 @@
+/**
+ * Route stream iframes through an HTML-rewriting proxy that:
+ * - strips known ad scripts
+ * - injects aggressive anti-popup / overlay guards
+ *
+ * Priority:
+ * 1) NEXT_PUBLIC_EMBED_PROXY_WORKER_URL (Cloudflare Worker)
+ * 2) Same-origin /api/v1/embed/proxy (Next rewrite → Express)
+ * 3) Absolute API base (SSR / non-browser)
+ */
+
 import { resolveApiBaseAbsolute } from "./api-base";
 
-function getEmbedProxyApiBase(): string | null {
+function getCloudflareWorkerBase(): string | null {
+  const raw = (process.env.NEXT_PUBLIC_EMBED_PROXY_WORKER_URL || "").trim();
+  if (!raw) return null;
+  return raw.replace(/\/$/, "");
+}
+
+function getApiProxyBase(): string | null {
   const raw =
     process.env.NEXT_PUBLIC_EMBED_PROXY_API_URL ??
     process.env.NEXT_PUBLIC_API_BASE_URL ??
@@ -11,7 +28,6 @@ function getEmbedProxyApiBase(): string | null {
     return raw.replace(/\/$/, "");
   }
 
-  // Live hosts: never proxy via localhost
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     if (host && host !== "localhost" && host !== "127.0.0.1") {
@@ -27,9 +43,22 @@ export function isEmbedProxyEnabled(): boolean {
   return process.env.NEXT_PUBLIC_USE_EMBED_PROXY === "true";
 }
 
-/** Route embed iframe loads through the backend proxy (UA/referrer rotation + caching). */
+/** Route embed iframe loads through CF Worker or backend proxy. */
 export function proxifyEmbedUrl(directUrl: string): string {
-  const apiBase = getEmbedProxyApiBase();
-  if (!apiBase || !isEmbedProxyEnabled()) return directUrl;
-  return `${apiBase}/api/embed/proxy?url=${encodeURIComponent(directUrl)}`;
+  if (!directUrl || !isEmbedProxyEnabled()) return directUrl;
+
+  const workerBase = getCloudflareWorkerBase();
+  if (workerBase) {
+    return `${workerBase}/?url=${encodeURIComponent(directUrl)}`;
+  }
+
+  // Browser: same-origin Next rewrite — avoids iframe hitting dead :5000 directly
+  // ("localhost refused to connect") when the API briefly restarts.
+  if (typeof window !== "undefined") {
+    return `/api/v1/embed/proxy?url=${encodeURIComponent(directUrl)}`;
+  }
+
+  const apiBase = getApiProxyBase();
+  if (!apiBase) return directUrl;
+  return `${apiBase}/api/v1/embed/proxy?url=${encodeURIComponent(directUrl)}`;
 }
