@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import { env } from "./config/env";
 import { logger } from "./config/logger";
 import { corsOptions } from "./config/cors";
+import { supabaseAdmin } from "./infrastructure/supabase";
 
 import { errorHandler } from "./middleware/error-handler";
 import { redisRateLimit } from "./middleware/rate-limit";
@@ -135,7 +136,26 @@ async function main() {
   const supabaseKeyOk = env.SUPABASE_ANON_KEY?.length > 20;
   const supabaseSecretOk = env.SUPABASE_SERVICE_ROLE_KEY?.length > 20;
   if (supabaseUrlOk && supabaseKeyOk && supabaseSecretOk) {
-    logger.info("✔ Supabase Auth configured");
+    const { error: supabaseAdminError } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 1,
+    });
+    if (supabaseAdminError) {
+      logger.error(
+        { err: supabaseAdminError.message },
+        "✘ Supabase service role key rejected — registration/login will fail"
+      );
+      logger.error(
+        "  Fix server/.env: set SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY from Supabase Dashboard → Settings → API"
+      );
+      if (/unregistered api key/i.test(supabaseAdminError.message)) {
+        logger.error(
+          "  Use the project's active secret key (sb_secret_...) or legacy service_role JWT — deleted/rotated keys cause this error"
+        );
+      }
+    } else {
+      logger.info("✔ Supabase Auth configured");
+    }
   } else {
     logger.warn("✘ Supabase Auth not fully configured — auth endpoints will fail");
   }

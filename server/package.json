@@ -20,7 +20,7 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^5.22.0",
-    "@supabase/supabase-js": "^2.110.2",
+    "@supabase/supabase-js": "^2.110.7",
     "@types/pg": "^8.20.0",
     "@upstash/redis": "^1.38.0",
     "axios": "^1.18.0",
