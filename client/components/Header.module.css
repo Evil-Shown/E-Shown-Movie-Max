@@ -24,6 +24,15 @@
   box-shadow: 0 2px 16px rgba(28, 25, 23, 0.04);
 }
 
+:global(.dark) .headerScrolled,
+:global(.dim) .headerScrolled {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border-bottom-color: var(--glass-border);
+  box-shadow: var(--shadow-sm);
+}
+
 .headerHidden {
   transform: translate3d(0, -100%, 0);
   pointer-events: none;
@@ -163,6 +172,25 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   color: #c96a2b;
+}
+
+:global(.dark) .logoEyebrow,
+:global(.dim) .logoEyebrow,
+:global(.dark) .logoTitle span,
+:global(.dim) .logoTitle span,
+:global(.dark) .logoRegion,
+:global(.dim) .logoRegion {
+  color: var(--accent-primary);
+}
+
+:global(.dark) .logoTitle,
+:global(.dim) .logoTitle {
+  color: var(--text-primary);
+}
+
+:global(.dark) .logoSubtitle,
+:global(.dim) .logoSubtitle {
+  color: var(--text-muted);
 }
 
 .rightActions {

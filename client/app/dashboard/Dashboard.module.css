@@ -880,3 +880,60 @@
     object-position: center;
   }
 }
+
+/* Dark / Dim only — Daylight selectors above stay exact */
+:global(.dark) .dashboardRoot,
+:global(.dim) .dashboardRoot {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--bg-primary) 82%, transparent),
+      color-mix(in srgb, var(--bg-secondary) 82%, transparent)
+    ),
+    url("https://i.pinimg.com/736x/71/81/5e/71815e3c386223362c13a7feed3a56b5.jpg");
+  color: var(--text-primary);
+}
+
+:global(.dark) .statCard,
+:global(.dim) .statCard {
+  background: linear-gradient(135deg, var(--card-surface) 0%, var(--bg-secondary) 100%);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+:global(.dark) .topbar,
+:global(.dim) .topbar {
+  background: var(--topbar-bg);
+  border-bottom-color: var(--border);
+}
+
+:global(.dark) .activityCard,
+:global(.dim) .activityCard {
+  background: var(--panel-white);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+:global(.dark) .filterPill,
+:global(.dim) .filterPill {
+  background: var(--bg-secondary);
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
+}
+
+:global(.dark) .filterPill:hover,
+:global(.dim) .filterPill:hover {
+  border-color: color-mix(in srgb, var(--tan) 40%, transparent);
+  color: var(--accent-primary);
+}
+
+:global(.dark) .filterPillActive,
+:global(.dim) .filterPillActive {
+  background: linear-gradient(135deg, var(--bg-dark) 0%, #2d1b15 100%);
+  color: var(--on-accent);
+}
+
+:global(.dark) .cardGlass,
+:global(.dim) .cardGlass {
+  background: var(--glass-bg);
+  border-color: var(--border-strong);
+}

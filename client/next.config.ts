@@ -65,6 +65,13 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    // Enable AVIF + WebP for 50-70% smaller images vs JPEG/PNG
+    formats: ["image/avif", "image/webp"],
+    // Responsive breakpoints for optimal device targeting
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Cache optimized images for 7 days (Vercel CDN)
+    minimumCacheTTL: 60 * 60 * 24 * 7,
     remotePatterns: [
       {
         protocol: "https",

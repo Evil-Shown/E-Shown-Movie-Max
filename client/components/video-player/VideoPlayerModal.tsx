@@ -55,7 +55,7 @@ export default function VideoPlayerModal({
   const setLoadedRef = useRef<(value: boolean) => void>(() => {});
   const lastTapRef = useRef(0);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
-  const overlayFsTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const overlayFsTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     setIsMobileTouch(isMobileTouchBrowser());
@@ -238,7 +238,7 @@ export default function VideoPlayerModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className={`relative shrink-0 overflow-hidden border-b border-[rgba(201,106,43,0.18)] bg-[linear-gradient(135deg,#fffdf9,#f3ebe0)] ${
+          className={`relative shrink-0 overflow-hidden border-b border-[rgba(201,106,43,0.18)] bg-[linear-gradient(135deg,#fffdf9,#f3ebe0)] dark:border-[var(--border)] dark:bg-[linear-gradient(135deg,var(--bg-card),var(--bg-secondary))] ${
             isTvPlayer ? "px-3 py-2 sm:px-4" : "px-4 py-3 sm:px-5"
           }`}
         >
@@ -246,7 +246,7 @@ export default function VideoPlayerModal({
             className="pointer-events-none absolute inset-0 opacity-[0.12]"
             style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center" }}
           />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,249,0.94),rgba(255,253,249,0.78),rgba(255,253,249,0.94))]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,249,0.94),rgba(255,253,249,0.78),rgba(255,253,249,0.94))] dark:bg-[linear-gradient(90deg,var(--hero-veil),var(--hero-veil-mid),var(--hero-veil))]" />
             <div className="relative flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <div className="hidden h-12 w-8 overflow-hidden rounded-md border border-[rgba(201,106,43,0.2)] bg-white shadow-sm sm:block">
@@ -316,7 +316,7 @@ export default function VideoPlayerModal({
         </div>
 
         <div
-          className={`flex min-h-0 flex-1 flex-col bg-[linear-gradient(180deg,#faf6ef,#f0e8dc)] ${isTvPlayer ? "p-0" : "p-2 sm:p-3"}`}
+          className={`flex min-h-0 flex-1 flex-col bg-[linear-gradient(180deg,#faf6ef,#f0e8dc)] dark:bg-[linear-gradient(180deg,var(--bg-primary),var(--bg-secondary))] ${isTvPlayer ? "p-0" : "p-2 sm:p-3"}`}
         >
           <div
             className={`flex min-h-0 flex-1 ${isTvPlayer ? "flex-col lg:flex-row lg:gap-0" : "flex-col gap-2 sm:gap-3"}`}

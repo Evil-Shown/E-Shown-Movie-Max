@@ -26,6 +26,7 @@ import securityRoutes from "./domains/security/security.routes";
 import mobileRoutes from "./domains/mobile/mobile.routes";
 import subscriptionRoutes from "./domains/subscription/subscription.routes";
 import tmdbRoutes from "./domains/tmdb/tmdb.routes";
+import bffRoutes from "./domains/bff/bff.routes";
 
 import { prisma } from "./infrastructure/prisma";
 
@@ -86,23 +87,24 @@ app.use("/api/v1/security", securityRoutes);
 app.use("/api/v1/mobile", mobileRoutes);
 app.use("/api/v1/subscription", subscriptionRoutes);
 app.use("/api/v1/tmdb", tmdbRoutes);
+app.use("/api/v1", bffRoutes);
 
-// Legacy route compatibility (redirect /api/* to /api/v1/*)
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/watchlist", watchlistRoutes);
-app.use("/api/continue", continueRoutes);
-app.use("/api/episodes", episodesRoutes);
-app.use("/api/search", searchRoutes);
-app.use("/api/embed", embedRoutes);
-app.use("/api/analytics", analyticsRoutes);
-app.use("/api/telemetry", telemetryRoutes);
-app.use("/api/security", securityRoutes);
-app.use("/api/mobile", mobileRoutes);
-app.use("/api/subscription", subscriptionRoutes);
-app.use("/api/tmdb", tmdbRoutes);
+// Legacy route redirects (301 permanent) — avoids double middleware execution
+app.use("/api/auth", (_req, res) => { res.redirect(301, `/api/v1/auth${_req.url}`); });
+app.use("/api/users", (_req, res) => { res.redirect(301, `/api/v1/users${_req.url}`); });
+app.use("/api/watchlist", (_req, res) => { res.redirect(301, `/api/v1/watchlist${_req.url}`); });
+app.use("/api/continue", (_req, res) => { res.redirect(301, `/api/v1/continue${_req.url}`); });
+app.use("/api/episodes", (_req, res) => { res.redirect(301, `/api/v1/episodes${_req.url}`); });
+app.use("/api/search", (_req, res) => { res.redirect(301, `/api/v1/search${_req.url}`); });
+app.use("/api/embed", (_req, res) => { res.redirect(301, `/api/v1/embed${_req.url}`); });
+app.use("/api/analytics", (_req, res) => { res.redirect(301, `/api/v1/analytics${_req.url}`); });
+app.use("/api/telemetry", (_req, res) => { res.redirect(301, `/api/v1/telemetry${_req.url}`); });
+app.use("/api/security", (_req, res) => { res.redirect(301, `/api/v1/security${_req.url}`); });
+app.use("/api/mobile", (_req, res) => { res.redirect(301, `/api/v1/mobile${_req.url}`); });
+app.use("/api/subscription", (_req, res) => { res.redirect(301, `/api/v1/subscription${_req.url}`); });
+app.use("/api/tmdb", (_req, res) => { res.redirect(301, `/api/v1/tmdb${_req.url}`); });
 app.get("/api/health", (_req, res) => {
-  res.json({ success: true, data: { status: "ok" } });
+  res.redirect(301, "/api/v1/health");
 });
 
 // 404 handler

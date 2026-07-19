@@ -317,3 +317,15 @@
   border-top: 1px solid rgba(212, 165, 116, 0.12);
   margin: 0;
 }
+
+/* Dark / Dim only — Daylight pageRoot stays exact */
+:global(.dark) .pageRoot,
+:global(.dim) .pageRoot {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--bg-primary) 82%, transparent),
+      color-mix(in srgb, var(--bg-secondary) 82%, transparent)
+    ),
+    url("https://i.pinimg.com/736x/71/81/5e/71815e3c386223362c13a7feed3a56b5.jpg");
+  color: var(--text-primary);
+}

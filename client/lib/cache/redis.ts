@@ -77,6 +77,29 @@ export async function cacheSetString(
   await memorySet(key, value, ttlSeconds);
 }
 
+/**
+ * SETNX: Set key only if it does NOT exist (for distributed locks).
+ * Returns true if the lock was acquired, false if the key already exists.
+ */
+export async function cacheSetStringNx(
+  key: string,
+  value: string,
+  ttlSeconds: number
+): Promise<boolean> {
+  const redis = getRedis();
+  if (redis) {
+    const result = await redis.set(key, value, { ex: ttlSeconds, nx: true });
+    return result !== null;
+  }
+  // In-memory fallback: check existence first
+  const existing = memoryStore.get(key);
+  if (existing && existing.expiresAt > Date.now()) {
+    return false;
+  }
+  await memorySet(key, value, ttlSeconds);
+  return true;
+}
+
 export async function cacheGetJson<T>(key: string): Promise<T | null> {
   const redis = getRedis();
   if (redis) {
@@ -104,6 +127,15 @@ export async function cacheSetJson<T>(
     return;
   }
   await memorySet(key, JSON.stringify(value), ttlSeconds);
+}
+
+export async function cacheDelete(key: string): Promise<void> {
+  const redis = getRedis();
+  if (redis) {
+    await redis.del(key);
+    return;
+  }
+  memoryStore.delete(key);
 }
 
 export async function cacheIncr(key: string, ttlSeconds: number): Promise<number> {

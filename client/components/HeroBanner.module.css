@@ -58,6 +58,34 @@
   background: linear-gradient(to bottom, rgba(245, 239, 228, 0.18) 0%, transparent 100%);
 }
 
+/* Dark / Dim only — light hero gradients stay exact */
+:global(.dark) .backdropImage,
+:global(.dim) .backdropImage {
+  opacity: 0.88;
+  filter: blur(3px) contrast(1.1) saturate(1.08) brightness(0.82);
+}
+
+:global(.dark) .gradientLeft,
+:global(.dim) .gradientLeft {
+  background: linear-gradient(
+    to right,
+    var(--hero-scrim) 0%,
+    var(--hero-scrim-mid) 28%,
+    var(--hero-scrim-soft) 48%,
+    transparent 62%
+  );
+}
+
+:global(.dark) .gradientBottom,
+:global(.dim) .gradientBottom {
+  background: linear-gradient(to top, var(--hero-edge-bottom) 0%, transparent 100%);
+}
+
+:global(.dark) .gradientTop,
+:global(.dim) .gradientTop {
+  background: linear-gradient(to bottom, var(--hero-edge-top) 0%, transparent 100%);
+}
+
 .inner {
   position: relative;
   z-index: 10;
@@ -185,6 +213,60 @@
   color: #2a2218;
 }
 
+/* Dark / Dim only — light hero copy stays exact */
+:global(.dark) .contentWrap,
+:global(.dim) .contentWrap {
+  padding: 1.25rem 1.35rem;
+  margin: -1.25rem -1.35rem;
+  border-radius: 18px;
+  background: var(--hero-content-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+:global(.dark) .badge,
+:global(.dim) .badge {
+  border-left-color: var(--accent-primary);
+  color: var(--hero-badge);
+}
+
+:global(.dark) .title,
+:global(.dim) .title {
+  color: var(--text-primary);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+}
+
+:global(.dark) .metaText,
+:global(.dim) .metaText,
+:global(.dark) .genrePill,
+:global(.dim) .genrePill {
+  color: var(--text-primary);
+}
+
+:global(.dark) .ratingPill,
+:global(.dim) .ratingPill {
+  border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+  background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+  color: var(--hero-rating);
+}
+
+:global(.dark) .metaDot,
+:global(.dim) .metaDot {
+  background: var(--text-muted);
+}
+
+:global(.dark) .genrePill,
+:global(.dim) .genrePill {
+  border-color: var(--hero-pill-border);
+  background: var(--hero-pill-bg);
+}
+
+:global(.dark) .description,
+:global(.dim) .description {
+  color: var(--hero-description);
+}
+
 .buttonRow {
   display: flex;
   flex-wrap: wrap;
@@ -257,6 +339,31 @@
   color: #1c1917;
   border-color: rgba(28, 25, 23, 0.2);
   background: rgba(28, 25, 23, 0.04);
+}
+
+:global(.dark) .trailerButton,
+:global(.dim) .trailerButton {
+  border-color: var(--border-strong);
+  background: var(--glass-bg-strong);
+  color: var(--text-primary);
+}
+
+:global(.dark) .trailerButton:hover,
+:global(.dim) .trailerButton:hover {
+  background: var(--panel-white);
+  border-color: var(--border-strong);
+}
+
+:global(.dark) .moreButton,
+:global(.dim) .moreButton {
+  color: var(--text-muted);
+}
+
+:global(.dark) .moreButton:hover,
+:global(.dim) .moreButton:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
 }
 
 .posterCol {

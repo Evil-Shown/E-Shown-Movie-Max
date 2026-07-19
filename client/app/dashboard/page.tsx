@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -254,11 +254,11 @@ function StatCard({
 
       {/* Content */}
       <div className="p-4 pb-5 flex-1 flex flex-col justify-center">
-        <p className="font-cinzel text-2xl sm:text-3xl font-bold text-[#3e2723] leading-tight">
+        <p className="font-cinzel text-2xl sm:text-3xl font-bold text-[#3e2723] dark:text-[var(--text-primary)] leading-tight">
           {value}
-          {valueUnit && <span className="text-sm sm:text-base text-[#a0785a] font-normal ml-1">{valueUnit}</span>}
+          {valueUnit && <span className="text-sm sm:text-base text-[#a0785a] dark:text-[var(--text-muted)] font-normal ml-1">{valueUnit}</span>}
         </p>
-        <p className="text-xs sm:text-sm text-[#6b4423] mt-1.5 font-medium">{label}</p>
+        <p className="text-xs sm:text-sm text-[#6b4423] dark:text-[var(--text-secondary)] mt-1.5 font-medium">{label}</p>
 
         {/* Glowing Progress Line */}
         {progress !== undefined && progress > 0 && (
@@ -392,7 +392,7 @@ interface ActivityItem {
 function ActivityRow({ item }: { item: ActivityItem }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3 border-b border-[#d4a574]/15 last:border-b-0">
-      <div className="relative w-10 h-10 shrink-0 rounded-lg overflow-hidden bg-[#e8ddd0]">
+      <div className="relative w-10 h-10 shrink-0 rounded-lg overflow-hidden bg-[#f5efe8]">
         {item.posterPath ? (
           <img
             src={posterUrl(item.posterPath, "w342")}
@@ -412,8 +412,8 @@ function ActivityRow({ item }: { item: ActivityItem }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold text-[#3e2723] leading-tight truncate">{item.title}</p>
-        <p className="text-[11px] text-[#a0785a] mt-0.5 truncate">
+        <p className="text-[13px] font-semibold text-[#3e2723] dark:text-[var(--text-primary)] leading-tight truncate">{item.title}</p>
+        <p className="text-[11px] text-[#a0785a] dark:text-[var(--text-muted)] mt-0.5 truncate">
           {item.meta && <span>{item.meta} · </span>}
           {timeAgo(item.timestamp)}
         </p>
@@ -858,7 +858,7 @@ export default function DashboardPage() {
                       {trialDaysLeft}d Trial
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#A0785A]/20 text-[#A0785A]">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#A0785A]/20 text-[#a0785a]">
                       Free
                     </span>
                   )}
@@ -1115,14 +1115,14 @@ export default function DashboardPage() {
           <div className="px-4 py-6 md:px-8 md:py-8 max-w-7xl mx-auto min-w-0">
             {/* Appearance */}
             <section className={`mb-6 ${styles.fadeUp}`}>
-              <div className={`${styles.cardGlass} rounded-2xl border border-[var(--border-strong)] p-4 sm:p-5`}>
+              <div className={`${styles.cardGlass} rounded-2xl border border-[#d4a574]/30 p-4 sm:p-5`}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E65100] dark:text-[var(--accent-primary)]">
                       Appearance
                     </p>
-                    <h2 className="font-cinzel text-lg font-bold text-[var(--text-primary)]">Theme</h2>
-                    <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                    <h2 className="font-cinzel text-lg font-bold text-[#3e2723] dark:text-[var(--text-primary)]">Theme</h2>
+                    <p className="mt-1 text-sm text-[#6b4423] dark:text-[var(--text-secondary)]">
                       Switch between Daylight, Midnight, and Theater Dim.
                     </p>
                   </div>
@@ -1304,7 +1304,7 @@ export default function DashboardPage() {
                     </h2>
                     <Link
                       href="/dashboard?tab=activity"
-                      className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
+                      className="text-sm font-semibold text-[#E65100] hover:text-[#3e2723] transition flex items-center gap-1"
                     >
                       View All
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
