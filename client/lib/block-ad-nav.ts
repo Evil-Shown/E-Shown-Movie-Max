@@ -87,7 +87,8 @@ type OpenGuardOptions = {
 
 /**
  * Only intercepts window.open from the parent page (and some embed-initiated
- * opens that bubble to the top window). Does not touch iframe network requests.
+ * opens that bubble to the top window). Cross-origin iframe popups cannot be
+ * fully blocked without sandbox/proxy — both break many providers.
  */
 export function installAdPopupBlocker(options: OpenGuardOptions = {}): () => void {
   if (typeof window === "undefined") return () => undefined;
@@ -115,7 +116,21 @@ export function installAdPopupBlocker(options: OpenGuardOptions = {}): () => voi
     return originalOpen(url, target, features);
   };
 
+  // If an ad still opens a tab (rare escape), refocus the player window.
+  const onBlur = () => {
+    window.setTimeout(() => {
+      try {
+        if (document.hidden) return;
+        window.focus();
+      } catch {
+        // ignore
+      }
+    }, 0);
+  };
+  window.addEventListener("blur", onBlur);
+
   return () => {
     window.open = originalOpen;
+    window.removeEventListener("blur", onBlur);
   };
 }

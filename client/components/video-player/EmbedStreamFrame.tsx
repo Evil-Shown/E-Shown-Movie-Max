@@ -26,10 +26,9 @@ function applyFullscreenPermissions(el: HTMLIFrameElement) {
 }
 
 /**
- * Single clean embed iframe (no shell, no sandbox).
- * Fullscreen: wrapper button uses the stage; embed's own FS button needs
- * allowFullScreen + legacy webkit/moz flags so cross-origin players can expand.
- * With the embed proxy on, nested iframes are patched + FS is bridged to the stage.
+ * Direct provider iframe — no sandbox, no shell.
+ * Providers detect ancestor sandbox and show "please disable sandbox";
+ * popup ads can only be reduced via parent window.open guard (see block-ad-nav).
  */
 export default function EmbedStreamFrame({ src, title, iframeRef, onLoad }: EmbedStreamFrameProps) {
   useLayoutEffect(() => {
