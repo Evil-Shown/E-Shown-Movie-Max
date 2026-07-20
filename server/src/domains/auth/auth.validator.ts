@@ -39,3 +39,16 @@ export const oauthSchema = {
     appVersion: z.string().optional(),
   }),
 };
+
+export const forgotPasswordSchema = {
+  body: z.object({
+    email: z.string().email("Invalid email address"),
+  }),
+};
+
+export const resetPasswordSchema = {
+  body: z.object({
+    token: z.string().min(1, "Token is required"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+  }),
+};

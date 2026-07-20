@@ -47,6 +47,15 @@ export interface OAuthInput {
   appVersion?: string;
 }
 
+export interface ForgotPasswordInput {
+  email: string;
+}
+
+export interface ResetPasswordInput {
+  token: string;
+  password: string;
+}
+
 export interface AuthResponse {
   user: AuthUser;
   tokens: AuthTokens;

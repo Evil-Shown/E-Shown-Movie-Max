@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { getApiBase } from "@/lib/api";
 import { getPublicAppOrigin } from "@/lib/app-origin";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 const cinemaGradients = [
   "radial-gradient(ellipse at 20% 50%, #e65100 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, #0f3460 0%, transparent 50%), #0a0a0f",
@@ -19,7 +20,7 @@ interface AuthModalProps {
 
 export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: AuthModalProps) {
   const { login, register } = useAuth();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -37,6 +38,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
     password: "",
     confirmPassword: "",
   });
+  const [forgotEmail, setForgotEmail] = useState("");
 
   const handleClose = useCallback(() => {
     if (didAuth.current) {
@@ -117,9 +119,32 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
     }
   };
 
-  const switchMode = (newMode: "login" | "register") => {
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      const supabase = getSupabaseClient();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${getPublicAppOrigin()}/reset-password`,
+      });
+      if (resetError) {
+        setError(resetError.message || "Something went wrong. Please try again.");
+      } else {
+        setSuccessMsg("If an account exists with this email, a password reset link has been sent.");
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const switchMode = (newMode: "login" | "register" | "forgot") => {
     setMode(newMode);
     setError(null);
+    setSuccessMsg(null);
   };
 
   if (!isOpen) return null;
@@ -199,24 +224,26 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
             </div>
 
             {/* Tabs */}
-            <div className="relative flex mb-6 bg-white/5 rounded-xl p-1">
-              <div
-                className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-[#e65100] transition-all duration-300 ease-out"
-                style={{ left: mode === "login" ? "4px" : "calc(50%)" }}
-              />
-              <button
-                onClick={() => switchMode("login")}
-                className={`relative z-10 flex-1 py-2.5 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${mode === "login" ? "text-white" : "text-gray-400 hover:text-gray-200"}`}
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => switchMode("register")}
-                className={`relative z-10 flex-1 py-2.5 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${mode === "register" ? "text-white" : "text-gray-400 hover:text-gray-200"}`}
-              >
-                Register
-              </button>
-            </div>
+            {mode !== "forgot" && (
+              <div className="relative flex mb-6 bg-white/5 rounded-xl p-1">
+                <div
+                  className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-[#e65100] transition-all duration-300 ease-out"
+                  style={{ left: mode === "login" ? "4px" : "calc(50%)" }}
+                />
+                <button
+                  onClick={() => switchMode("login")}
+                  className={`relative z-10 flex-1 py-2.5 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${mode === "login" ? "text-white" : "text-gray-400 hover:text-gray-200"}`}
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => switchMode("register")}
+                  className={`relative z-10 flex-1 py-2.5 text-sm font-semibold uppercase tracking-wider transition-colors duration-300 rounded-lg ${mode === "register" ? "text-white" : "text-gray-400 hover:text-gray-200"}`}
+                >
+                  Register
+                </button>
+              </div>
+            )}
 
             {/* Error */}
             {error && (
@@ -274,7 +301,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
                     <label className="flex items-center gap-2 text-gray-400 cursor-pointer select-none">
                       <input type="checkbox" className="w-3.5 h-3.5 accent-[#e65100] cursor-pointer" /> Remember me
                     </label>
-                    <button type="button" className="text-[#FFB87A] hover:text-[#e65100] transition-colors font-medium">
+                    <button type="button" onClick={() => switchMode("forgot")} className="text-[#FFB87A] hover:text-[#e65100] transition-colors font-medium">
                       Forgot password?
                     </button>
                   </div>
@@ -282,7 +309,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
                 </form>
                 <GoogleOAuthButton />
               </>
-            ) : (
+            ) : mode === "register" ? (
               <>
                 <form key="register" onSubmit={handleRegisterSubmit} autoComplete="off" className="space-y-4">
                   <InputGroup
@@ -332,11 +359,49 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
                 </form>
                 <GoogleOAuthButton />
               </>
+            ) : (
+              <>
+                <div className="text-center mb-4">
+                  <div
+                    className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
+                    style={{ background: "rgba(230, 81, 0, 0.15)" }}
+                  >
+                    <svg className="w-6 h-6 text-[#e65100]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-1">Forgot Password?</h3>
+                  <p className="text-xs text-gray-400">Enter your email and we&apos;ll send you a reset link</p>
+                </div>
+                <form key="forgot" onSubmit={handleForgotSubmit} autoComplete="off" className="space-y-4">
+                  <InputGroup
+                    icon={<EmailIcon />}
+                    label="Email"
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(v) => setForgotEmail(v)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                  />
+                  <SubmitButton loading={loading} text="Send Reset Link" loadingText="Sending..." />
+                </form>
+              </>
             )}
 
             <div className="mt-6 pt-5 border-t border-white/5">
               <p className="text-center text-sm text-gray-400">
-                {mode === "login" ? (
+                {mode === "forgot" ? (
+                  <>
+                    Remember your password?{" "}
+                    <button
+                      onClick={() => switchMode("login")}
+                      className="text-[#FFB87A] hover:text-[#e65100] underline underline-offset-4 font-medium transition-colors"
+                    >
+                      Sign in
+                    </button>
+                  </>
+                ) : mode === "login" ? (
                   <>
                     Don&apos;t have an account?{" "}
                     <button

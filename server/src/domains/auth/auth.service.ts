@@ -2,8 +2,9 @@ import { supabaseAdmin, supabaseAnon } from "../../infrastructure/supabase";
 import { prisma } from "../../infrastructure/prisma";
 import { AppError } from "../../utils/response";
 import { logger } from "../../config/logger";
+import { env } from "../../config/env";
 import * as authRepository from "./auth.repository";
-import type { RegisterInput, LoginInput, OAuthInput, AuthResponse, AuthUser } from "./auth.types";
+import type { RegisterInput, LoginInput, OAuthInput, AuthResponse, AuthUser, ForgotPasswordInput, ResetPasswordInput } from "./auth.types";
 import { toAuthUser } from "./auth.types";
 import { setTrialStartDate } from "../subscription/subscription.service";
 
@@ -310,6 +311,47 @@ export async function oauth(input: OAuthInput, ip?: string): Promise<AuthRespons
       expiresIn: 3600,
     },
   };
+}
+
+export async function forgotPassword(input: ForgotPasswordInput): Promise<void> {
+  const { email } = input;
+
+  const { error } = await supabaseAnon.auth.resetPasswordForEmail(email, {
+    redirectTo: `${env.APP_URL}/reset-password`,
+  });
+
+  if (error) {
+    logger.warn({ error: error.message, email }, "Supabase resetPasswordForEmail failed");
+  }
+
+  logger.info({ email }, "Password reset email requested");
+}
+
+export async function resetPassword(input: ResetPasswordInput): Promise<void> {
+  const { token, password } = input;
+
+  const { data, error: verifyError } = await supabaseAnon.auth.getUser(token);
+  if (verifyError || !data.user) {
+    throw new AppError(401, "INVALID_TOKEN", "Invalid or expired reset token");
+  }
+
+  const authUserId = data.user.id;
+
+  const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, {
+    password,
+  });
+
+  if (updateError) {
+    logger.error({ error: updateError.message, authUserId }, "Failed to update password");
+    throw new AppError(500, "PASSWORD_UPDATE_FAILED", "Failed to update password");
+  }
+
+  const localUser = await authRepository.findUserByAuthId(authUserId);
+  if (localUser) {
+    await createAuditLog(localUser.id, "PASSWORD_RESET", { email: localUser.email });
+  }
+
+  logger.info({ authUserId }, "Password reset completed");
 }
 
 export function getMe(user: AuthUser): AuthUser {

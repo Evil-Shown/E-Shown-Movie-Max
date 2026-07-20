@@ -4,7 +4,7 @@ import { strictRateLimit } from "../../middleware/rate-limit";
 import { validate } from "../../middleware/validate";
 import { AppError } from "../../utils/response";
 import * as controller from "./auth.controller";
-import { loginSchema, registerSchema, oauthSchema } from "./auth.validator";
+import { loginSchema, registerSchema, oauthSchema, forgotPasswordSchema, resetPasswordSchema } from "./auth.validator";
 import { createPendingClaim, getPendingNonce, storeSession, claimSession } from "./oauth-relay";
 
 const router = Router();
@@ -13,6 +13,8 @@ router.post("/register", strictRateLimit, validate(registerSchema), controller.r
 router.post("/login", strictRateLimit, validate(loginSchema), controller.login);
 router.post("/oauth", strictRateLimit, validate(oauthSchema), controller.oauth);
 router.post("/logout", authMiddleware, controller.logout);
+router.post("/forgot-password", strictRateLimit, validate(forgotPasswordSchema), controller.forgotPassword);
+router.post("/reset-password", strictRateLimit, validate(resetPasswordSchema), controller.resetPassword);
 router.get("/me", authMiddleware, controller.me);
 
 router.post("/create-claim", strictRateLimit, (_req: Request, res: Response) => {

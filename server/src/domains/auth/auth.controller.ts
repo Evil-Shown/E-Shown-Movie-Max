@@ -3,7 +3,7 @@ import { success } from "../../utils/response";
 import { logger } from "../../config/logger";
 import * as authService from "./auth.service";
 import { toAuthUser } from "./auth.types";
-import type { LoginInput, RegisterInput, OAuthInput } from "./auth.types";
+import type { LoginInput, RegisterInput, OAuthInput, ForgotPasswordInput, ResetPasswordInput } from "./auth.types";
 
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -57,6 +57,30 @@ export async function logout(req: Request, res: Response, next: NextFunction): P
     await authService.logout(req.user?.authUserId);
     success(res, { message: "Logged out successfully" });
   } catch (error) {
+    next(error);
+  }
+}
+
+export async function forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const body = req.body as ForgotPasswordInput;
+    logger.info({ email: body?.email }, "auth.forgotPassword request");
+    await authService.forgotPassword(body);
+    success(res, { message: "If an account exists with this email, a password reset link has been sent" });
+  } catch (error) {
+    logger.warn({ err: error instanceof Error ? error.message : error }, "auth.forgotPassword failed");
+    next(error);
+  }
+}
+
+export async function resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const body = req.body as ResetPasswordInput;
+    logger.info({}, "auth.resetPassword request");
+    await authService.resetPassword(body);
+    success(res, { message: "Password has been reset successfully" });
+  } catch (error) {
+    logger.warn({ err: error instanceof Error ? error.message : error }, "auth.resetPassword failed");
     next(error);
   }
 }
