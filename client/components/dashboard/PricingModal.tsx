@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const freeFeatures = ["7-Day Trial Access Only", "1 Device at a time", "Ad-supported"];
+const freeFeatures = ["60-Day Trial Access Only", "1 Device at a time", "Ad-supported"];
 
 const freeRestrictions = ["No Offline Downloads", "No Live TV Access", "No The God's Eye (Torrents)"];
 
@@ -18,10 +18,21 @@ const proFeatures = [
 
 export default function PricingModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [region, setRegion] = useState<"LKR" | "USD">("LKR");
+  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
 
   if (!isOpen) return null;
 
-  const price = region === "LKR" ? "LKR 200.00" : "$0.99";
+  const isMonthly = billing === "monthly";
+  const price = isMonthly
+    ? region === "LKR" ? "LKR 200" : "$0.99"
+    : region === "LKR" ? "LKR 2,000" : "$9.90";
+  const originalPrice = isMonthly
+    ? region === "LKR" ? "LKR 500" : "$2.49"
+    : region === "LKR" ? "LKR 2,400" : "$11.88";
+  const perDay = isMonthly
+    ? region === "LKR" ? "LKR 6.67" : "$0.03"
+    : region === "LKR" ? "LKR 5.48" : "$0.03";
+  const savings = isMonthly ? "60%" : "17%";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
@@ -101,18 +112,38 @@ export default function PricingModal({ isOpen, onClose }: { isOpen: boolean; onC
             <div className="text-center">
               <div className="flex items-center justify-center gap-3">
                 <span className="text-lg text-[#FFFBF5]/40 line-through decoration-2">
-                  {region === "LKR" ? "LKR 500" : "$2.49"}
+                  {originalPrice}
                 </span>
                 <span className="text-4xl font-extrabold text-[#FFB87A]">{price}</span>
-                <span className="text-[#FFFBF5]/40 text-sm self-end mb-1">/mo</span>
+                <span className="text-[#FFFBF5]/40 text-sm self-end mb-1">
+                  {isMonthly ? "/mo" : "/yr"}
+                </span>
               </div>
               <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-red-500/15 border border-red-400/30">
-                <span className="text-red-300 text-xs font-bold">Save 60%</span>
+                <span className="text-red-300 text-xs font-bold">Save {savings}</span>
               </div>
               <div className="text-[#FFFBF5]/40 text-xs mt-3">
-                {region === "LKR" ? "Only LKR 6.67 per day" : "Only $0.03 per day"}
-                &bull; Cancel anytime
+                Only {perDay} per day &bull; Cancel anytime
               </div>
+            </div>
+
+            <div className="flex gap-2 mt-4 mb-6">
+              <button
+                onClick={() => { setBilling("monthly"); }}
+                className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                  isMonthly ? "bg-[#FFB87A] text-[#3E2723]" : "bg-[#FFFBF5]/10 text-[#FFFBF5]/60"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => { setBilling("yearly"); }}
+                className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                  !isMonthly ? "bg-[#FFB87A] text-[#3E2723]" : "bg-[#FFFBF5]/10 text-[#FFFBF5]/60"
+                }`}
+              >
+                Yearly
+              </button>
             </div>
 
             <div className="flex gap-2 mt-4 mb-6">

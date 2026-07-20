@@ -1,6 +1,11 @@
 "use client";
 
+import { useState } from "react";
+
 export default function UpgradeBanner({ onUpgradeClick }: { onUpgradeClick: () => void }) {
+  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+
+  const isMonthly = billing === "monthly";
   const features = [
     {
       icon: (
@@ -73,7 +78,7 @@ export default function UpgradeBanner({ onUpgradeClick }: { onUpgradeClick: () =
             Unlock The God&apos;s Eye & Live TV
           </h2>
           <p className="text-[#FFFBF5]/60 text-sm mb-4 max-w-lg">
-            Don&apos;t be limited by the 7-day trial. Upgrade to Pro for unlimited torrent downloading, movies and tv
+            Don&apos;t be limited by the 60-day trial. Upgrade to Pro for unlimited torrent downloading, movies and tv
             series offline downloads, and best cinematic quality and fast streaming.
           </p>
 
@@ -94,18 +99,53 @@ export default function UpgradeBanner({ onUpgradeClick }: { onUpgradeClick: () =
           <div className="absolute -top-3 right-4 bg-[#FFB87A] text-[#3E2723] text-[10px] font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
             LIMITED OFFER
           </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setBilling("monthly")}
+              className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                isMonthly ? "bg-[#FFB87A] text-[#3E2723]" : "bg-[#FFFBF5]/10 text-[#FFFBF5]/60"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBilling("yearly")}
+              className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                !isMonthly ? "bg-[#FFB87A] text-[#3E2723]" : "bg-[#FFFBF5]/10 text-[#FFFBF5]/60"
+              }`}
+            >
+              Yearly
+            </button>
+          </div>
           <div className="text-center">
             <span className="text-[#FFFBF5]/60 text-xs uppercase tracking-wider">Limited Time Offer</span>
             <div className="flex items-center justify-center gap-3 mt-2">
-              <span className="text-lg text-[#FFFBF5]/40 line-through decoration-2">LKR 500</span>
-              <span className="text-4xl font-extrabold text-[#FFB87A]">LKR 200</span>
-              <span className="text-[#FFFBF5]/40 text-sm self-end mb-1">/mo</span>
+              {isMonthly ? (
+                <>
+                  <span className="text-lg text-[#FFFBF5]/40 line-through decoration-2">LKR 500</span>
+                  <span className="text-4xl font-extrabold text-[#FFB87A]">LKR 200</span>
+                  <span className="text-[#FFFBF5]/40 text-sm self-end mb-1">/mo</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-lg text-[#FFFBF5]/40 line-through decoration-2">LKR 2,400</span>
+                  <span className="text-4xl font-extrabold text-[#FFB87A]">LKR 2,000</span>
+                  <span className="text-[#FFFBF5]/40 text-sm self-end mb-1">/yr</span>
+                </>
+              )}
             </div>
             <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-red-500/15 border border-red-400/30">
-              <span className="text-red-300 text-xs font-bold">🔥 Save 60%</span>
+              <span className="text-red-300 text-xs font-bold">
+                {isMonthly ? "🔥 Save 60%" : "🎉 Save 17%"}
+              </span>
             </div>
-            <div className="text-[#FFFBF5]/40 text-xs mt-3">Only LKR 6.67 per day &bull; Cancel anytime</div>
-            <div className="text-[#FFFBF5]/40 text-xs mt-1">or $0.99/month for global users</div>
+            <div className="text-[#FFFBF5]/40 text-xs mt-3">
+              {isMonthly ? "Only LKR 6.67 per day" : "Only LKR 5.48 per day"}
+              &bull; Cancel anytime
+            </div>
+            <div className="text-[#FFFBF5]/40 text-xs mt-1">
+              {isMonthly ? "or $0.99/month for global users" : "or $9.90/year for global users"}
+            </div>
           </div>
 
           <button

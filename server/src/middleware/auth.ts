@@ -19,7 +19,8 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
     const { data, error } = await supabaseAnon.auth.getUser(token);
 
     if (error || !data.user) {
-      throw new AppError(401, "INVALID_TOKEN", "Invalid or expired token");
+      logger.warn({ error: error?.message, hint: (error as { hint?: string })?.hint, tokenPrefix: token.slice(0, 15) }, "Auth middleware — token validation failed");
+      throw new AppError(401, "INVALID_TOKEN", error?.message || "Invalid or expired token");
     }
 
     const localUser = await prisma.user.findUnique({
