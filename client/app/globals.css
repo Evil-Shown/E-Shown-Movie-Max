@@ -358,7 +358,8 @@ section[id] {
   }
 }
 
-body.dashboard-page .site-main {
+body.dashboard-page .site-main,
+body.auth-page .site-main {
   padding-top: 0;
 }
 

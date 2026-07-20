@@ -24,7 +24,7 @@ export default function Footer() {
     }
   }, []);
 
-  if (pathname === "/dashboard" || pathname === "/settings" || pathname === "/notifications") return null;
+  if (pathname === "/dashboard" || pathname === "/settings" || pathname === "/notifications" || pathname === "/login" || pathname === "/register" || pathname === "/forgot-password" || pathname === "/reset-password") return null;
 
   return (
     <footer className="mt-auto border-t border-[var(--border-strong)] bg-[var(--bg-secondary)]">
