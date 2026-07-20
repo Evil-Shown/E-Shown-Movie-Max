@@ -32,7 +32,7 @@ export default function PosterImage({
   height = 513,
   priority = false,
   className = "object-cover",
-  sizes = "(max-width: 640px) 40vw, 200px",
+  sizes = "(max-width: 640px) 45vw, (max-width: 1024px) 22vw, 200px",
   onLoad,
 }: PosterImageProps) {
   const [failed, setFailed] = useState(false);

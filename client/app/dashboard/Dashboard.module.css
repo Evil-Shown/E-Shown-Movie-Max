@@ -9,6 +9,14 @@
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+@media (max-width: 768px) {
+  .dashboardRoot {
+    background-attachment: scroll;
+  }
 }
 
 .dashboardRoot::before {
@@ -342,7 +350,7 @@
    ========================================================================== */
 .eyeDeco {
   position: relative;
-  background-image: url("/dashboard/hero-bg.png");
+  background-image: url("/dashboard/hero-bg.webp");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -795,30 +803,137 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .heroSection {
+    border-radius: 20px;
+  }
+
   .heroContent {
-    padding: 32px 24px 80px;
+    padding: 24px 20px;
+  }
+
+  .heroDescription {
+    margin-bottom: 20px;
   }
 
   .heroInfoPanel {
-    bottom: 16px;
-    right: 16px;
-    left: 16px;
+    position: relative;
+    bottom: auto;
+    right: auto;
+    left: auto;
+    margin: 16px 20px;
     justify-content: center;
     padding: 10px 16px;
+  }
+
+  .heroCtaButton {
+    width: 100%;
+    justify-content: center;
   }
 }
 
 @media (max-width: 480px) {
+  .heroSection {
+    min-height: auto;
+    border-radius: 16px;
+  }
+
   .heroContent {
-    padding: 24px 20px 88px;
+    padding: 16px;
+  }
+
+  .heroTitle {
+    font-size: 22px;
+    line-height: 1.2;
+  }
+
+  .heroEyebrow {
+    font-size: 10px;
+    margin-bottom: 10px;
   }
 
   .heroDescription {
     font-size: 13px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .heroCtaButton {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 20px;
+    font-size: 13px;
   }
 
   .heroInfoPanel {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    left: auto;
+    margin: 0 16px 16px;
+    padding: 10px 14px;
+    gap: 10px;
     flex-wrap: wrap;
-    gap: 12px;
+    justify-content: center;
   }
+
+  .heroBgImage {
+    object-position: center;
+  }
+}
+
+/* Dark / Dim only — Daylight selectors above stay exact */
+:global(.dark) .dashboardRoot,
+:global(.dim) .dashboardRoot {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--bg-primary) 82%, transparent),
+      color-mix(in srgb, var(--bg-secondary) 82%, transparent)
+    ),
+    url("https://i.pinimg.com/736x/71/81/5e/71815e3c386223362c13a7feed3a56b5.jpg");
+  color: var(--text-primary);
+}
+
+:global(.dark) .statCard,
+:global(.dim) .statCard {
+  background: linear-gradient(135deg, var(--card-surface) 0%, var(--bg-secondary) 100%);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+:global(.dark) .topbar,
+:global(.dim) .topbar {
+  background: var(--topbar-bg);
+  border-bottom-color: var(--border);
+}
+
+:global(.dark) .activityCard,
+:global(.dim) .activityCard {
+  background: var(--panel-white);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+:global(.dark) .filterPill,
+:global(.dim) .filterPill {
+  background: var(--bg-secondary);
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
+}
+
+:global(.dark) .filterPill:hover,
+:global(.dim) .filterPill:hover {
+  border-color: color-mix(in srgb, var(--tan) 40%, transparent);
+  color: var(--accent-primary);
+}
+
+:global(.dark) .filterPillActive,
+:global(.dim) .filterPillActive {
+  background: linear-gradient(135deg, var(--bg-dark) 0%, #2d1b15 100%);
+  color: var(--on-accent);
+}
+
+:global(.dark) .cardGlass,
+:global(.dim) .cardGlass {
+  background: var(--glass-bg);
+  border-color: var(--border-strong);
 }

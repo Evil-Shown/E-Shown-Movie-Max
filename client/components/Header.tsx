@@ -4,12 +4,13 @@ import ConnectionIndicator from "@/components/ConnectionIndicator";
 import InstantSearch from "@/components/InstantSearch";
 import ProtectedLink from "@/components/ProtectedLink";
 import UserDashboard from "@/components/UserDashboard";
-import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { useWatchlistLibrary } from "@/components/UserLibraryProvider";
 import { BRAND_NAME, BRAND_NAME_SINHALA } from "@/lib/brand";
 import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
+import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./Header.module.css";
 
 const navLinks = [
@@ -79,12 +80,15 @@ function NavLink({
 export default function Header() {
   const pathname = usePathname();
   const isDashboard = pathname === "/dashboard" || pathname === "/settings" || pathname === "/notifications";
-  const { watchlistCount } = useUserLibrary();
+  const { watchlistCount } = useWatchlistLibrary();
   const afterHydration = useAfterHydration();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const lastScrollY = useRef(0);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  useFocusTrap(menuRef, menuOpen, closeMenu);
 
   useEffect(() => {
     document.body.classList.toggle("dashboard-page", isDashboard);
@@ -92,23 +96,31 @@ export default function Header() {
   }, [isDashboard]);
 
   useEffect(() => {
+    let ticking = false;
+
     const onScroll = () => {
-      const currentY = window.scrollY;
-      const delta = currentY - lastScrollY.current;
+      if (ticking) return;
+      ticking = true;
 
-      setScrolled(currentY > 24);
+      window.requestAnimationFrame(() => {
+        const currentY = window.scrollY;
+        const delta = currentY - lastScrollY.current;
 
-      if (menuOpen) {
-        setHidden(false);
-      } else if (currentY < 80) {
-        setHidden(false);
-      } else if (delta > 6) {
-        setHidden(true);
-      } else if (delta < -6) {
-        setHidden(false);
-      }
+        setScrolled(currentY > 24);
 
-      lastScrollY.current = currentY;
+        if (menuOpen) {
+          setHidden(false);
+        } else if (currentY < 80) {
+          setHidden(false);
+        } else if (delta > 6) {
+          setHidden(true);
+        } else if (delta < -6) {
+          setHidden(false);
+        }
+
+        lastScrollY.current = currentY;
+        ticking = false;
+      });
     };
 
     onScroll();
@@ -142,7 +154,9 @@ export default function Header() {
         <div className={styles.inner}>
           <button
             type="button"
-            aria-label="Toggle menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
             className={styles.menuButton}
             onClick={() => setMenuOpen((o) => !o)}
           >
@@ -225,13 +239,20 @@ export default function Header() {
       </header>
 
       {menuOpen && (
-        <div className={styles.mobileMenu}>
+        <div
+          ref={menuRef}
+          id="mobile-navigation"
+          className={styles.mobileMenu}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Main navigation"
+        >
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className={styles.mobileLink}>
+            <Link key={link.href} href={link.href} onClick={closeMenu} className={styles.mobileLink}>
               {link.label}
             </Link>
           ))}
-          <ProtectedLink href="/gods-eye" onClick={() => setMenuOpen(false)} className={styles.mobileWatch}>
+          <ProtectedLink href="/gods-eye" onClick={closeMenu} className={styles.mobileWatch}>
             THE GOD&apos;S EYE
           </ProtectedLink>
         </div>

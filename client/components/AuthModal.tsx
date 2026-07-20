@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { getApiBase } from "@/lib/api";
+import { getPublicAppOrigin } from "@/lib/app-origin";
 
 const cinemaGradients = [
   "radial-gradient(ellipse at 20% 50%, #e65100 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, #0f3460 0%, transparent 50%), #0a0a0f",
@@ -154,7 +155,9 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
 
       <div
         ref={modalRef}
-        className={`relative z-10 w-full max-w-[440px] transition-all duration-500 ${mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"}`}
+        className={`relative z-10 w-full max-w-[440px] max-h-[90dvh] transition-all duration-500 ${
+          mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"
+        }`}
       >
         <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex gap-1" aria-hidden="true">
           {[...Array(5)].map((_, i) => (
@@ -166,10 +169,10 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
           ))}
         </div>
 
-        <div className="relative rounded-3xl overflow-hidden backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50">
+        <div className="relative overflow-hidden rounded-3xl backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50">
           <div className="absolute inset-0 bg-gradient-to-br from-[#0f0f1a]/90 via-[#1a1a2e]/85 to-[#16213e]/90" />
 
-          <div className="relative px-6 py-8 max-h-[90vh] overflow-y-auto">
+          <div className="relative px-5 py-6 sm:px-6 sm:py-8 max-h-[90dvh] overflow-y-auto overscroll-contain">
             {/* Brand */}
             <div className="text-center mb-6">
               <div className="inline-flex items-center gap-2 mb-3">
@@ -359,7 +362,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
 
             <button
               onClick={handleClose}
-              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+              className="absolute top-3 right-3 flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -563,7 +566,8 @@ function GoogleOAuthButton() {
         return;
       }
 
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      const appOrigin = getPublicAppOrigin();
+      const redirectTo = `${appOrigin}/auth/callback`;
       const isElectron = window.chithraDesktop?.isDesktopApp;
 
       if (isElectron) {
@@ -588,6 +592,7 @@ function GoogleOAuthButton() {
       }
 
       const url = `${baseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&prompt=select_account`;
+      console.info("[chithra-auth] Google OAuth redirect_to=", redirectTo);
       const popup = window.open(url, "google-auth", "width=600,height=700");
       if (!popup) {
         // eslint-disable-next-line react-hooks/immutability
@@ -610,7 +615,10 @@ function GoogleOAuthButton() {
           return;
         }
         const popupUrl = popup.location.href;
-        if (popupUrl?.startsWith(window.location.origin + "/auth/callback")) {
+        if (
+          popupUrl?.startsWith(getPublicAppOrigin() + "/auth/callback") ||
+          popupUrl?.startsWith(window.location.origin + "/auth/callback")
+        ) {
           clearInterval(timer);
           const hash = popupUrl.includes("#") ? popupUrl.substring(popupUrl.indexOf("#") + 1) : "";
           const token = new URLSearchParams(hash).get("access_token");

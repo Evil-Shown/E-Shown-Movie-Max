@@ -12,6 +12,7 @@ export interface UpdatePreferencesInput {
   subtitleLang?: string;
   quality?: string;
   notifications?: boolean;
+  theme?: string;
 }
 
 export interface UserProfileResponse {

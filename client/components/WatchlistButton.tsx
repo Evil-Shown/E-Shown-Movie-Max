@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { useAuthModal } from "@/components/AuthModalProvider";
-import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { useUserLibraryActions, useWatchlistLibrary } from "@/components/UserLibraryProvider";
 import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
 import type { Movie } from "@/lib/types";
 
@@ -14,7 +14,8 @@ interface WatchlistButtonProps {
 export default function WatchlistButton({ movie, className = "" }: WatchlistButtonProps) {
   const { isAuthenticated } = useAuth();
   const { openAuthModal } = useAuthModal();
-  const { isWatchlisted, toggleWatchlist } = useUserLibrary();
+  const { isWatchlisted } = useWatchlistLibrary();
+  const { toggleWatchlist } = useUserLibraryActions();
   const afterHydration = useAfterHydration();
   const active = afterHydration && isWatchlisted(movie.id);
 

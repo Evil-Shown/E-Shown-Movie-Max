@@ -1,70 +1,87 @@
-/** Block gambling popups from embed players — do NOT block in-iframe network requests. */
+/**
+ * Web fallback ad popup guard.
+ * Cross-origin iframe popups need hybrid sandbox (EmbedStreamFrame) or
+ * native shells (Electron / RN WebView) — this only covers parent window.open.
+ */
 
-const BLOCKED_HOST_PATTERNS = [
-  /(^|\.)1xbet\./i,
-  /(^|\.)xbet\./i,
-  /(^|\.)melbet\./i,
-  /(^|\.)betway\./i,
-  /(^|\.)stake\.com$/i,
-  /(^|\.)parimatch\./i,
-  /(^|\.)bet365\./i,
-  /(^|\.)pin-up\./i,
-  /(^|\.)mostbet\./i,
-  /(^|\.)linebet\./i,
-  /(^|\.)22bet\./i,
-  /(^|\.)betwinner\./i,
-  /(^|\.)1win\./i,
-  /(^|\.)clickunder/i,
-  /(^|\.)popads\./i,
-  /(^|\.)propellerads\./i,
-  /(^|\.)exoclick\./i,
-  /(^|\.)adsterra\./i,
-];
+import {
+  isAllowedStreamPopupUrl as sharedIsAllowedStreamPopupUrl,
+  isBlockedAdUrl as sharedIsBlockedAdUrl,
+} from "@chithra/core/ad-block";
 
-const BLOCKED_PATH_PATTERNS = [
-  /clickunder/i,
-  /popunder/i,
-  /[?&]tag=d_/i,
-];
+export {
+  getEmbedIframeSandbox,
+  shouldBypassEmbedSandbox,
+  EMBED_IFRAME_SANDBOX,
+} from "@chithra/core/ad-block";
 
 export function isBlockedAdUrl(raw: string): boolean {
-  if (!raw || typeof raw !== "string") return false;
-
-  try {
-    const url = new URL(raw, typeof window !== "undefined" ? window.location.origin : "https://localhost");
-    const host = url.hostname.toLowerCase();
-    const href = url.href.toLowerCase();
-
-    if (BLOCKED_HOST_PATTERNS.some((pattern) => pattern.test(host))) {
-      return true;
-    }
-
-    if (BLOCKED_PATH_PATTERNS.some((pattern) => pattern.test(href))) {
-      return true;
-    }
-
-    return false;
-  } catch {
-    const lower = raw.toLowerCase();
-    return lower.includes("1xbet") || lower.includes("clickunder") || lower.includes("xbet.lk");
-  }
+  return sharedIsBlockedAdUrl(raw);
 }
 
-/** Only intercepts window.open popups — never blocks iframe scripts or video CDNs. */
-export function installAdPopupBlocker(): () => void {
+export function isAllowedStreamPopupUrl(raw: string): boolean {
+  const sameOrigin =
+    typeof window !== "undefined" ? window.location.hostname : undefined;
+  return sharedIsAllowedStreamPopupUrl(raw, sameOrigin);
+}
+
+function isBlankPopupUrl(url: unknown): boolean {
+  if (url == null) return true;
+  if (typeof url !== "string") return false;
+  const trimmed = url.trim();
+  return trimmed === "" || trimmed === "about:blank" || trimmed === "about:blank#blocked";
+}
+
+type OpenGuardOptions = {
+  /** While the player is open: only allow stream/trailer/same-origin popups. */
+  strict?: boolean;
+};
+
+/**
+ * Only intercepts window.open from the parent page (and some embed-initiated
+ * opens that bubble to the top window). Cross-origin iframe popups cannot be
+ * fully blocked without sandbox (non-VidFast) or a native shell.
+ */
+export function installAdPopupBlocker(options: OpenGuardOptions = {}): () => void {
   if (typeof window === "undefined") return () => undefined;
 
+  const { strict = true } = options;
   const originalOpen = window.open.bind(window);
 
   window.open = function openGuard(url, target, features) {
-    if (typeof url === "string" && isBlockedAdUrl(url)) {
-      console.warn("[CHITHRA] Blocked ad popup:", url);
+    if (isBlankPopupUrl(url)) {
+      console.warn("[CHITHRA] Blocked blank/ad popup");
       return null;
     }
+
+    if (typeof url === "string") {
+      if (isBlockedAdUrl(url)) {
+        console.warn("[CHITHRA] Blocked ad popup:", url);
+        return null;
+      }
+      if (strict && !isAllowedStreamPopupUrl(url)) {
+        console.warn("[CHITHRA] Blocked non-stream popup:", url);
+        return null;
+      }
+    }
+
     return originalOpen(url, target, features);
   };
 
+  const onBlur = () => {
+    window.setTimeout(() => {
+      try {
+        if (document.hidden) return;
+        window.focus();
+      } catch {
+        // ignore
+      }
+    }, 0);
+  };
+  window.addEventListener("blur", onBlur);
+
   return () => {
     window.open = originalOpen;
+    window.removeEventListener("blur", onBlur);
   };
-}
+};

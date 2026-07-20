@@ -103,6 +103,16 @@ export async function register(input: RegisterInput, ip?: string): Promise<AuthR
 
   if (createError || !authData.user) {
     logger.error({ error: createError, email }, "Supabase createUser failed");
+
+    const providerMessage = createError?.message ?? "Unknown auth provider error";
+    if (/unregistered api key/i.test(providerMessage)) {
+      throw new AppError(
+        503,
+        "AUTH_CONFIG_ERROR",
+        "Server auth is misconfigured. Update SUPABASE_SERVICE_ROLE_KEY in server/.env with a valid secret or service_role key from Supabase Dashboard → Settings → API."
+      );
+    }
+
     throw new AppError(500, "AUTH_PROVIDER_ERROR", "Failed to create account");
   }
 

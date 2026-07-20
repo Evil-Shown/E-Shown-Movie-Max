@@ -1,5 +1,6 @@
 import axios, { type AxiosProxyConfig } from "axios";
 import { env } from "./config/env";
+import { buildAntiAdGuardScript, stripAdScripts } from "./embed-anti-ad-guard";
 
 const EMBED_CACHE_TTL_MS = env.EMBED_CACHE_TTL_MS;
 const EMBED_REQUEST_TIMEOUT_MS = env.EMBED_REQUEST_TIMEOUT_MS;
@@ -23,24 +24,24 @@ export const REFERRERS = [
   "https://www.facebook.com/",
 ];
 
-const ALLOWED_EMBED_HOSTS = new Set([
+const ALLOWED_EMBED_SUFFIXES = [
   "vidfast.pro",
-  "www.vidfast.pro",
   "vidsrc.cc",
-  "www.vidsrc.cc",
   "vidsrc.pm",
-  "www.vidsrc.pm",
   "vidsrc.in",
-  "www.vidsrc.in",
+  "vidsrc.to",
+  "vidsrc.xyz",
+  "vidsrc.me",
   "vidlink.pro",
-  "www.vidlink.pro",
   "multiembed.mov",
-  "www.multiembed.mov",
   "autoembed.co",
-  "www.autoembed.co",
   "2embed.skin",
-  "www.2embed.skin",
-]);
+  "2embed.cc",
+  "2embed.to",
+  "embedsu.net",
+  "superembed.stream",
+  "oviesphere.xyz",
+];
 
 type EmbedCacheEntry = {
   body: Buffer | string;
@@ -109,7 +110,8 @@ export function isAllowedEmbedUrl(urlString: string): boolean {
   try {
     const parsed = new URL(urlString);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
-    return ALLOWED_EMBED_HOSTS.has(parsed.hostname.toLowerCase());
+    const host = parsed.hostname.toLowerCase();
+    return ALLOWED_EMBED_SUFFIXES.some((suffix) => host === suffix || host.endsWith("." + suffix));
   } catch {
     return false;
   }
@@ -167,10 +169,43 @@ export function addCorsHeaders(headers: HeaderMap = {}, origin?: string): Header
 function prepareHtmlBody(html: string, targetUrl: string): string {
   const parsed = new URL(targetUrl);
   let out = html;
+
+  // Drop meta CSP that can block our injected guard or framing.
   out = out.replace(/<meta[^>]+http-equiv=["']content-security-policy["'][^>]*>/gi, "");
+
+  // Strip ad / third-party scripts before they reach the browser.
+  out = stripAdScripts(out);
+
+  // Ensure nested player iframes can request fullscreen (embed UI FS button).
+  out = out.replace(/<iframe\b([^>]*)>/gi, (_match, attrs: string) => {
+    let next = attrs;
+    if (!/\ballowfullscreen\b/i.test(next)) next += " allowfullscreen";
+    if (!/\bwebkitallowfullscreen\b/i.test(next)) next += ' webkitallowfullscreen="true"';
+    if (!/\bmozallowfullscreen\b/i.test(next)) next += ' mozallowfullscreen="true"';
+    if (/\ballow\s*=\s*["'][^"']*["']/i.test(next)) {
+      next = next.replace(/\ballow\s*=\s*(["'])([^"']*)\1/i, (_m, q, value) => {
+        if (/fullscreen/i.test(value)) return `allow=${q}${value}${q}`;
+        return `allow=${q}${value}; fullscreen${q}`;
+      });
+    } else {
+      next += ' allow="fullscreen; autoplay; encrypted-media; picture-in-picture"';
+    }
+    return `<iframe${next}>`;
+  });
+
+  // Keep relative asset URLs resolving against the provider origin.
   if (!/<base\s/i.test(out)) {
     out = out.replace(/<head([^>]*)>/i, `<head$1><base href="${parsed.origin}/">`);
   }
+
+  const antiPopupGuard = buildAntiAdGuardScript();
+
+  if (/<head([^>]*)>/i.test(out)) {
+    out = out.replace(/<head([^>]*)>/i, `<head$1>${antiPopupGuard}`);
+  } else {
+    out = `${antiPopupGuard}${out}`;
+  }
+
   return out;
 }
 

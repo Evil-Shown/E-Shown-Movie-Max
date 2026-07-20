@@ -1,8 +1,8 @@
 import { RECENT_KEY, loadRecentSearches } from "@/utils/parseQuery";
 import type { ContinueWatching } from "./types";
-import { resolveApiBase } from "@/lib/api-base";
+import { resolveApiBaseAbsolute } from "@/lib/api-base";
 
-export const API_BASE_URL = resolveApiBase() || "https://chithra-cinema-api.onrender.com";
+export const API_BASE_URL = resolveApiBaseAbsolute();
 
 export const CONTINUE_KEY = "chithra_continue";
 

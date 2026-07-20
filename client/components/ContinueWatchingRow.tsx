@@ -1,13 +1,14 @@
 "use client";
 
 import PosterImage from "@/components/PosterImage";
-import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { usePlaybackLibrary, useUserLibraryActions } from "@/components/UserLibraryProvider";
 import { prefetchMovieStream } from "@/lib/stream-prefetch";
 import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
 
 export default function ContinueWatchingRow() {
-  const { continueWatching, removeContinueItem, clearContinueWatching } = useUserLibrary();
+  const { continueWatching } = usePlaybackLibrary();
+  const { removeContinueItem, clearContinueWatching } = useUserLibraryActions();
   const { openMovie } = useVideoPlayer();
   const afterHydration = useAfterHydration();
 

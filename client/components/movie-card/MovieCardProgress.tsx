@@ -1,6 +1,6 @@
 "use client";
 
-import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { usePlaybackLibrary } from "@/components/UserLibraryProvider";
 import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
 
 interface MovieCardProgressProps {
@@ -8,7 +8,7 @@ interface MovieCardProgressProps {
 }
 
 export default function MovieCardProgress({ movieId }: MovieCardProgressProps) {
-  const { continueWatching } = useUserLibrary();
+  const { continueWatching } = usePlaybackLibrary();
   const afterHydration = useAfterHydration();
 
   const progress = afterHydration ? (continueWatching.find((item) => item.id === movieId)?.progress ?? 0) : 0;

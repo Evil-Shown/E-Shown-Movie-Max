@@ -77,11 +77,11 @@ export default function UpgradeBanner({ onUpgradeClick }: { onUpgradeClick: () =
             series offline downloads, and best cinematic quality and fast streaming.
           </p>
 
-          <div className="flex flex-wrap gap-4 mb-4">
+          <div className="flex flex-col md:flex-row md:flex-wrap gap-2 md:gap-4 mb-4">
             {features.map((feat) => (
               <div
                 key={feat.text}
-                className="flex items-center gap-2 text-sm text-[#FFFBF5]/80 bg-[#FFFBF5]/5 px-3 py-1.5 rounded-lg border border-[#FFFBF5]/10"
+                className="flex items-center gap-2 text-sm text-[#FFFBF5]/80 bg-[#FFFBF5]/5 px-3 py-2 rounded-lg border border-[#FFFBF5]/10"
               >
                 {feat.icon}
                 {feat.text}
@@ -90,7 +90,7 @@ export default function UpgradeBanner({ onUpgradeClick }: { onUpgradeClick: () =
           </div>
         </div>
 
-        <div className="relative flex flex-col items-center gap-3 bg-[#FFFBF5]/5 backdrop-blur-sm p-6 rounded-xl border border-[#FFFBF5]/10 min-w-[260px]">
+        <div className="relative flex flex-col items-center gap-3 bg-[#FFFBF5]/5 backdrop-blur-sm p-5 rounded-xl border border-[#FFFBF5]/10 w-full md:w-auto md:min-w-[260px]">
           <div className="absolute -top-3 right-4 bg-[#FFB87A] text-[#3E2723] text-[10px] font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
             LIMITED OFFER
           </div>

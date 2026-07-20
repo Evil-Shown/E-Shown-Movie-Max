@@ -3,6 +3,7 @@
 import WatchlistButton from "@/components/WatchlistButton";
 import type { Movie } from "@/lib/types";
 import Link from "next/link";
+import { memo } from "react";
 import MovieCardExternalRatings from "./MovieCardExternalRatings";
 import MovieCardMeta from "./MovieCardMeta";
 import MovieCardPlayButton from "./MovieCardPlayButton";
@@ -18,7 +19,7 @@ export interface MovieCardClientProps {
   rank?: number;
 }
 
-export default function MovieCardClient({ movie, priority = false, rank }: MovieCardClientProps) {
+function MovieCardClient({ movie, priority = false, rank }: MovieCardClientProps) {
   return (
     <MovieCardShell movie={movie} className={styles.card}>
       {rank !== undefined && (
@@ -53,3 +54,5 @@ export default function MovieCardClient({ movie, priority = false, rank }: Movie
     </MovieCardShell>
   );
 }
+
+export default memo(MovieCardClient);

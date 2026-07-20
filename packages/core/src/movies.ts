@@ -5,8 +5,10 @@ const TMDB = "https://image.tmdb.org/t/p";
 export const posterUrl = (path: string, size: "w342" | "w500" | "w780" = "w500") =>
   path.startsWith("http") ? path : `${TMDB}/${size}${path}`;
 
-export const backdropUrl = (path: string) =>
-  path.startsWith("http") ? path : `${TMDB}/w1280${path}`;
+export const backdropUrl = (
+  path: string,
+  size: "w780" | "w1280" | "w1920" | "original" = "w1280"
+) => (path.startsWith("http") ? path : `${TMDB}/${size}${path}`);
 
 export const stillUrl = (
   path: string | null | undefined,

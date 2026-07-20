@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Cinzel, Inter, Noto_Sans_Sinhala, Oswald, Playfair_Display } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Cinzel, Inter, Noto_Sans_Sinhala, Playfair_Display } from "next/font/google";
 import { Suspense } from "react";
 import AuthActionHandler from "@/components/AuthActionHandler";
 import AuthModalProvider from "@/components/AuthModalProvider";
@@ -13,6 +13,7 @@ import NavigationProgress from "@/components/NavigationProgress";
 import PageTransition from "@/components/PageTransition";
 import QueryProvider from "@/components/QueryProvider";
 import QuickViewProvider from "@/components/QuickViewProvider";
+import ThemeProvider from "@/components/ThemeProvider";
 import UserLibraryProvider from "@/components/UserLibraryProvider";
 import VideoPlayerProvider from "@/components/VideoPlayerProvider";
 import { BRAND_DESCRIPTION, BRAND_NAME } from "@/lib/brand";
@@ -41,13 +42,6 @@ const cinzel = Cinzel({
   display: "swap",
 });
 
-const oswald = Oswald({
-  variable: "--font-oswald",
-  subsets: ["latin"],
-  weight: ["300", "500", "700"],
-  display: "swap",
-});
-
 const notoSinhala = Noto_Sans_Sinhala({
   variable: "--font-sinhala",
   subsets: ["sinhala"],
@@ -64,6 +58,17 @@ export const metadata: Metadata = {
   applicationName: BRAND_NAME,
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fffbf5" },
+    { media: "(prefers-color-scheme: dark)", color: "#0e0e10" },
+  ],
+};
+
 function HeaderFallback() {
   return <div className="h-[72px] w-full shrink-0" aria-hidden />;
 }
@@ -76,38 +81,40 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-scroll-behavior="smooth"
-      className={`${inter.variable} ${playfair.variable} ${cinzel.variable} ${oswald.variable} ${notoSinhala.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${inter.variable} ${playfair.variable} ${cinzel.variable} ${notoSinhala.variable} h-full antialiased`}
     >
       <head>
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
         <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="anonymous" />
       </head>
       <body className="flex min-h-full flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
-        <StartupSplashLoader />
-        <AuthProvider>
-          <AuthModalProvider>
-            <AuthActionHandler />
-            <QueryProvider>
-              <UserLibraryProvider>
-                <VideoPlayerProvider>
-                  <QuickViewProvider>
-                    <NavigationProgress />
-                    <Suspense fallback={<HeaderFallback />}>
-                      <Header />
-                    </Suspense>
-                    <main className="site-main flex-1">
-                      <PageTransition>{children}</PageTransition>
-                    </main>
-                    <Footer />
-                    <BackToTop />
-                  </QuickViewProvider>
-                  <DesktopMediaPauseHandler />
-                </VideoPlayerProvider>
-              </UserLibraryProvider>
-            </QueryProvider>
-          </AuthModalProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <StartupSplashLoader />
+          <AuthProvider>
+            <AuthModalProvider>
+              <AuthActionHandler />
+              <QueryProvider>
+                <UserLibraryProvider>
+                  <VideoPlayerProvider>
+                    <QuickViewProvider>
+                      <NavigationProgress />
+                      <Suspense fallback={<HeaderFallback />}>
+                        <Header />
+                      </Suspense>
+                      <main className="site-main flex-1">
+                        <PageTransition>{children}</PageTransition>
+                      </main>
+                      <Footer />
+                      <BackToTop />
+                    </QuickViewProvider>
+                    <DesktopMediaPauseHandler />
+                  </VideoPlayerProvider>
+                </UserLibraryProvider>
+              </QueryProvider>
+            </AuthModalProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

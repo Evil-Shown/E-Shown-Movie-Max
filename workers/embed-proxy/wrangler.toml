@@ -1,0 +1,5 @@
+# Cloudflare Worker — optional embed HTML proxy
+# Deploy workers/embed-proxy/worker.js then set your workers.dev URL here.
+name = "chithra-embed-proxy"
+main = "worker.js"
+compatibility_date = "2024-12-01"

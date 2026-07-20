@@ -1,4 +1,4 @@
-import { resolveApiBase } from "./api-base";
+import { resolveApiBaseAbsolute } from "./api-base";
 
 export type TboomErrorCode = "TIMEOUT" | "NO_RESULTS" | "RATE_LIMITED" | "NETWORK_ERROR" | "PARSE_ERROR";
 
@@ -14,7 +14,7 @@ export type SearchApiResponse = {
   meta?: { providersUsed?: string[]; providersFailed?: string[] };
 };
 
-const BASE_URL = resolveApiBase() || "https://chithra-cinema-api.onrender.com";
+const BASE_URL = resolveApiBaseAbsolute();
 
 const TIMEOUT_MS = 12000;
 const RETRY_DELAYS = [500, 1000, 2000];

@@ -12,6 +12,8 @@ interface PlayerNextEpisodeOverlayProps {
   episode?: TvEpisodeSummary | null;
   countdown: number;
   progress?: number;
+  /** When false, only Play Now / Cancel — no auto-skip countdown. */
+  autoAdvance?: boolean;
   onPlayNow: () => void;
   onCancel: () => void;
 }
@@ -24,6 +26,7 @@ export default function PlayerNextEpisodeOverlay({
   episode,
   countdown,
   progress = 0,
+  autoAdvance = false,
   onPlayNow,
   onCancel,
 }: PlayerNextEpisodeOverlayProps) {
@@ -96,28 +99,36 @@ export default function PlayerNextEpisodeOverlay({
                   >
                     Cancel
                   </button>
-                  <span className="ml-auto text-xs text-stone-400">
-                    Auto-playing in <span className="font-semibold text-white">{countdown}s</span>
-                  </span>
+                  {autoAdvance ? (
+                    <span className="ml-auto text-xs text-stone-400">
+                      Auto-playing in <span className="font-semibold text-white">{countdown}s</span>
+                    </span>
+                  ) : (
+                    <span className="ml-auto text-xs text-stone-400">Ready when you are</span>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="h-1 bg-white/10">
-              <motion.div
-                key={countdown}
-                initial={{ width: "100%" }}
-                animate={{ width: "0%" }}
-                transition={{ duration: 1, ease: "linear" }}
-                className="h-full bg-[#f4c27a]"
-              />
-            </div>
-            <div className="h-[2px] bg-white/5">
-              <div
-                className="h-full bg-white/30"
-                style={{ width: `${Math.min(Math.max(progress, 0), 1) * 100}%` }}
-              />
-            </div>
+            {autoAdvance ? (
+              <>
+                <div className="h-1 bg-white/10">
+                  <motion.div
+                    key={countdown}
+                    initial={{ width: "100%" }}
+                    animate={{ width: "0%" }}
+                    transition={{ duration: 1, ease: "linear" }}
+                    className="h-full bg-[#f4c27a]"
+                  />
+                </div>
+                <div className="h-[2px] bg-white/5">
+                  <div
+                    className="h-full bg-white/30"
+                    style={{ width: `${Math.min(Math.max(progress, 0), 1) * 100}%` }}
+                  />
+                </div>
+              </>
+            ) : null}
           </motion.div>
         </motion.div>
       ) : null}

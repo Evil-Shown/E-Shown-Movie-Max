@@ -1,11 +1,27 @@
+// Sentry initialization (must be before all other imports)
+import * as Sentry from "@sentry/node";
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV || "development",
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+  profilesSampleRate: 0.1,
+  integrations: [
+    Sentry.expressIntegration(),
+    Sentry.prismaIntegration(),
+  ],
+});
+
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import compression from "compression";
 
 import { env } from "./config/env";
 import { logger } from "./config/logger";
 import { corsOptions } from "./config/cors";
+import { supabaseAdmin } from "./infrastructure/supabase";
 
 import { errorHandler } from "./middleware/error-handler";
 import { redisRateLimit } from "./middleware/rate-limit";
@@ -24,10 +40,14 @@ import securityRoutes from "./domains/security/security.routes";
 import mobileRoutes from "./domains/mobile/mobile.routes";
 import subscriptionRoutes from "./domains/subscription/subscription.routes";
 import tmdbRoutes from "./domains/tmdb/tmdb.routes";
+import bffRoutes from "./domains/bff/bff.routes";
 
 import { prisma } from "./infrastructure/prisma";
 
 const app = express();
+
+app.set("trust proxy", 1);
+app.use(compression());
 
 app.use(
   helmet({
@@ -81,23 +101,24 @@ app.use("/api/v1/security", securityRoutes);
 app.use("/api/v1/mobile", mobileRoutes);
 app.use("/api/v1/subscription", subscriptionRoutes);
 app.use("/api/v1/tmdb", tmdbRoutes);
+app.use("/api/v1", bffRoutes);
 
-// Legacy route compatibility (redirect /api/* to /api/v1/*)
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/watchlist", watchlistRoutes);
-app.use("/api/continue", continueRoutes);
-app.use("/api/episodes", episodesRoutes);
-app.use("/api/search", searchRoutes);
-app.use("/api/embed", embedRoutes);
-app.use("/api/analytics", analyticsRoutes);
-app.use("/api/telemetry", telemetryRoutes);
-app.use("/api/security", securityRoutes);
-app.use("/api/mobile", mobileRoutes);
-app.use("/api/subscription", subscriptionRoutes);
-app.use("/api/tmdb", tmdbRoutes);
+// Legacy route redirects (301 permanent) — avoids double middleware execution
+app.use("/api/auth", (_req, res) => { res.redirect(301, `/api/v1/auth${_req.url}`); });
+app.use("/api/users", (_req, res) => { res.redirect(301, `/api/v1/users${_req.url}`); });
+app.use("/api/watchlist", (_req, res) => { res.redirect(301, `/api/v1/watchlist${_req.url}`); });
+app.use("/api/continue", (_req, res) => { res.redirect(301, `/api/v1/continue${_req.url}`); });
+app.use("/api/episodes", (_req, res) => { res.redirect(301, `/api/v1/episodes${_req.url}`); });
+app.use("/api/search", (_req, res) => { res.redirect(301, `/api/v1/search${_req.url}`); });
+app.use("/api/embed", (_req, res) => { res.redirect(301, `/api/v1/embed${_req.url}`); });
+app.use("/api/analytics", (_req, res) => { res.redirect(301, `/api/v1/analytics${_req.url}`); });
+app.use("/api/telemetry", (_req, res) => { res.redirect(301, `/api/v1/telemetry${_req.url}`); });
+app.use("/api/security", (_req, res) => { res.redirect(301, `/api/v1/security${_req.url}`); });
+app.use("/api/mobile", (_req, res) => { res.redirect(301, `/api/v1/mobile${_req.url}`); });
+app.use("/api/subscription", (_req, res) => { res.redirect(301, `/api/v1/subscription${_req.url}`); });
+app.use("/api/tmdb", (_req, res) => { res.redirect(301, `/api/v1/tmdb${_req.url}`); });
 app.get("/api/health", (_req, res) => {
-  res.json({ success: true, data: { status: "ok" } });
+  res.redirect(301, "/api/v1/health");
 });
 
 // 404 handler
@@ -110,6 +131,9 @@ app.use((_req, res) => {
     },
   });
 });
+
+// Sentry error handler (must be before Express error handler)
+Sentry.setupExpressErrorHandler(app);
 
 // Global error handler
 app.use(errorHandler);
@@ -135,7 +159,26 @@ async function main() {
   const supabaseKeyOk = env.SUPABASE_ANON_KEY?.length > 20;
   const supabaseSecretOk = env.SUPABASE_SERVICE_ROLE_KEY?.length > 20;
   if (supabaseUrlOk && supabaseKeyOk && supabaseSecretOk) {
-    logger.info("✔ Supabase Auth configured");
+    const { error: supabaseAdminError } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 1,
+    });
+    if (supabaseAdminError) {
+      logger.error(
+        { err: supabaseAdminError.message },
+        "✘ Supabase service role key rejected — registration/login will fail"
+      );
+      logger.error(
+        "  Fix server/.env: set SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY from Supabase Dashboard → Settings → API"
+      );
+      if (/unregistered api key/i.test(supabaseAdminError.message)) {
+        logger.error(
+          "  Use the project's active secret key (sb_secret_...) or legacy service_role JWT — deleted/rotated keys cause this error"
+        );
+      }
+    } else {
+      logger.info("✔ Supabase Auth configured");
+    }
   } else {
     logger.warn("✘ Supabase Auth not fully configured — auth endpoints will fail");
   }

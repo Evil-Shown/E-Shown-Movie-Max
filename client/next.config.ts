@@ -6,11 +6,33 @@ const appRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const monorepoRoot = path.join(appRoot, "..");
 
-const backendApi = (
-  process.env.BACKEND_API_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "https://chithra-cinema-api.onrender.com"
-).replace(/\/$/, "");
+const RENDER_API = "https://chithra-cinema-api.onrender.com";
+
+function resolveBackendForRewrites(): string {
+  const candidates = [
+    process.env.BACKEND_API_URL,
+    process.env.NEXT_PUBLIC_API_BASE_URL,
+    process.env.NEXT_PUBLIC_GODS_EYE_API_URL,
+    process.env.NEXT_PUBLIC_TBOOM_API_URL,
+  ];
+
+  const onVercel = Boolean(process.env.VERCEL);
+
+  for (const raw of candidates) {
+    const url = (raw || "").trim().replace(/\/$/, "");
+    if (!url) continue;
+    const isPrivate = /localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2\d|3[0-1])\./i.test(url);
+    // Vercel cannot reach private IPs — skip those there only.
+    if (isPrivate && onVercel) continue;
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+  }
+
+  return RENDER_API;
+}
+
+const backendApi = resolveBackendForRewrites();
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@chithra/core"],
@@ -20,7 +42,6 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["framer-motion", "@react-three/fiber", "@react-three/drei"],
   },
-  // Prevent native torrent deps from entering the server/client SSR graph if referenced elsewhere.
   serverExternalPackages: ["webtorrent", "node-datachannel", "puppeteer"],
   async redirects() {
     return [
@@ -37,7 +58,6 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    // Browser calls same-origin /api/v1/*; Vercel proxies to Render (avoids localhost + CORS).
     return [
       {
         source: "/api/v1/:path*",
@@ -46,6 +66,13 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    // Enable AVIF + WebP for 50-70% smaller images vs JPEG/PNG
+    formats: ["image/avif", "image/webp"],
+    // Responsive breakpoints for optimal device targeting
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Cache optimized images for 7 days (Vercel CDN)
+    minimumCacheTTL: 60 * 60 * 24 * 7,
     remotePatterns: [
       {
         protocol: "https",

@@ -21,21 +21,42 @@ import { getPreferredProvider, setPreferredProvider } from "@/lib/storage/provid
 import { syncDesktopSession } from "@/lib/storage/desktop-session";
 import type { ContinueWatchingItem, WatchlistItem } from "@/lib/storage/types";
 import { getWatchlist, removeFromWatchlist, toggleWatchlistItem } from "@/lib/storage/watchlist";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 interface Toast {
   id: number;
   message: string;
 }
 
-interface UserLibraryContextValue {
+interface WatchlistContextValue {
   hydrated: boolean;
   watchlist: WatchlistItem[];
   watchlistCount: number;
   isWatchlisted: (id: string) => boolean;
+  toasts: Toast[];
+}
+
+interface PlaybackContextValue {
+  hydrated: boolean;
+  continueWatching: ContinueWatchingItem[];
+  preferredProvider: StreamProvider;
+  watchedEpisodes: Record<string, boolean>;
+  watchedEpisodeCount: (tvId: string) => number;
+  isEpisodeWatched: (tvId: string, season: number, episode: number) => boolean;
+}
+
+interface UserLibraryActionsValue {
   toggleWatchlist: (movie: Movie) => void;
   removeWatchlistItem: (id: string) => void;
-  continueWatching: ContinueWatchingItem[];
   savePlayback: (params: {
     movie: Movie;
     provider: StreamProvider;
@@ -47,21 +68,50 @@ interface UserLibraryContextValue {
   removeContinueItem: (id: string) => void;
   clearContinueWatching: () => void;
   getResumeTime: (id: string) => number;
-  preferredProvider: StreamProvider;
   setProvider: (provider: StreamProvider) => void;
-  isEpisodeWatched: (tvId: string, season: number, episode: number) => boolean;
   toggleEpisodeWatched: (tvId: string, season: number, episode: number) => void;
-  watchedEpisodes: Record<string, boolean>;
-  watchedEpisodeCount: (tvId: string) => number;
-  toasts: Toast[];
 }
 
-const UserLibraryContext = createContext<UserLibraryContextValue | null>(null);
+type UserLibraryContextValue = WatchlistContextValue & PlaybackContextValue & UserLibraryActionsValue;
 
-export function useUserLibrary() {
-  const ctx = useContext(UserLibraryContext);
-  if (!ctx) throw new Error("useUserLibrary must be used within UserLibraryProvider");
+const WatchlistContext = createContext<WatchlistContextValue | null>(null);
+const PlaybackContext = createContext<PlaybackContextValue | null>(null);
+const UserLibraryActionsContext = createContext<UserLibraryActionsValue | null>(null);
+
+const MemoizedChildren = memo(function MemoizedChildren({ children }: { children: ReactNode }) {
+  return <>{children}</>;
+});
+
+export function useWatchlistLibrary() {
+  const ctx = useContext(WatchlistContext);
+  if (!ctx) throw new Error("useWatchlistLibrary must be used within UserLibraryProvider");
   return ctx;
+}
+
+export function usePlaybackLibrary() {
+  const ctx = useContext(PlaybackContext);
+  if (!ctx) throw new Error("usePlaybackLibrary must be used within UserLibraryProvider");
+  return ctx;
+}
+
+export function useUserLibraryActions() {
+  const ctx = useContext(UserLibraryActionsContext);
+  if (!ctx) throw new Error("useUserLibraryActions must be used within UserLibraryProvider");
+  return ctx;
+}
+
+export function useUserLibrary(): UserLibraryContextValue {
+  const watchlist = useWatchlistLibrary();
+  const playback = usePlaybackLibrary();
+  const actions = useUserLibraryActions();
+  return useMemo(
+    () => ({
+      ...watchlist,
+      ...playback,
+      ...actions,
+    }),
+    [watchlist, playback, actions]
+  );
 }
 
 function movieToWatchlistItem(movie: Movie): WatchlistItem | null {
@@ -89,7 +139,11 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    syncDesktopSession();
+    try {
+      syncDesktopSession();
+    } catch (error) {
+      console.error("Failed to sync desktop session:", error);
+    }
     setWatchlist(getWatchlist());
     setContinueWatching(getContinueWatching());
     setPreferredProviderState(getPreferredProvider());
@@ -97,8 +151,8 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
   }, []);
 
   const showToast = useCallback((message: string) => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message }]);
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, message }].slice(-3));
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 2800);
@@ -198,55 +252,66 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
     setWatchedEpisodes(getWatchedEpisodes(tvId));
   }, []);
 
-  const value = useMemo<UserLibraryContextValue>(
+  const watchlistValue = useMemo<WatchlistContextValue>(
     () => ({
       hydrated,
       watchlist: hydrated ? watchlist : [],
       watchlistCount: hydrated ? watchlist.length : 0,
       isWatchlisted: (id) => (hydrated ? watchlist : []).some((w) => w.id === id),
+      toasts,
+    }),
+    [hydrated, watchlist, toasts]
+  );
+
+  const playbackValue = useMemo<PlaybackContextValue>(
+    () => ({
+      hydrated,
+      continueWatching: hydrated ? continueWatching : [],
+      preferredProvider,
+      watchedEpisodes,
+      watchedEpisodeCount: countWatchedEpisodes,
+      isEpisodeWatched,
+    }),
+    [hydrated, continueWatching, preferredProvider, watchedEpisodes]
+  );
+
+  const actionsValue = useMemo<UserLibraryActionsValue>(
+    () => ({
       toggleWatchlist,
       removeWatchlistItem,
-      continueWatching: hydrated ? continueWatching : [],
       savePlayback,
       removeContinueItem,
       clearContinueWatching: clearContinueItems,
       getResumeTime,
-      preferredProvider,
       setProvider,
-      isEpisodeWatched,
       toggleEpisodeWatched,
-      watchedEpisodes,
-      watchedEpisodeCount: countWatchedEpisodes,
-      toasts,
     }),
     [
-      hydrated,
-      watchlist,
       toggleWatchlist,
       removeWatchlistItem,
-      continueWatching,
       savePlayback,
       removeContinueItem,
       clearContinueItems,
       getResumeTime,
-      preferredProvider,
       setProvider,
       toggleEpisodeWatched,
-      watchedEpisodes,
-      toasts,
     ]
   );
 
   return (
-    <UserLibraryContext.Provider value={value}>
-      {children}
-      <div className="toast-stack" aria-live="polite">
-        {toasts.map((toast) => (
-          <div key={toast.id} className="toast-item">
-            {toast.message}
+    <UserLibraryActionsContext.Provider value={actionsValue}>
+      <WatchlistContext.Provider value={watchlistValue}>
+        <PlaybackContext.Provider value={playbackValue}>
+          <MemoizedChildren>{children}</MemoizedChildren>
+          <div className="toast-stack" aria-live="polite">
+            {toasts.map((toast) => (
+              <div key={toast.id} className="toast-item">
+                {toast.message}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-    </UserLibraryContext.Provider>
+        </PlaybackContext.Provider>
+      </WatchlistContext.Provider>
+    </UserLibraryActionsContext.Provider>
   );
 }

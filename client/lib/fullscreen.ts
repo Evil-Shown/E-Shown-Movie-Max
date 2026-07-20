@@ -49,22 +49,23 @@ export async function exitAnyFullscreen(): Promise<void> {
   }
 }
 
-export async function requestElementFullscreen(element: HTMLElement): Promise<void> {
+export function requestElementFullscreen(element: HTMLElement): Promise<void> | void {
   const target = element as FullscreenElement;
 
-  if (target.requestFullscreen) {
-    await target.requestFullscreen();
-    return;
-  }
-  if (target.webkitRequestFullscreen) {
-    await target.webkitRequestFullscreen();
-    return;
-  }
-  if (target.mozRequestFullScreen) {
-    await target.mozRequestFullScreen();
-    return;
-  }
-  if (target.msRequestFullscreen) {
-    await target.msRequestFullscreen();
+  try {
+    if (target.requestFullscreen) {
+      return target.requestFullscreen({ navigationUI: "hide" });
+    }
+    if (target.webkitRequestFullscreen) {
+      return target.webkitRequestFullscreen();
+    }
+    if (target.mozRequestFullScreen) {
+      return target.mozRequestFullScreen();
+    }
+    if (target.msRequestFullscreen) {
+      return target.msRequestFullscreen();
+    }
+  } catch {
+    // Some browsers throw synchronously when the gesture window expired.
   }
 }

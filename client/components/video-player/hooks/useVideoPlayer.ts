@@ -3,8 +3,14 @@ import type { StreamProvider } from "@/lib/providers";
 import { backdropUrl, formatDisplayYear, posterUrl } from "@/lib/movies";
 import { getMovieEmbedUrl, getRawMovieEmbedUrl, isTvShow } from "@/lib/streaming";
 import { getTrailerId } from "@/lib/trailers";
-import { useUserLibrary } from "@/components/UserLibraryProvider";
-import { isEmbedNearEnd, isEmbedPlaybackEnded } from "@/lib/embed-events";
+import { useUserLibraryActions } from "@/components/UserLibraryProvider";
+import {
+  getEmbedFullscreenAction,
+  isEmbedNearEnd,
+  isEmbedPlaybackEnded,
+  isEmbedUpNextSignal,
+} from "@/lib/embed-events";
+import { installAdPopupBlocker } from "@/lib/block-ad-nav";
 import { exitAnyFullscreen, getActiveFullscreenElement, requestElementFullscreen } from "@/lib/fullscreen";
 import {
   getEpisodeSummary,
@@ -12,7 +18,7 @@ import {
   type TvEpisodeSummary,
   type TvSeasonSummary,
 } from "@/lib/tv-episodes";
-import { getStabilityTip, isEmbedPlaybackMessage, warmStreamProviders } from "@/lib/stream-optimizer";
+import { getStabilityTip, isEmbedPlaybackMessage, warmEmbedUrl, warmStreamProviders } from "@/lib/stream-optimizer";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlayerMode } from "../types";
 import { NEXT_EPISODE_COUNTDOWN_SECONDS } from "../types";
@@ -46,13 +52,16 @@ export function useVideoPlayer({
   onClose,
   onSeasonEpisodeChange,
 }: UseVideoPlayerOptions) {
-  const { savePlayback, setProvider } = useUserLibrary();
+  const { savePlayback, setProvider } = useUserLibraryActions();
   const isTrailer = mode === "trailer";
   const isTvPlayer = !isTrailer && isTvShow(movie);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFauxFullscreen, setIsFauxFullscreen] = useState(false);
   const [showKeyboardHint, setShowKeyboardHint] = useState(false);
   const [showNextEpisode, setShowNextEpisode] = useState(false);
+  /** When true, countdown auto-plays next. When false, user must click Play Now. */
+  const [nextEpisodeAuto, setNextEpisodeAuto] = useState(false);
   const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState(NEXT_EPISODE_COUNTDOWN_SECONDS);
   const [nextEpisodeProgress, setNextEpisodeProgress] = useState(0);
   const [tvSeasons, setTvSeasons] = useState<TvSeasonSummary[]>([]);
@@ -61,6 +70,7 @@ export function useVideoPlayer({
   const nextEpisodeTriggeredRef = useRef(false);
   const stageRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const justExitedFullscreenRef = useRef(false);
 
   const stabilityTip = getStabilityTip();
   const trailerId = movie.trailerKey ?? getTrailerId(movie.id);
@@ -98,8 +108,6 @@ export function useVideoPlayer({
     ? getEpisodeSummary(episodesBySeason, nextEpisodeTarget.season, nextEpisodeTarget.episode)
     : null;
 
-  const currentEpisodeSummary = season && episode ? getEpisodeSummary(episodesBySeason, season, episode) : null;
-
   const loadSeasonEpisodes = useCallback(
     async (seasonNumber: number) => {
       if (!seasonNumber) return;
@@ -132,6 +140,7 @@ export function useVideoPlayer({
   const playNextEpisode = useCallback(() => {
     if (!nextEpisodeTarget) return;
     setShowNextEpisode(false);
+    setNextEpisodeAuto(false);
     nextEpisodeTriggeredRef.current = false;
     setNextEpisodeCountdown(NEXT_EPISODE_COUNTDOWN_SECONDS);
     setNextEpisodeProgress(0);
@@ -140,44 +149,85 @@ export function useVideoPlayer({
 
   const dismissNextEpisode = useCallback(() => {
     setShowNextEpisode(false);
+    setNextEpisodeAuto(false);
     nextEpisodeTriggeredRef.current = true;
     setNextEpisodeCountdown(NEXT_EPISODE_COUNTDOWN_SECONDS);
     setNextEpisodeProgress(0);
   }, []);
 
-  const openNextEpisodeOverlay = useCallback(() => {
-    if (!isTvPlayer || !nextEpisodeTarget || nextEpisodeTriggeredRef.current || showNextEpisode) {
-      return;
-    }
-    nextEpisodeTriggeredRef.current = true;
-    setNextEpisodeCountdown(NEXT_EPISODE_COUNTDOWN_SECONDS);
-    setNextEpisodeProgress(0);
-    setShowNextEpisode(true);
-    void loadSeasonEpisodes(nextEpisodeTarget.season);
-  }, [isTvPlayer, loadSeasonEpisodes, nextEpisodeTarget, showNextEpisode]);
+  const openNextEpisodeOverlay = useCallback(
+    (options?: { auto?: boolean }) => {
+      if (!isTvPlayer || !nextEpisodeTarget || nextEpisodeTriggeredRef.current || showNextEpisode) {
+        return;
+      }
+      nextEpisodeTriggeredRef.current = true;
+      setNextEpisodeAuto(Boolean(options?.auto));
+      setNextEpisodeCountdown(NEXT_EPISODE_COUNTDOWN_SECONDS);
+      setNextEpisodeProgress(0);
+      setShowNextEpisode(true);
+      void loadSeasonEpisodes(nextEpisodeTarget.season);
+    },
+    [isTvPlayer, loadSeasonEpisodes, nextEpisodeTarget, showNextEpisode]
+  );
 
   const focusPlayer = useCallback(() => {
     iframeRef.current?.focus();
     setShowKeyboardHint(false);
   }, []);
 
-  const toggleFullscreen = useCallback(async () => {
+  const exitFauxFullscreen = useCallback(() => {
+    setIsFauxFullscreen(false);
+    setIsFullscreen(false);
+  }, []);
+
+  const enterWrapperFullscreen = useCallback(() => {
     const stage = stageRef.current;
     if (!stage) return;
+    if (getActiveFullscreenElement() || isFauxFullscreen) return;
 
-    try {
-      if (getActiveFullscreenElement()) {
-        await exitAnyFullscreen();
-        setIsFullscreen(false);
-        return;
-      }
-      await requestElementFullscreen(stage);
+    const enterFaux = () => {
+      setIsFauxFullscreen(true);
       setIsFullscreen(true);
       focusPlayer();
+    };
+
+    // Wrapper fullscreen only — never request FS on the cross-origin iframe.
+    try {
+      const result = requestElementFullscreen(stage);
+      if (result && typeof result.then === "function") {
+        void result
+          .then(() => {
+            setIsFullscreen(true);
+            setIsFauxFullscreen(false);
+            focusPlayer();
+          })
+          .catch(enterFaux);
+        return;
+      }
+      window.setTimeout(() => {
+        if (!getActiveFullscreenElement()) enterFaux();
+        else {
+          setIsFullscreen(true);
+          focusPlayer();
+        }
+      }, 0);
     } catch {
-      // Browser blocked fullscreen — user can still use the embed control.
+      enterFaux();
     }
-  }, [focusPlayer]);
+  }, [focusPlayer, isFauxFullscreen]);
+
+  const exitWrapperFullscreen = useCallback(() => {
+    if (getActiveFullscreenElement()) void exitAnyFullscreen();
+    exitFauxFullscreen();
+  }, [exitFauxFullscreen]);
+
+  const toggleFullscreen = useCallback(() => {
+    if (getActiveFullscreenElement() || isFauxFullscreen) {
+      exitWrapperFullscreen();
+      return;
+    }
+    enterWrapperFullscreen();
+  }, [enterWrapperFullscreen, exitWrapperFullscreen, isFauxFullscreen]);
 
   const openStreamInBrowserTab = useCallback(() => {
     if (!rawEmbedUrl) return;
@@ -190,8 +240,9 @@ export function useVideoPlayer({
 
   useEffect(() => {
     warmStreamProviders();
+    warmEmbedUrl(iframeSrc);
     setPlayerEngaged(false);
-  }, [movie.id, mode]);
+  }, [movie.id, mode, iframeSrc, setPlayerEngaged]);
 
   useEffect(() => {
     if (!isTvPlayer) return;
@@ -219,39 +270,16 @@ export function useVideoPlayer({
   }, [isTvPlayer, loadSeasonEpisodes, season]);
 
   useEffect(() => {
-    if (!isTvPlayer || !nextEpisodeTarget || showNextEpisode) return;
-
-    const currentEpisode =
-      episodesBySeason.get(season ?? 0)?.find((item) => item.episode_number === (episode ?? 0)) ?? null;
-    const durationSeconds = currentEpisode?.runtime ?? movie.runtime ?? 0;
-    const fallbackSeconds = Math.max(0, durationSeconds - 60);
-    if (!fallbackSeconds) return;
-
-    const timer = window.setTimeout(() => {
-      openNextEpisodeOverlay();
-    }, fallbackSeconds * 1000);
-
-    return () => window.clearTimeout(timer);
-  }, [
-    episode,
-    episodesBySeason,
-    isTvPlayer,
-    movie.runtime,
-    nextEpisodeTarget,
-    openNextEpisodeOverlay,
-    season,
-    showNextEpisode,
-  ]);
-
-  useEffect(() => {
     if (!nextEpisodeTarget) return;
     void loadSeasonEpisodes(nextEpisodeTarget.season);
   }, [loadSeasonEpisodes, nextEpisodeTarget]);
 
   useEffect(() => {
     setShowNextEpisode(false);
+    setNextEpisodeAuto(false);
     nextEpisodeTriggeredRef.current = false;
     setNextEpisodeCountdown(NEXT_EPISODE_COUNTDOWN_SECONDS);
+    setNextEpisodeProgress(0);
   }, [season, episode]);
 
   useEffect(() => {
@@ -259,69 +287,64 @@ export function useVideoPlayer({
     setEpisodesBySeason(new Map());
   }, [movie.id]);
 
+  // Auto-countdown only after a real "ended" signal — never for early up-next hints.
   useEffect(() => {
-    if (!showNextEpisode) return;
+    if (!showNextEpisode || !nextEpisodeAuto) return;
     if (nextEpisodeCountdown <= 0) {
       playNextEpisode();
       return;
     }
+    const total = NEXT_EPISODE_COUNTDOWN_SECONDS;
+    setNextEpisodeProgress(1 - nextEpisodeCountdown / total);
     const timer = window.setTimeout(() => {
       setNextEpisodeCountdown((current) => current - 1);
     }, 1000);
     return () => window.clearTimeout(timer);
-  }, [nextEpisodeCountdown, playNextEpisode, showNextEpisode]);
+  }, [nextEpisodeAuto, nextEpisodeCountdown, playNextEpisode, showNextEpisode]);
 
-  useEffect(() => {
-    if (!isTvPlayer || !nextEpisodeTarget) return;
-    const runtime = currentEpisodeSummary?.runtime ?? movie.runtime ?? 0;
-    if (!runtime) return;
-
-    const startThreshold = Math.max(0.82, (runtime - 75) / runtime);
-    let started = false;
-
-    const timer = window.setInterval(() => {
-      if (started || showNextEpisode) return;
-      const currentSeconds = loaded ? Math.min(runtime, runtime * startThreshold) : 0;
-      const remaining = Math.max(runtime - currentSeconds, 0);
-      const progress = 1 - remaining / runtime;
-      setNextEpisodeProgress(progress);
-
-      if (progress >= startThreshold) {
-        started = true;
-        openNextEpisodeOverlay();
-      }
-    }, 2000);
-
-    return () => window.clearInterval(timer);
-  }, [
-    currentEpisodeSummary?.runtime,
-    isTvPlayer,
-    loaded,
-    movie.runtime,
-    nextEpisodeTarget,
-    openNextEpisodeOverlay,
-    showNextEpisode,
-  ]);
-
+  // Embed in-player FS button → same wrapper fullscreen as the header control.
   useEffect(() => {
     if (isTrailer) return;
+
+    const onMessage = (event: MessageEvent) => {
+      const action = getEmbedFullscreenAction(event.data);
+      if (!action) return;
+      if (action === "enter") enterWrapperFullscreen();
+      else exitWrapperFullscreen();
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [enterWrapperFullscreen, exitWrapperFullscreen, isTrailer]);
+
+  // postMessage only — no wall-clock / fake progress timers.
+  useEffect(() => {
+    if (isTrailer || !isTvPlayer) return;
 
     const onMessage = (event: MessageEvent) => {
       if (isEmbedPlaybackMessage(event.data)) {
         confirmPlayback();
       }
-      if (isEmbedPlaybackEnded(event.data) || isEmbedNearEnd(event.data, 0.985)) {
-        openNextEpisodeOverlay();
+
+      // True end → show overlay and auto-advance after countdown.
+      if (isEmbedPlaybackEnded(event.data)) {
+        openNextEpisodeOverlay({ auto: true });
+        return;
+      }
+
+      // Up-next / final seconds → show Play Now only (no auto skip).
+      if (isEmbedUpNextSignal(event.data) || isEmbedNearEnd(event.data, 30)) {
+        openNextEpisodeOverlay({ auto: false });
       }
     };
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [confirmPlayback, isTrailer, openNextEpisodeOverlay]);
+  }, [confirmPlayback, isTrailer, isTvPlayer, openNextEpisodeOverlay]);
 
   useEffect(() => {
     setPlayerEngaged(false);
-  }, [season, episode, provider, iframeSrc]);
+  }, [season, episode, provider, iframeSrc, setPlayerEngaged]);
 
   useEffect(() => {
     if (!isTrailer && loaded && movieEmbedUrl) {
@@ -344,21 +367,43 @@ export function useVideoPlayer({
   }, [showKeyboardHint]);
 
   useEffect(() => {
+    const uninstall = installAdPopupBlocker({ strict: true });
+    return uninstall;
+  }, []);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "f" || e.key === "F") {
+        const tag = (e.target as HTMLElement | null)?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        e.preventDefault();
+        toggleFullscreen();
+        return;
+      }
       if (e.key !== "Escape") return;
+      if (isFauxFullscreen) {
+        exitFauxFullscreen();
+        return;
+      }
       if (getActiveFullscreenElement()) return;
+      if (justExitedFullscreenRef.current) {
+        justExitedFullscreenRef.current = false;
+        return;
+      }
       onClose();
     };
     const onFullscreenChange = () => {
-      setIsFullscreen(Boolean(getActiveFullscreenElement()));
-      if (getActiveFullscreenElement()) {
-        window.setTimeout(() => iframeRef.current?.focus(), 50);
-      } else {
+      const active = Boolean(getActiveFullscreenElement());
+      if (!active) {
+        justExitedFullscreenRef.current = true;
         window.setTimeout(() => {
-          if (!getActiveFullscreenElement()) {
-            setIsFullscreen(false);
-          }
-        }, 50);
+          justExitedFullscreenRef.current = false;
+        }, 400);
+      }
+      setIsFullscreen(active || isFauxFullscreen);
+      if (active) {
+        setIsFauxFullscreen(false);
+        window.setTimeout(() => iframeRef.current?.focus(), 50);
       }
     };
 
@@ -372,19 +417,22 @@ export function useVideoPlayer({
       document.removeEventListener("fullscreenchange", onFullscreenChange);
       document.removeEventListener("webkitfullscreenchange", onFullscreenChange as EventListener);
       void exitAnyFullscreen();
+      setIsFauxFullscreen(false);
     };
-  }, [onClose]);
+  }, [exitFauxFullscreen, isFauxFullscreen, onClose, toggleFullscreen]);
 
   return {
     isTrailer,
     isTvPlayer,
-    isFullscreen,
+    isFullscreen: isFullscreen || isFauxFullscreen,
+    isFauxFullscreen,
     showKeyboardHint,
     showNextEpisode,
     nextEpisodeCountdown,
     nextEpisodeProgress,
     nextEpisodeTarget,
     nextEpisodeSummary,
+    nextEpisodeAuto,
     stabilityTip,
     movieEmbedUrl,
     rawEmbedUrl,

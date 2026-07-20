@@ -4,6 +4,7 @@ import Video, { type OnVideoErrorData } from "react-native-video";
 import { WebView } from "react-native-webview";
 
 import { colors, fonts, radii, spacing } from "@/constants/theme";
+import { createEmbedShouldStartLoad } from "@/lib/block-ad-nav";
 import { getDirectHlsSources } from "@/lib/live-tv/sources";
 import type { LiveTvChannel, LiveTvStream } from "@/lib/live-tv/types";
 import { resolveLiveTvStream } from "@/lib/api/live-tv";
@@ -103,6 +104,8 @@ export default function LiveTvNativePlayer({ channel }: LiveTvNativePlayerProps)
         mediaPlaybackRequiresUserAction={false}
         javaScriptEnabled
         domStorageEnabled
+        setSupportMultipleWindows={false}
+        onShouldStartLoadWithRequest={createEmbedShouldStartLoad(embedUrl)}
         onError={() => setStatus("error")}
       />
     );

@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useUserLibrary } from "@/components/UserLibraryProvider";
@@ -23,6 +24,8 @@ import { api } from "@/lib/api";
 import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
 import PricingModal from "@/components/dashboard/PricingModal";
 import ProBadge from "@/components/dashboard/ProBadge";
+import ThemeSelect from "@/components/ThemeSelect";
+import welcomeHero from "@/assets/images/welcome.webp";
 import styles from "./Dashboard.module.css";
 
 function formatDuration(seconds: number) {
@@ -242,7 +245,7 @@ function StatCard({
   progress?: number;
 }) {
   return (
-    <div className={`${styles.statCard} rounded-xl`}>
+    <div className={`${styles.statCard} rounded-xl h-full flex flex-col`}>
       {/* Copper Metallic Band */}
       <div className={styles.statCardMetallicBand}>
         <div className={`${styles.statIconBox}`}>{icon}</div>
@@ -250,12 +253,12 @@ function StatCard({
       </div>
 
       {/* Content */}
-      <div className="p-5 pb-6">
-        <p className="font-cinzel text-3xl font-bold text-[#3e2723] leading-tight">
+      <div className="p-4 pb-5 flex-1 flex flex-col justify-center">
+        <p className="font-cinzel text-2xl sm:text-3xl font-bold text-[#3e2723] dark:text-[var(--text-primary)] leading-tight">
           {value}
-          {valueUnit && <span className="text-base text-[#a0785a] font-normal ml-1">{valueUnit}</span>}
+          {valueUnit && <span className="text-sm sm:text-base text-[#a0785a] dark:text-[var(--text-muted)] font-normal ml-1">{valueUnit}</span>}
         </p>
-        <p className="text-sm text-[#6b4423] mt-2 font-medium">{label}</p>
+        <p className="text-xs sm:text-sm text-[#6b4423] dark:text-[var(--text-secondary)] mt-1.5 font-medium">{label}</p>
 
         {/* Glowing Progress Line */}
         {progress !== undefined && progress > 0 && (
@@ -279,7 +282,7 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
 
   return (
     <Link href={href} className={`${styles.resumeCard} rounded-xl flex flex-col md:flex-row group transition`}>
-      <div className="md:w-72 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
+      <div className="md:w-72 h-36 sm:h-48 md:h-auto relative overflow-hidden flex-shrink-0">
         <img
           src={posterUrl(item.posterPath, "w342")}
           alt={item.title}
@@ -387,101 +390,45 @@ interface ActivityItem {
 }
 
 function ActivityRow({ item }: { item: ActivityItem }) {
-  const badgeCfg: Record<
-    string,
-    { label: string; icon: React.ReactNode; pill: string; iconBg: string; iconColor: string }
-  > = {
-    watching: {
-      label: "WATCHING",
-      icon: <polygon points="5 3 19 12 5 21 5 3" />,
-      pill: "bg-gradient-to-r from-[#e65100] to-[#ff8a4a] text-white shadow-[0_2px_10px_rgba(230,81,0,0.35)]",
-      iconBg: "bg-[#3e2723]",
-      iconColor: "text-[#ff8a4a]",
-    },
-    completed: {
-      label: "COMPLETED",
-      icon: <polyline points="20 6 9 17 4 12" />,
-      pill: "bg-gradient-to-r from-[#2e7d32] to-[#66bb6a] text-white shadow-[0_2px_10px_rgba(46,125,50,0.35)]",
-      iconBg: "bg-[#3e2723]",
-      iconColor: "text-[#66bb6a]",
-    },
-    watchlist: {
-      label: "ADDED",
-      icon: <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />,
-      pill: "bg-gradient-to-r from-[#b8860b] to-[#ffd54f] text-white shadow-[0_2px_10px_rgba(184,134,11,0.35)]",
-      iconBg: "bg-[#3e2723]",
-      iconColor: "text-[#ffd54f]",
-    },
-    downloaded: {
-      label: "DOWNLOADED",
-      icon: (
-        <>
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </>
-      ),
-      pill: "bg-gradient-to-r from-[#1565c0] to-[#64b5f6] text-white shadow-[0_2px_10px_rgba(21,101,192,0.35)]",
-      iconBg: "bg-[#3e2723]",
-      iconColor: "text-[#64b5f6]",
-    },
-  };
-
-  const cfg = badgeCfg[item.type] || badgeCfg.watching;
-
   return (
-    <div className={`${styles.activityRow} flex items-center gap-4 px-5 py-4 rounded-[14px] bg-[#faf6f0]`}>
-      {/* Action Icon */}
-      <div className={`w-9 h-9 rounded-xl ${cfg.iconBg} flex items-center justify-center shrink-0`}>
-        <svg
-          className={`w-4 h-4 ${cfg.iconColor}`}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          {cfg.icon}
-        </svg>
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-[#d4a574]/15 last:border-b-0">
+      <div className="relative w-10 h-10 shrink-0 rounded-lg overflow-hidden bg-[#f5efe8]">
+        {item.posterPath ? (
+          <img
+            src={posterUrl(item.posterPath, "w342")}
+            alt={item.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-[#c4b5a5]">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="2" y="2" width="20" height="20" rx="3" />
+              <circle cx="9" cy="9" r="2" />
+              <path d="m21 15-5-5L5 21" />
+            </svg>
+          </div>
+        )}
       </div>
 
-      {/* Thumbnail */}
-      <div className="relative w-[72px] shrink-0">
-        <div className="aspect-[16/9] rounded-[10px] overflow-hidden bg-[#e8ddd0]">
-          {item.posterPath ? (
-            <img
-              src={posterUrl(item.posterPath, "w342")}
-              alt={item.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-[#c4b5a5]">
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <rect x="2" y="2" width="20" height="20" rx="3" />
-                <circle cx="9" cy="9" r="2" />
-                <path d="m21 15-5-5L5 21" />
-              </svg>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Middle: metadata */}
       <div className="flex-1 min-w-0">
-        <p className="text-[15px] font-bold text-[#3e2723] leading-tight truncate">{item.title}</p>
-        <p className="text-[12px] text-[#a0785a] mt-1.5 truncate">
+        <p className="text-[13px] font-semibold text-[#3e2723] dark:text-[var(--text-primary)] leading-tight truncate">{item.title}</p>
+        <p className="text-[11px] text-[#a0785a] dark:text-[var(--text-muted)] mt-0.5 truncate">
           {item.meta && <span>{item.meta} · </span>}
           {timeAgo(item.timestamp)}
         </p>
       </div>
 
-      {/* Right: status pill */}
       <div className="shrink-0">
-        <span
-          className={`inline-block text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-[0.5px] ${cfg.pill}`}
+        <button
+          type="button"
+          className="w-9 h-9 rounded-full flex items-center justify-center text-[#e65100] hover:bg-[#e65100]/10 transition"
+          aria-label={`Play ${item.title}`}
         >
-          {cfg.label}
-        </span>
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3" />
+          </svg>
+        </button>
       </div>
     </div>
   );
@@ -751,7 +698,7 @@ export default function DashboardPage() {
   if (!hydrated || authLoading) return <DashboardSkeleton />;
 
   return (
-    <div suppressHydrationWarning className={`min-h-screen font-sans text-chocolate ${styles.dashboardRoot}`}>
+    <div suppressHydrationWarning className={`min-h-screen font-sans text-chocolate overflow-x-hidden w-full max-w-full ${styles.dashboardRoot}`}>
       <div className="flex min-h-screen">
         {/* Desktop Sidebar */}
         <aside className={`${styles.sidebar} fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col`}>
@@ -911,7 +858,7 @@ export default function DashboardPage() {
                       {trialDaysLeft}d Trial
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#A0785A]/20 text-[#A0785A]">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#A0785A]/20 text-[#a0785a]">
                       Free
                     </span>
                   )}
@@ -957,49 +904,55 @@ export default function DashboardPage() {
 
         {/* Mobile Menu Overlay */}
         {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-40 bg-faint-white pt-20 px-6 pb-6 overflow-y-auto">
-            <div className="space-y-6">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold mb-2">Browse</p>
-                <div className="space-y-1">
-                  {browseNav.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
-                        isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
-                      }`}
-                    >
-                      <NavIcon name={link.icon} />
-                      {link.label}
-                    </Link>
-                  ))}
+          <>
+            <div
+              className="lg:hidden fixed inset-0 z-40 bg-black/50"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div className="lg:hidden fixed inset-0 z-50 bg-faint-white pt-20 px-6 pb-6 overflow-y-auto">
+              <div className="space-y-6">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold mb-2">Browse</p>
+                  <div className="space-y-1">
+                    {browseNav.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium min-h-[44px] ${
+                          isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
+                        }`}
+                      >
+                        <NavIcon name={link.icon} />
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold mb-2">Library</p>
-                <div className="space-y-1">
-                  {libraryNav.map((link) => (
-                    <Link
-                      key={link.label}
-                      href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
-                        isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
-                      }`}
-                    >
-                      <NavIcon name={link.icon} />
-                      {link.label}
-                    </Link>
-                  ))}
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold mb-2">Library</p>
+                  <div className="space-y-1">
+                    {libraryNav.map((link) => (
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium min-h-[44px] ${
+                          isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
+                        }`}
+                      >
+                        <NavIcon name={link.icon} />
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </>
         )}
 
-        <main className="flex-1 lg:ml-64 min-h-screen pt-[60px] lg:pt-0">
+        <main className="flex-1 lg:ml-64 min-h-screen pt-[60px] lg:pt-0 overflow-x-hidden max-w-full min-w-0">
           {/* Desktop Topbar */}
           <header
             className={`${styles.topbar} sticky top-0 z-30 hidden lg:flex items-center justify-between px-8 py-4`}
@@ -1159,16 +1112,38 @@ export default function DashboardPage() {
             </div>
           </header>
 
-          <div className="px-6 md:px-8 py-8 max-w-7xl mx-auto">
+          <div className="px-4 py-6 md:px-8 md:py-8 max-w-7xl mx-auto min-w-0">
+            {/* Appearance */}
+            <section className={`mb-6 ${styles.fadeUp}`}>
+              <div className={`${styles.cardGlass} rounded-2xl border border-[#d4a574]/30 p-4 sm:p-5`}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E65100] dark:text-[var(--accent-primary)]">
+                      Appearance
+                    </p>
+                    <h2 className="font-cinzel text-lg font-bold text-[#3e2723] dark:text-[var(--text-primary)]">Theme</h2>
+                    <p className="mt-1 text-sm text-[#6b4423] dark:text-[var(--text-secondary)]">
+                      Switch between Daylight, Midnight, and Theater Dim.
+                    </p>
+                  </div>
+                  <div className="w-full sm:max-w-xs">
+                    <ThemeSelect />
+                  </div>
+                </div>
+              </div>
+            </section>
+
             {/* Cinematic Hero Section */}
-            <section className={`mb-10 ${styles.fadeUp}`}>
+            <section className={`mb-6 md:mb-10 ${styles.fadeUp}`}>
               <div className={styles.heroSection}>
-                <img
-                  src="/dashboard/welcome.png"
+                <Image
+                  src={welcomeHero}
                   alt=""
                   aria-hidden="true"
                   className={styles.heroBgImage}
-                  loading="eager"
+                  priority
+                  sizes="100vw"
+                  placeholder="blur"
                 />
                 <div className={styles.heroAmbientGlow} />
                 <div className={styles.heroTopEdge} />
@@ -1230,7 +1205,7 @@ export default function DashboardPage() {
             </section>
 
             {/* Dashboard Stats */}
-            <section className={`grid grid-cols-1 md:grid-cols-3 gap-5 mb-12 ${styles.fadeUp} ${styles.delay1}`}>
+            <section className={`grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4 md:gap-5 mb-10 md:mb-12 ${styles.fadeUp} ${styles.delay1}`}>
               <StatCard
                 icon={
                   <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1269,7 +1244,7 @@ export default function DashboardPage() {
 
             {/* Daily Pick */}
             {dailyPick && (
-              <section className={`mb-12 ${styles.fadeUp} ${styles.delay1}`}>
+              <section className={`mb-8 md:mb-12 ${styles.fadeUp} ${styles.delay1}`}>
                 <Link
                   href={`/movie/${dailyPick.id}`}
                   className="relative block rounded-2xl overflow-hidden border border-tan/20 bg-gradient-to-br from-faint-white to-[#f5efe8] group transition-all hover:shadow-lg hover:shadow-deep-orange/5"
@@ -1315,21 +1290,21 @@ export default function DashboardPage() {
             )}
 
             {/* Upgrade Banner */}
-            <div className={`mb-12 ${styles.fadeUp} ${styles.delay2}`}>
+            <div className={`mb-8 md:mb-12 ${styles.fadeUp} ${styles.delay2}`}>
               <UpgradeBanner onUpgradeClick={() => setIsPricingOpen(true)} />
             </div>
 
             {/* Resume Watching */}
-            <section className={`mb-12 ${styles.fadeUp} ${styles.delay2}`}>
+            <section className={`mb-8 md:mb-12 ${styles.fadeUp} ${styles.delay2}`}>
               {resumeItems.length > 0 ? (
                 <>
-                  <div className="flex items-center justify-between mb-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                     <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3e2723]`}>
                       RESUME WATCHING
                     </h2>
                     <Link
                       href="/dashboard?tab=activity"
-                      className="text-sm font-semibold text-[#E65100] hover:text-[#3E2723] transition flex items-center gap-1"
+                      className="text-sm font-semibold text-[#E65100] hover:text-[#3e2723] transition flex items-center gap-1"
                     >
                       View All
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1361,27 +1336,27 @@ export default function DashboardPage() {
                   <p className="text-sm text-brown mb-6 max-w-md mx-auto">
                     You haven&apos;t started watching anything yet. Browse our collection and pick your next obsession.
                   </p>
-                  <div className="flex items-center justify-center gap-3">
-                    <Link
-                      href="/browse"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-deep-orange to-chocolate text-faint-white text-sm font-semibold hover:from-chocolate hover:to-chocolate transition-all shadow-lg shadow-deep-orange/20"
-                    >
-                      Browse Movies
-                    </Link>
-                    <Link
-                      href="/browse?type=tv"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-tan/40 text-brown text-sm font-semibold hover:border-deep-orange hover:text-deep-orange transition-all"
-                    >
-                      Explore Series
-                    </Link>
-                  </div>
+                    <div className="flex flex-wrap items-center justify-center gap-3">
+                      <Link
+                        href="/browse"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-full bg-gradient-to-r from-deep-orange to-chocolate text-faint-white text-sm font-semibold hover:from-chocolate hover:to-chocolate transition-all shadow-lg shadow-deep-orange/20"
+                      >
+                        Browse Movies
+                      </Link>
+                      <Link
+                        href="/browse?type=tv"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-full border border-tan/40 text-brown text-sm font-semibold hover:border-deep-orange hover:text-deep-orange transition-all"
+                      >
+                        Explore Series
+                      </Link>
+                    </div>
                 </div>
               )}
             </section>
 
             {/* The Archive */}
-            <section className={`mb-12 ${styles.fadeUp} ${styles.delay3}`}>
-              <div className="flex items-center justify-between mb-5">
+            <section className={`mb-8 md:mb-12 ${styles.fadeUp} ${styles.delay3}`}>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                 <div>
                   <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
                     The Archive
@@ -1390,14 +1365,14 @@ export default function DashboardPage() {
                     {filteredArchive.length} titles preserved for your viewing
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex bg-faint-white border border-tan/30 rounded-lg p-1">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex overflow-x-auto whitespace-nowrap bg-faint-white border border-tan/30 rounded-lg p-1 shrink-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {(["all", "movies", "series"] as const).map((f) => (
                       <button
                         type="button"
                         key={f}
                         onClick={() => setArchiveFilter(f)}
-                        className={`px-3 py-1 text-xs font-semibold rounded transition ${archiveFilter === f ? "bg-chocolate text-faint-white" : "text-brown hover:text-deep-orange"}`}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded transition whitespace-nowrap min-h-[36px] ${archiveFilter === f ? "bg-chocolate text-faint-white" : "text-brown hover:text-deep-orange"}`}
                       >
                         {f === "all" ? "All" : f === "movies" ? "Movies" : "Series"}
                       </button>
@@ -1405,7 +1380,7 @@ export default function DashboardPage() {
                   </div>
                   <Link
                     href="/watchlist"
-                    className="text-sm font-semibold text-deep-orange hover:text-chocolate transition flex items-center gap-1"
+                    className="text-sm font-semibold text-deep-orange hover:text-chocolate transition flex items-center gap-1 whitespace-nowrap shrink-0"
                   >
                     View All
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1416,7 +1391,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               {filteredArchive.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
                   {filteredArchive.slice(0, 12).map((item) => (
                     <Link key={item.id} href={`/movie/${item.id}`} className={`${styles.archiveCard}`}>
                       <img src={posterUrl(item.posterPath, "w342")} alt={item.title} loading="lazy" />
@@ -1447,7 +1422,7 @@ export default function DashboardPage() {
                   <p className="text-sm text-brown mb-5">
                     Your archive is empty. Start adding titles to your watchlist.
                   </p>
-                  <div className="flex items-center justify-center gap-3">
+                  <div className="flex flex-wrap items-center justify-center gap-3">
                     <Link
                       href="/browse"
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-deep-orange to-chocolate text-faint-white text-xs font-semibold hover:from-chocolate hover:to-chocolate transition-all shadow-lg shadow-deep-orange/20"
@@ -1466,7 +1441,7 @@ export default function DashboardPage() {
             </section>
 
             {/* Recent Activity */}
-            <section id="recent-activity" className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>
+            <section id="recent-activity" className={`mb-8 md:mb-12 ${styles.fadeUp} ${styles.delay4}`}>
               {/* Main card container */}
               <div className={styles.activityCard}>
                 {/* Left orange accent bar */}
@@ -1475,22 +1450,22 @@ export default function DashboardPage() {
                 {/* Card content */}
                 <div className="p-6 md:p-8">
                   {/* Header */}
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                     <h3 className="font-cinzel text-lg font-bold text-[#3e2723] tracking-[0.5px]">RECENT ACTIVITY</h3>
-                    <div className="flex items-center gap-2">
+                    <div className="flex overflow-x-auto whitespace-nowrap items-center gap-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                       {(["all", "watching", "watchlist", "completed"] as const).map((f) => (
                         <button
                           type="button"
                           key={f}
                           onClick={() => setActivityFilter(f)}
-                          className={`${styles.filterPill} ${activityFilter === f ? styles.filterPillActive : ""}`}
+                          className={`${styles.filterPill} ${activityFilter === f ? styles.filterPillActive : ""} whitespace-nowrap shrink-0 min-h-[36px]`}
                         >
                           {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
                         </button>
                       ))}
                       <Link
                         href="/dashboard?tab=activity"
-                        className="text-[12px] font-semibold text-[#6b4423] hover:text-[#e65100] transition-colors whitespace-nowrap"
+                        className="text-[12px] font-semibold text-[#6b4423] hover:text-[#e65100] transition-colors whitespace-nowrap shrink-0"
                       >
                         View All &rarr;
                       </Link>
@@ -1523,8 +1498,8 @@ export default function DashboardPage() {
 
             {/* Recommended For You */}
             {(!recsLoading || recommendations.length > 0) && (
-              <section className={`mb-12 ${styles.fadeUp} ${styles.delay4}`}>
-                <div className="flex items-center justify-between mb-5">
+              <section className={`mb-8 md:mb-12 ${styles.fadeUp} ${styles.delay4}`}>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                   <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
                     Recommended For You
                   </h2>
@@ -1539,7 +1514,7 @@ export default function DashboardPage() {
                     </svg>
                   </Link>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                   {recsLoading
                     ? Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className={`${styles.archiveCard} animate-pulse`}>
@@ -1568,7 +1543,7 @@ export default function DashboardPage() {
               </section>
             )}
 
-            <footer className="mt-12 py-6 border-t border-tan/30">
+            <footer className="mt-8 md:mt-12 py-6 border-t border-tan/30">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <p className="text-xs text-brown font-cinzel tracking-wider">CHITHIRA · EVERY STORY, CARVED IN LIGHT</p>
                 <div className="flex gap-5 text-xs">

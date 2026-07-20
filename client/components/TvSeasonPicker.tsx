@@ -1,7 +1,7 @@
 "use client";
 
 import type { Movie } from "@/lib/types";
-import { useUserLibrary } from "@/components/UserLibraryProvider";
+import { usePlaybackLibrary, useUserLibraryActions } from "@/components/UserLibraryProvider";
 import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import { useEffect, useState } from "react";
 
@@ -24,7 +24,8 @@ interface TvSeasonPickerProps {
 
 export default function TvSeasonPicker({ movie }: TvSeasonPickerProps) {
   const { openMovie } = useVideoPlayer();
-  const { isEpisodeWatched, toggleEpisodeWatched, watchedEpisodeCount } = useUserLibrary();
+  const { isEpisodeWatched, watchedEpisodeCount } = usePlaybackLibrary();
+  const { toggleEpisodeWatched } = useUserLibraryActions();
   const [seasons, setSeasons] = useState<SeasonSummary[]>([]);
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [episodes, setEpisodes] = useState<EpisodeSummary[]>([]);

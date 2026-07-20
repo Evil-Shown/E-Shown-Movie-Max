@@ -2,7 +2,7 @@
 
 import type { Movie } from "@/lib/types";
 import { posterUrl, stillUrl, formatDisplayYear } from "@/lib/movies";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface SeasonSummary {
   season_number: number;
@@ -40,6 +40,16 @@ export default function PlayerTvSelector({
   const [loadingSeasons, setLoadingSeasons] = useState(true);
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
   const activeEpisodeRef = useRef<HTMLButtonElement>(null);
+  const [mobileExpanded, setMobileExpanded] = useState(false);
+  const mobileCollapsed = !mobileExpanded;
+
+  const handleEpisodeChange = useCallback(
+    (ep: number) => {
+      setMobileExpanded(false);
+      onChange(season, ep);
+    },
+    [onChange, season]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -117,22 +127,35 @@ export default function PlayerTvSelector({
   const displayYear = formatDisplayYear(movie.year);
 
   return (
-    <aside className="flex h-full max-h-[min(50vh,460px)] min-h-0 w-full flex-col rounded-none border-l border-[rgba(201,106,43,0.2)] bg-[linear-gradient(180deg,#fffdf9,#f6efe4)] lg:max-h-none lg:w-[380px] lg:shrink-0 xl:w-[420px]">
-      <div className="shrink-0 border-b border-[rgba(201,106,43,0.12)] px-3 py-3">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
-          Now playing
-        </p>
-        <p className="mt-1 text-sm font-semibold leading-snug text-[var(--text-primary)]">
-          S{season} · E{episode}
-          {currentEpisode?.name ? ` — ${currentEpisode.name}` : ""}
-        </p>
-        <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
-          {movie.title}
-          {displayYear ? ` · ${displayYear}` : ""}
-        </p>
+    <aside
+      className={`flex min-h-0 w-full flex-col rounded-none border-t border-[rgba(201,106,43,0.2)] bg-[linear-gradient(180deg,#fffdf9,#f6efe4)] transition-[height,max-height] duration-300 lg:h-full lg:max-h-none lg:w-[380px] lg:shrink-0 lg:border-t-0 lg:border-l xl:w-[420px] ${
+        mobileCollapsed ? "h-auto max-h-none shrink-0" : "h-full max-h-[min(60dvh,520px)] lg:max-h-none"
+      }`}
+    >
+      <div className="flex shrink-0 items-center justify-between border-b border-[rgba(201,106,43,0.12)] px-3 py-2 lg:block lg:py-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
+            Now playing
+          </p>
+          <p className="text-sm font-semibold leading-snug text-[var(--text-primary)] lg:mt-1">
+            S{season} · E{episode}
+            {currentEpisode?.name ? ` — ${currentEpisode.name}` : ""}
+          </p>
+          <p className="hidden text-[11px] text-[var(--text-secondary)] lg:mt-0.5 lg:block">
+            {movie.title}
+            {displayYear ? ` · ${displayYear}` : ""}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMobileExpanded((v) => !v)}
+          className="min-h-[40px] rounded-full border border-[var(--border-strong)] bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-primary)] active:scale-95 lg:hidden"
+        >
+          {mobileExpanded ? "Hide" : "Episodes"}
+        </button>
       </div>
 
-      <div className="shrink-0 border-b border-[rgba(201,106,43,0.1)] px-3 py-2.5">
+      <div className={`shrink-0 border-b border-[rgba(201,106,43,0.1)] px-3 py-2.5 ${mobileCollapsed ? "hidden lg:block" : ""}`}>
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
           Season
         </p>
@@ -149,7 +172,7 @@ export default function PlayerTvSelector({
                     type="button"
                     disabled={disabled}
                     onClick={() => onChange(s.season_number, 1)}
-                    className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
+                    className={`min-h-[44px] min-w-[44px] rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
                       active
                         ? "bg-[var(--accent-primary)] text-white shadow-sm"
                         : "border border-[var(--border)] bg-white text-[var(--text-primary)] hover:border-[var(--accent-primary)]"
@@ -162,7 +185,7 @@ export default function PlayerTvSelector({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col px-3 py-2.5">
+      <div className={`flex min-h-0 flex-1 flex-col px-3 py-2.5 ${mobileCollapsed ? "hidden lg:flex" : ""}`}>
         <p className="mb-2 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
           Episodes
         </p>
@@ -181,14 +204,14 @@ export default function PlayerTvSelector({
                     ref={active ? activeEpisodeRef : undefined}
                     type="button"
                     disabled={disabled}
-                    onClick={() => onChange(season, ep.episode_number)}
-                    className={`flex w-full gap-3 rounded-lg border p-2.5 text-left transition ${
+                    onClick={() => handleEpisodeChange(ep.episode_number)}
+                    className={`flex w-full gap-3 rounded-lg border p-3 text-left transition ${
                       active
                         ? "border-[var(--accent-primary)] bg-[rgba(232,164,74,0.12)] ring-1 ring-[rgba(201,106,43,0.22)]"
                         : "border-[var(--border)] bg-white hover:border-[var(--accent-primary)]/45 hover:bg-[rgba(232,164,74,0.05)]"
                     }`}
                   >
-                    <div className="relative aspect-video w-[128px] shrink-0 overflow-hidden rounded-md bg-[var(--bg-secondary)] sm:w-[140px]">
+                    <div className="relative aspect-video w-[140px] shrink-0 overflow-hidden rounded-md bg-[var(--bg-secondary)] sm:w-[150px]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={thumb}
@@ -206,14 +229,14 @@ export default function PlayerTvSelector({
                     </div>
                     <div className="min-w-0 flex-1 py-0.5">
                       <p
-                        className={`line-clamp-2 text-[13px] font-semibold leading-snug ${
+                        className={`line-clamp-2 text-[14px] font-semibold leading-snug ${
                           active ? "text-[var(--accent-primary)]" : "text-[var(--text-primary)]"
                         }`}
                       >
                         {ep.name || `Episode ${ep.episode_number}`}
                       </p>
                       {ep.overview ? (
-                        <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[var(--text-secondary)]">
+                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--text-secondary)] sm:text-[13px]">
                           {ep.overview}
                         </p>
                       ) : null}
@@ -225,7 +248,7 @@ export default function PlayerTvSelector({
       </div>
 
       {onSwitchProvider ? (
-        <div className="shrink-0 border-t border-[rgba(201,106,43,0.12)] p-3">
+        <div className={`shrink-0 border-t border-[rgba(201,106,43,0.12)] p-3 ${mobileCollapsed ? "hidden lg:block" : ""}`}>
           <button
             type="button"
             onClick={onSwitchProvider}
