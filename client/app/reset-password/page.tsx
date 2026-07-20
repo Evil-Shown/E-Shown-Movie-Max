@@ -242,11 +242,11 @@ export default function ResetPasswordPage() {
             </span>
           </h1>
 
-          <p className="text-white/40 text-sm leading-relaxed max-w-sm mx-auto">
+          <p className="text-white/90 text-sm leading-relaxed max-w-sm mx-auto">
             Choose a strong password to secure your account. A mix of letters, numbers, and symbols is best.
           </p>
 
-          <div className="mt-12 flex items-center justify-center gap-10 text-white/25 text-xs">
+          <div className="mt-12 flex items-center justify-center gap-10 text-white/80 text-xs">
             {[
               { icon: "shield", label: "Encrypted" },
               { icon: "lock", label: "Secure" },
@@ -306,16 +306,16 @@ export default function ResetPasswordPage() {
                   </svg>
                 </div>
                 <h2 className="font-cinzel text-xl font-bold text-[#3E2723] mb-3">Invalid Reset Link</h2>
-                <p className="text-sm text-[#6B4423] mb-8 leading-relaxed max-w-xs mx-auto">
+                <p className="text-sm text-[#3E2723] mb-8 leading-relaxed max-w-xs mx-auto">
                   This password reset link is invalid or has expired. Please request a new one.
                 </p>
                 <Link
                   href="/forgot-password"
-                  className="inline-block w-full py-3.5 btn-primary text-white text-sm font-semibold rounded-xl text-center"
+                  className="inline-block w-full py-3.5 btn-primary text-black text-sm font-semibold rounded-xl text-center"
                 >
                   Request New Link
                 </Link>
-                <Link href="/" className="block mt-4 text-xs text-[#A0785A] hover:text-[#E65100] transition text-center">
+                <Link href="/" className="block mt-4 text-xs text-[#6B4423] hover:text-[#E65100] transition text-center">
                   Back to Home
                 </Link>
               </div>
@@ -328,8 +328,8 @@ export default function ResetPasswordPage() {
                   </svg>
                 </div>
                 <h2 className="font-cinzel text-xl font-bold text-[#3E2723] mb-3">Password Reset!</h2>
-                <p className="text-sm text-[#6B4423] mb-1">Your password has been updated successfully.</p>
-                <p className="text-xs text-[#A0785A] mb-8">Redirecting to sign in...</p>
+                <p className="text-sm text-[#3E2723] mb-1">Your password has been updated successfully.</p>
+                <p className="text-xs text-[#6B4423] mb-8">Redirecting to sign in...</p>
                 <Link
                   href="/login"
                   className="inline-block w-full py-3.5 btn-primary text-white text-sm font-semibold rounded-xl text-center"

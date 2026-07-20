@@ -39,6 +39,19 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
     confirmPassword: "",
   });
   const [forgotEmail, setForgotEmail] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => setCooldown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+  };
 
   const handleClose = useCallback(() => {
     if (didAuth.current) {
@@ -130,7 +143,14 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
         redirectTo: `${getPublicAppOrigin()}/reset-password`,
       });
       if (resetError) {
-        setError(resetError.message || "Something went wrong. Please try again.");
+        if (/rate\s*limit|too\s*many|cooldown/i.test(resetError.message)) {
+          const match = resetError.message.match(/(\d+)\s*seconds?/i);
+          const seconds = match ? parseInt(match[1], 10) : 60;
+          setCooldown(seconds);
+          setError("Too many requests. Please wait.");
+        } else {
+          setError(resetError.message || "Something went wrong. Please try again.");
+        }
       } else {
         setSuccessMsg("If an account exists with this email, a password reset link has been sent.");
       }
@@ -145,6 +165,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
     setMode(newMode);
     setError(null);
     setSuccessMsg(null);
+    if (newMode !== "forgot") setCooldown(0);
   };
 
   if (!isOpen) return null;
@@ -247,16 +268,28 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
 
             {/* Error */}
             {error && (
-              <div className="mb-5 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm flex items-center gap-2.5 animate-pulse">
-                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span>{error}</span>
+              <div className={`mb-5 p-3 rounded-xl border text-sm flex items-center gap-2.5 ${
+                cooldown > 0
+                  ? "bg-amber-500/10 border-amber-500/20 text-amber-300"
+                  : "bg-red-500/10 border-red-500/20 text-red-300 animate-pulse"
+              }`}>
+                {cooldown > 0 ? (
+                  <>
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>
+                      Too many requests. Wait <strong className="tabular-nums">{formatTime(cooldown)}</strong>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{error}</span>
+                  </>
+                )}
               </div>
             )}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { getPublicAppOrigin } from "@/lib/app-origin";
 
@@ -10,6 +10,19 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => setCooldown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  const parseCooldown = (msg: string): number => {
+    const match = msg.match(/(\d+)\s*seconds?/i);
+    if (match) return parseInt(match[1], 10);
+    return 60;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +35,13 @@ export default function ForgotPasswordPage() {
         redirectTo: `${getPublicAppOrigin()}/reset-password`,
       });
       if (resetError) {
-        setError(resetError.message || "Something went wrong. Please try again.");
+        if (/rate\s*limit|too\s*many|cooldown/i.test(resetError.message)) {
+          const seconds = parseCooldown(resetError.message);
+          setCooldown(seconds);
+          setError("You've requested too many password resets. Please wait.");
+        } else {
+          setError(resetError.message || "Something went wrong. Please try again.");
+        }
       } else {
         setSent(true);
       }
@@ -31,6 +50,12 @@ export default function ForgotPasswordPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
   };
 
   return (
@@ -183,11 +208,11 @@ export default function ForgotPasswordPage() {
             </span>
           </h1>
 
-          <p className="text-white/40 text-sm leading-relaxed max-w-sm mx-auto">
+          <p className="text-white/90 text-sm leading-relaxed max-w-sm mx-auto">
             Don&apos;t worry, it happens to the best of us. Enter your email and we&apos;ll send you a link to reset your password.
           </p>
 
-          <div className="mt-12 flex items-center justify-center gap-10 text-white/25 text-xs">
+          <div className="mt-12 flex items-center justify-center gap-10 text-white/80 text-xs">
             {[
               { icon: "shield", label: "Encrypted" },
               { icon: "lock", label: "Secure" },
@@ -291,11 +316,28 @@ export default function ForgotPasswordPage() {
 
                 {/* Error */}
                 {error && (
-                  <div className="mb-6 p-4 rounded-xl bg-red-50/80 border border-red-200/50 text-red-600 text-sm flex items-center gap-3 status-enter">
-                    <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{error}</span>
+                  <div className={`mb-6 p-4 rounded-xl border text-sm flex items-center gap-3 status-enter ${
+                    cooldown > 0
+                      ? "bg-amber-50/80 border-amber-200/50 text-amber-700"
+                      : "bg-red-50/80 border-red-200/50 text-red-600"
+                  }`}>
+                    {cooldown > 0 ? (
+                      <>
+                        <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>
+                          Too many requests. Please wait <strong className="tabular-nums">{formatTime(cooldown)}</strong> before trying again.
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{error}</span>
+                      </>
+                    )}
                   </div>
                 )}
 
