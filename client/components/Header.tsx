@@ -80,6 +80,7 @@ function NavLink({
 export default function Header() {
   const pathname = usePathname();
   const isDashboard = pathname === "/dashboard" || pathname === "/settings" || pathname === "/notifications";
+  const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password" || pathname === "/reset-password";
   const { watchlistCount } = useWatchlistLibrary();
   const afterHydration = useAfterHydration();
   const [scrolled, setScrolled] = useState(false);
@@ -92,8 +93,12 @@ export default function Header() {
 
   useEffect(() => {
     document.body.classList.toggle("dashboard-page", isDashboard);
-    return () => document.body.classList.remove("dashboard-page");
-  }, [isDashboard]);
+    document.body.classList.toggle("auth-page", isAuthPage);
+    return () => {
+      document.body.classList.remove("dashboard-page");
+      document.body.classList.remove("auth-page");
+    };
+  }, [isDashboard, isAuthPage]);
 
   useEffect(() => {
     let ticking = false;
@@ -140,7 +145,7 @@ export default function Header() {
     };
   }, [menuOpen]);
 
-  if (isDashboard) return null;
+  if (isDashboard || isAuthPage) return null;
 
   return (
     <>

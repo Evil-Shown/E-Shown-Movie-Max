@@ -48,7 +48,7 @@ export default async function HomeMoreRows({
         </HomeSection>
       )}
 
-      {sinhalaCinema.length > 0 && (
+      {/* {sinhalaCinema.length > 0 && (
         <HomeSection className="section-alt py-12">
           <MovieRow
             embedded
@@ -58,7 +58,7 @@ export default async function HomeMoreRows({
             movies={sinhalaCinema}
           />
         </HomeSection>
-      )}
+      )} */}
 
       <HomeSection className="section-base py-12">
         <MovieRow

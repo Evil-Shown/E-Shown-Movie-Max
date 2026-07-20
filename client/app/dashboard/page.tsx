@@ -108,7 +108,7 @@ const browseNav = [
 const libraryNav = [
   { href: "/watchlist", label: "Watchlist", icon: "watchlist" },
   { href: "/dashboard?tab=activity", label: "History", icon: "history" },
-  { href: "/watchlist", label: "Downloads", icon: "downloads" },
+  { href: "/downloads", label: "Downloads", icon: "downloads" },
   { href: "/watchlist", label: "Favorites", icon: "favorites" },
 ];
 
