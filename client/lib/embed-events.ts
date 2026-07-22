@@ -86,6 +86,42 @@ export function isEmbedNearEnd(data: unknown, remainingSeconds = 30): boolean {
 }
 
 /**
+ * Return true if this message should be silently dropped (PiP spam, ad events, etc.)
+ */
+export function isIgnorableEmbedEvent(data: unknown): boolean {
+  const record = asRecord(data);
+  if (!record) return false;
+  const str = JSON.stringify(record).toLowerCase();
+  return (
+    str.includes("pip") ||
+    str.includes("picture-in-picture") ||
+    str.includes("pictureinpicture") ||
+    str.includes("ads.") ||
+    str.includes("ad_error") ||
+    str.includes("adstart") ||
+    str.includes("ad_end")
+  );
+}
+
+const THROTTLE_WINDOW_MS = 500;
+const lastEventByType = new Map<string, number>();
+
+/**
+ * Returns true if this event type has been seen within the throttle window.
+ * Used to prevent React from drowning in postMessage spam from aggressive embed providers.
+ */
+export function isThrottledEvent(data: unknown): boolean {
+  const record = asRecord(data);
+  if (!record) return false;
+  const key = String(record.event || record.type || "unknown").toLowerCase();
+  const now = Date.now();
+  const last = lastEventByType.get(key) ?? 0;
+  if (now - last < THROTTLE_WINDOW_MS) return true;
+  lastEventByType.set(key, now);
+  return false;
+}
+
+/**
  * Fullscreen bridge from proxied embed pages (see server/src/embed-proxy.ts).
  * Returns "enter" | "exit" when the in-player FS button asked the parent to handle it.
  */

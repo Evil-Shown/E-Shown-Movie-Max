@@ -9,6 +9,8 @@ import {
   isEmbedNearEnd,
   isEmbedPlaybackEnded,
   isEmbedUpNextSignal,
+  isIgnorableEmbedEvent,
+  isThrottledEvent,
   parseEmbedPlayerEvent,
 } from "@/lib/embed-events";
 import { installAdPopupBlocker } from "@/lib/block-ad-nav";
@@ -339,6 +341,9 @@ export function useVideoPlayer({
     if (isTrailer) return;
 
     const onMessage = (event: MessageEvent) => {
+      if (isIgnorableEmbedEvent(event.data)) return;
+      if (isThrottledEvent(event.data)) return;
+
       if (isEmbedPlaybackMessage(event.data)) {
         confirmPlayback();
       }
