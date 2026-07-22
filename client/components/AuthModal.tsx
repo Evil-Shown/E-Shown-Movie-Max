@@ -61,7 +61,6 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
     const timer = setInterval(() => setLoginLockSeconds((c) => c - 1), 1000);
     return () => clearInterval(timer);
   }, [loginLockSeconds]);
-  const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
     if (cooldown <= 0) return;
