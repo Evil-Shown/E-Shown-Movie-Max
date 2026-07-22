@@ -78,7 +78,7 @@ export default function SearchFilters({ params }: SearchFiltersProps) {
               aria-current={active ? "true" : undefined}
               className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                 active
-                  ? "border-[var(--bg-dark)] bg-[var(--bg-dark)] text-[var(--text-inverse)]"
+                  ? "border-[var(--accent-primary)] bg-[var(--accent-primary)] text-[var(--on-accent)]"
                   : "border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -141,7 +141,7 @@ export default function SearchFilters({ params }: SearchFiltersProps) {
             aria-current={!params.genre ? "true" : undefined}
             className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
               !params.genre
-                ? "border-[var(--bg-dark)] bg-[var(--bg-dark)] text-[var(--text-inverse)]"
+                ? "border-[var(--accent-primary)] bg-[var(--accent-primary)] text-[var(--on-accent)]"
                 : "border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]"
             }`}
           >
@@ -156,7 +156,7 @@ export default function SearchFilters({ params }: SearchFiltersProps) {
                 aria-current={active ? "true" : undefined}
                 className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                   active
-                    ? "border-[var(--bg-dark)] bg-[var(--bg-dark)] text-[var(--text-inverse)]"
+                    ? "border-[var(--accent-primary)] bg-[var(--accent-primary)] text-[var(--on-accent)]"
                     : "border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]"
                 }`}
               >

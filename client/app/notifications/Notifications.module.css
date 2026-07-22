@@ -98,8 +98,8 @@
 }
 
 .btnFilled:hover {
-  background: #cc4d00;
-  box-shadow: 0 4px 16px rgba(230, 81, 0, 0.3);
+  filter: brightness(0.9);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--deep-orange) 30%, transparent);
 }
 
 .listWrapper {
@@ -129,23 +129,21 @@
   gap: 14px;
   padding: 14px 18px;
   background: var(--faint-white);
-  border: 1px solid rgba(212, 165, 116, 0.25);
+  border: 1px solid var(--border-strong);
   border-radius: 12px;
   transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
   position: relative;
 }
 
 .notificationCard:hover {
-  border-color: rgba(230, 81, 0, 0.3);
-  box-shadow:
-    0 4px 20px rgba(62, 39, 35, 0.06),
-    0 8px 32px rgba(62, 39, 35, 0.04);
+  border-color: color-mix(in srgb, var(--accent-primary) 30%, transparent);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
 .notificationCardUnread {
   background: color-mix(in srgb, var(--light-orange-faint) 40%, var(--faint-white));
-  border-color: rgba(230, 81, 0, 0.15);
+  border-color: color-mix(in srgb, var(--accent-primary) 15%, transparent);
 }
 
 .posterThumb {
@@ -153,7 +151,7 @@
   height: 48px;
   border-radius: 10px;
   overflow: hidden;
-  background: rgba(212, 165, 116, 0.15);
+  background: color-mix(in srgb, var(--tan) 15%, transparent);
   flex-shrink: 0;
   position: relative;
 }
@@ -219,11 +217,11 @@
 
 .badgeUnread {
   background: var(--deep-orange);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .badgeRead {
-  background: rgba(212, 165, 116, 0.15);
+  background: color-mix(in srgb, var(--tan) 15%, transparent);
   color: var(--sandy);
 }
 
@@ -243,7 +241,7 @@
 }
 
 .actionBtn:hover {
-  background: rgba(212, 165, 116, 0.15);
+  background: color-mix(in srgb, var(--tan) 15%, transparent);
   color: var(--chocolate);
 }
 
@@ -253,9 +251,9 @@
   right: 0;
   margin-top: 4px;
   background: var(--faint-white);
-  border: 1px solid rgba(212, 165, 116, 0.25);
+  border: 1px solid var(--border-strong);
   border-radius: 10px;
-  box-shadow: 0 8px 32px rgba(62, 39, 35, 0.12);
+  box-shadow: var(--shadow-md);
   z-index: 60;
   min-width: 140px;
   max-width: min(90vw, 280px);
@@ -315,7 +313,7 @@
 
 .divider {
   border: none;
-  border-top: 1px solid rgba(212, 165, 116, 0.12);
+  border-top: 1px solid color-mix(in srgb, var(--tan) 12%, transparent);
   margin: 0;
 }
 

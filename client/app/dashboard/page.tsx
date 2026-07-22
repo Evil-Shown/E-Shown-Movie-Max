@@ -140,7 +140,7 @@ function SidebarNavLink({
       <span className="flex-1">{label}</span>
       {badge !== undefined && (
         <span
-          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${active ? "bg-[#e65100] text-white" : "text-[#d4a574]/60 bg-[#d4a574]/10"}`}
+          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${active ? "bg-[var(--accent-primary)] text-[var(--on-accent)]" : "text-[var(--accent-warm)]/60 bg-[var(--accent-warm)]/10"}`}
         >
           {badge}
         </span>
@@ -174,11 +174,11 @@ function StatCard({
 
       {/* Content */}
       <div className="p-4 pb-5 flex-1 flex flex-col justify-center">
-        <p className="font-cinzel text-2xl sm:text-3xl font-bold text-[#3e2723] dark:text-[var(--text-primary)] leading-tight">
+        <p className="font-cinzel text-2xl sm:text-3xl font-bold text-chocolate leading-tight">
           {value}
-          {valueUnit && <span className="text-sm sm:text-base text-[#a0785a] dark:text-[var(--text-muted)] font-normal ml-1">{valueUnit}</span>}
+          {valueUnit && <span className="text-sm sm:text-base text-[var(--text-muted)] font-normal ml-1">{valueUnit}</span>}
         </p>
-        <p className="text-xs sm:text-sm text-[#6b4423] dark:text-[var(--text-secondary)] mt-1.5 font-medium">{label}</p>
+        <p className="text-xs sm:text-sm text-brown mt-1.5 font-medium">{label}</p>
 
         {/* Glowing Progress Line */}
         {progress !== undefined && progress > 0 && (
@@ -226,8 +226,8 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
         <div>
           <div className="flex items-start justify-between gap-3 mb-2">
             <div>
-              <h3 className="font-cinzel text-xl font-bold text-[#fffbf5]">{item.title}</h3>
-              <p className="text-xs text-[#d4a574] mt-1">
+              <h3 className="font-cinzel text-xl font-bold text-[var(--text-inverse)]">{item.title}</h3>
+              <p className="text-xs text-[var(--accent-warm)] mt-1">
                 {isTv
                   ? `Season ${item.season || 1} · Episode ${item.episode || 1}`
                   : `${item.year || ""}${item.year ? " · " : ""}${item.genres?.slice(0, 2).join("/") || "Movie"} · ${formatDuration(item.duration)}`}
@@ -243,7 +243,7 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
                   e.preventDefault();
                   setMenuOpen((o) => !o);
                 }}
-                className="text-[#d4a574] hover:text-[#e65100] transition"
+                className="text-[var(--accent-warm)] hover:text-[var(--accent-primary)] transition"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                   <circle cx="5" cy="12" r="2" />
@@ -275,20 +275,20 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
               )}
             </div>
           </div>
-          <p className="text-sm text-[#c4b5a5] mt-2 line-clamp-2">
+          <p className="text-sm text-[var(--text-muted)] mt-2 line-clamp-2">
             {item.overview ||
               `Continue where you left off. ${remainingTime(item.currentTime, item.duration)} remaining.`}
           </p>
         </div>
 
         <div className="mt-4">
-          <div className="flex justify-between text-xs text-[#d4a574] mb-1.5">
+          <div className="flex justify-between text-xs text-[var(--accent-warm)] mb-1.5">
             <span className="flex items-center gap-1.5">
-              <svg className="w-3 h-3 text-[#e65100]" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-3 h-3 text-[var(--accent-primary)]" viewBox="0 0 24 24" fill="currentColor">
                 <rect x="6" y="4" width="4" height="16" />
                 <rect x="14" y="4" width="4" height="16" />
               </svg>
-              <span className="font-semibold text-[#fffbf5]">Paused at {pausedAt}</span>
+              <span className="font-semibold text-[var(--text-inverse)]">Paused at {pausedAt}</span>
             </span>
             <span>{totalDuration}</span>
           </div>
@@ -311,8 +311,8 @@ interface ActivityItem {
 
 function ActivityRow({ item }: { item: ActivityItem }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-[#d4a574]/15 last:border-b-0">
-      <div className="relative w-10 h-10 shrink-0 rounded-lg overflow-hidden bg-[#f5efe8]">
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] last:border-b-0">
+      <div className="relative w-10 h-10 shrink-0 rounded-lg overflow-hidden bg-[var(--bg-secondary)]">
         {item.posterPath ? (
           <img
             src={posterUrl(item.posterPath, "w342")}
@@ -321,7 +321,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[#c4b5a5]">
+          <div className="w-full h-full flex items-center justify-center text-[var(--text-muted)]">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <rect x="2" y="2" width="20" height="20" rx="3" />
               <circle cx="9" cy="9" r="2" />
@@ -332,8 +332,8 @@ function ActivityRow({ item }: { item: ActivityItem }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold text-[#3e2723] dark:text-[var(--text-primary)] leading-tight truncate">{item.title}</p>
-        <p className="text-[11px] text-[#a0785a] dark:text-[var(--text-muted)] mt-0.5 truncate">
+        <p className="text-[13px] font-semibold text-chocolate leading-tight truncate">{item.title}</p>
+        <p className="text-[11px] text-[var(--text-muted)] mt-0.5 truncate">
           {item.meta && <span>{item.meta} · </span>}
           {timeAgo(item.timestamp)}
         </p>
@@ -342,7 +342,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
       <div className="shrink-0">
         <button
           type="button"
-          className="w-9 h-9 rounded-full flex items-center justify-center text-[#e65100] hover:bg-[#e65100]/10 transition"
+          className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition"
           aria-label={`Play ${item.title}`}
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -356,41 +356,41 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 
 function DashboardSkeleton() {
   return (
-    <div className="min-h-screen font-sans text-chocolate" style={{ background: "#fdf8f0" }}>
+    <div className="min-h-screen font-sans text-chocolate" style={{ background: "var(--card-surface)" }}>
       <div className="flex min-h-screen">
-        <aside className="fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col bg-[#3e2723] animate-pulse">
-          <div className="px-6 py-6 border-b border-[#d4a574]/15">
+        <aside className="fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col bg-[var(--bg-dark)] animate-pulse">
+          <div className="px-6 py-6 border-b border-[var(--border)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#d4a574]/20" />
+              <div className="w-10 h-10 rounded-lg bg-[var(--accent-warm)]/20" />
               <div className="space-y-2">
-                <div className="h-4 w-24 rounded bg-[#d4a574]/20" />
-                <div className="h-2 w-16 rounded bg-[#d4a574]/10" />
+                <div className="h-4 w-24 rounded bg-[var(--accent-warm)]/20" />
+                <div className="h-2 w-16 rounded bg-[var(--accent-warm)]/10" />
               </div>
             </div>
           </div>
           <div className="flex-1 px-4 py-4 space-y-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="h-10 rounded-lg bg-[#d4a574]/10" />
+              <div key={i} className="h-10 rounded-lg bg-[var(--accent-warm)]/10" />
             ))}
           </div>
         </aside>
         <main className="flex-1 lg:ml-64 min-h-screen">
           <div className="px-6 md:px-8 py-8 max-w-7xl mx-auto animate-pulse">
             <div className="mb-10">
-              <div className="rounded-2xl bg-[#f5efe8] p-6 md:p-8">
-                <div className="h-3 w-40 rounded bg-[#d4a574]/20 mb-4" />
-                <div className="h-8 w-64 rounded bg-[#d4a574]/20 mb-2" />
-                <div className="h-8 w-48 rounded bg-[#d4a574]/20 mb-4" />
-                <div className="h-4 w-96 rounded bg-[#d4a574]/10" />
+              <div className="rounded-2xl bg-[var(--bg-secondary)] p-6 md:p-8">
+                <div className="h-3 w-40 rounded bg-[var(--accent-warm)]/20 mb-4" />
+                <div className="h-8 w-64 rounded bg-[var(--accent-warm)]/20 mb-2" />
+                <div className="h-8 w-48 rounded bg-[var(--accent-warm)]/20 mb-4" />
+                <div className="h-4 w-96 rounded bg-[var(--accent-warm)]/10" />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="rounded-xl bg-[#f5efe8] h-40" />
+                <div key={i} className="rounded-xl bg-[var(--bg-secondary)] h-40" />
               ))}
             </div>
-            <div className="rounded-2xl bg-[#f5efe8] h-48 mb-12" />
-            <div className="rounded-2xl bg-[#f5efe8] h-64 mb-12" />
+            <div className="rounded-2xl bg-[var(--bg-secondary)] h-48 mb-12" />
+            <div className="rounded-2xl bg-[var(--bg-secondary)] h-64 mb-12" />
           </div>
         </main>
       </div>
@@ -635,11 +635,11 @@ export default function DashboardPage() {
       <div className="flex min-h-screen">
         {/* Desktop Sidebar */}
         <aside className={`${styles.sidebar} fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col`}>
-          <div className="px-6 py-6 border-b border-[#d4a574]/15">
+          <div className="px-6 py-6 border-b border-[var(--border)]">
             <div className="flex items-center gap-3">
               <div className={`${styles.eyeDeco} w-10 h-10 relative`} />
               <div>
-                <h1 className="font-cinzel text-xl font-bold text-[#fffbf5] leading-none">CHITHIRA</h1>
+                <h1 className="font-cinzel text-xl font-bold text-[var(--text-inverse)] leading-none">CHITHIRA</h1>
               </div>
             </div>
           </div>
@@ -674,7 +674,7 @@ export default function DashboardPage() {
               className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium text-left w-full border-none cursor-pointer bg-transparent`}
               onClick={() => setShowLogoutConfirm(true)}
             >
-              <span className="text-[#d4a574]/80 group-hover:text-[#e65100] transition-colors">
+              <span className="text-[var(--accent-warm)]/80 group-hover:text-[var(--accent-primary)] transition-colors">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
@@ -691,23 +691,14 @@ export default function DashboardPage() {
                 onClick={() => setShowLogoutConfirm(false)}
               >
                 <div
-                  className="relative w-full max-w-md rounded-2xl p-6 text-center"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(255, 250, 240, 0.98) 0%, rgba(255, 245, 230, 0.98) 100%)",
-                    backdropFilter: "blur(20px)",
-                    WebkitBackdropFilter: "blur(20px)",
-                    border: "1px solid rgba(212, 165, 116, 0.4)",
-                    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
-                  }}
+                  className="relative w-full max-w-md rounded-2xl p-6 text-center bg-[var(--bg-card)] border border-[var(--border-strong)] shadow-[var(--shadow-lg)]"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div
-                    className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                    style={{ background: "rgba(230, 81, 0, 0.15)" }}
+                    className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-[var(--accent-primary)]/15"
                   >
                     <svg
-                      className="w-8 h-8"
-                      style={{ color: "#e65100" }}
+                      className="w-8 h-8 text-[var(--accent-primary)]"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -718,22 +709,17 @@ export default function DashboardPage() {
                       <line x1="21" y1="12" x2="9" y2="12" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold mb-2" style={{ color: "#3d2a10" }}>
+                  <h3 className="text-xl font-bold mb-2 text-[var(--text-primary)]">
                     Logout
                   </h3>
-                  <p className="mb-6 text-base leading-relaxed" style={{ color: "#6b4a1e" }}>
+                  <p className="mb-6 text-base leading-relaxed text-[var(--text-secondary)]">
                     Are you sure you want to logout of your account? You&apos;ll need to sign in again to continue
                     watching.
                   </p>
                   <div className="flex gap-3 justify-center">
                     <button
                       onClick={() => setShowLogoutConfirm(false)}
-                      className="px-6 py-2.5 rounded-xl font-medium text-sm transition-all"
-                      style={{
-                        background: "rgba(255, 255, 255, 0.8)",
-                        color: "#6b4a1e",
-                        border: "1px solid rgba(212, 165, 116, 0.3)",
-                      }}
+                      className="px-6 py-2.5 rounded-xl font-medium text-sm transition-all bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-strong)]"
                     >
                       Cancel
                     </button>
@@ -742,13 +728,7 @@ export default function DashboardPage() {
                         await logout();
                         window.location.href = "/";
                       }}
-                      className="px-6 py-2.5 rounded-xl font-medium text-sm transition-all"
-                      style={{
-                        background: "linear-gradient(135deg, #e65100 0%, #cc4d00 100%)",
-                        color: "#fffbf5",
-                        border: "none",
-                        boxShadow: "0 4px 16px rgba(230, 81, 0, 0.4)",
-                      }}
+                      className="px-6 py-2.5 rounded-xl font-medium text-sm transition-all bg-[var(--accent-primary)] text-[var(--on-accent)] border-none shadow-[0_4px_16px_color-mix(in_srgb,var(--accent-primary)_40%,transparent)]"
                     >
                       Logout
                     </button>
@@ -758,47 +738,40 @@ export default function DashboardPage() {
             )}
           </nav>
 
-          <div className="p-4 border-t border-[#d4a574]/15">
+          <div className="p-4 border-t border-[var(--border)]">
             <button
               onClick={() => setShowProfileSelector(true)}
-              className="w-full rounded-xl p-3 flex items-center gap-3 text-left transition-all hover:scale-[1.02]"
-              style={{
-                background: "linear-gradient(135deg, rgba(212, 165, 116, 0.15) 0%, rgba(107, 68, 35, 0.25) 100%)",
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
-                border: "1px solid rgba(212, 165, 116, 0.2)",
-                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
-              }}
+              className="w-full rounded-xl p-3 flex items-center gap-3 text-left transition-all hover:scale-[1.02] bg-[var(--bg-card)] border border-[var(--border-strong)] shadow-[var(--shadow-sm)]"
             >
               {profileIcon ? (
                 <img
                   src={`/avatars/${profileIcon}`}
                   alt="Profile"
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-[#d4a574]/60"
+                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-[var(--accent-warm)]/60"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#e65100] to-[#cc4d00] flex items-center justify-center font-bold text-[#fffbf5] flex-shrink-0 shadow-lg">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--bg-dark)] flex items-center justify-center font-bold text-[var(--on-accent)] flex-shrink-0 shadow-lg">
                   {getInitials(userName)}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-faint-white truncate">{userName}</p>
+                <p className="text-sm font-semibold text-[var(--text-inverse)] truncate">{userName}</p>
                 <div className="flex items-center gap-1">
                   {isPro ? (
                     <ProBadge />
                   ) : isTrial ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#D4A574]/20 text-[#D4A574]">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--accent-warm)]/20 text-[var(--accent-warm)]">
                       {trialDaysLeft}d Trial
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#A0785A]/20 text-[#a0785a]">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-muted)]/20 text-[var(--text-muted)]">
                       Free
                     </span>
                   )}
                 </div>
               </div>
               <svg
-                className="w-3 h-3 text-[#d4a574]/60"
+                className="w-3 h-3 text-[var(--accent-warm)]/60"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -1055,14 +1028,14 @@ export default function DashboardPage() {
           <div className="px-4 py-6 md:px-8 md:py-8 max-w-7xl mx-auto min-w-0">
             {/* Appearance */}
             <section className={`mb-6 ${styles.fadeUp}`}>
-              <div className={`${styles.cardGlass} rounded-2xl border border-[#d4a574]/30 p-4 sm:p-5`}>
+              <div className={`${styles.cardGlass} rounded-2xl border border-[var(--accent-warm)]/30 p-4 sm:p-5`}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E65100] dark:text-[var(--accent-primary)]">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-deep-orange">
                       Appearance
                     </p>
-                    <h2 className="font-cinzel text-lg font-bold text-[#3e2723] dark:text-[var(--text-primary)]">Theme</h2>
-                    <p className="mt-1 text-sm text-[#6b4423] dark:text-[var(--text-secondary)] hidden sm:block">
+                    <h2 className="font-cinzel text-lg font-bold text-chocolate">Theme</h2>
+                    <p className="mt-1 text-sm text-brown hidden sm:block">
                       Switch between Daylight, Midnight, and Theater Dim.
                     </p>
                   </div>
@@ -1187,7 +1160,7 @@ export default function DashboardPage() {
               <section className={`mb-8 md:mb-12 ${styles.fadeUp} ${styles.delay1}`}>
                 <Link
                   href={`/movie/${dailyPick.id}`}
-                  className="relative block rounded-2xl overflow-hidden border border-tan/20 bg-gradient-to-br from-faint-white to-[#f5efe8] group transition-all hover:shadow-lg hover:shadow-deep-orange/5"
+                  className="relative block rounded-2xl overflow-hidden border border-tan/20 bg-gradient-to-br from-faint-white to-[var(--bg-secondary)] group transition-all hover:shadow-lg hover:shadow-deep-orange/5"
                 >
                   <div className="flex flex-col sm:flex-row items-stretch">
                     <div className="relative w-full sm:w-40 h-32 sm:h-auto flex-shrink-0 overflow-hidden">
@@ -1240,12 +1213,12 @@ export default function DashboardPage() {
               {resumeItems.length > 0 ? (
                 <>
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-                    <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3e2723]`}>
+                    <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
                       RESUME WATCHING
                     </h2>
                     <Link
                       href="/dashboard?tab=activity"
-                      className="text-sm font-semibold text-[#E65100] hover:text-[#3e2723] transition flex items-center gap-1"
+                      className="text-sm font-semibold text-deep-orange hover:text-chocolate transition flex items-center gap-1"
                     >
                       View All
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1392,7 +1365,7 @@ export default function DashboardPage() {
                 <div className="p-6 md:p-8">
                   {/* Header */}
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-                    <h3 className="font-cinzel text-lg font-bold text-[#3e2723] tracking-[0.5px]">RECENT ACTIVITY</h3>
+                    <h3 className="font-cinzel text-lg font-bold text-chocolate tracking-[0.5px]">RECENT ACTIVITY</h3>
                     <div className="flex overflow-x-auto whitespace-nowrap items-center gap-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                       {(["all", "watching", "watchlist", "completed"] as const).map((f) => (
                         <button
@@ -1406,7 +1379,7 @@ export default function DashboardPage() {
                       ))}
                       <Link
                         href="/dashboard?tab=activity"
-                        className="text-[12px] font-semibold text-[#6b4423] hover:text-[#e65100] transition-colors whitespace-nowrap shrink-0"
+                        className="text-[12px] font-semibold text-brown hover:text-deep-orange transition-colors whitespace-nowrap shrink-0"
                       >
                         View All &rarr;
                       </Link>
@@ -1420,8 +1393,8 @@ export default function DashboardPage() {
                         <ActivityRow key={`${item.type}-${item.title}-${item.timestamp}`} item={item} />
                       ))
                     ) : (
-                      <div className="p-8 text-center bg-[#faf6f0] rounded-[14px]">
-                        <p className="text-sm text-[#a0785a] mb-4">
+                      <div className="p-8 text-center bg-[var(--bg-secondary)] rounded-[14px]">
+                        <p className="text-sm text-[var(--text-muted)] mb-4">
                           No activity yet. Start watching to see your history here.
                         </p>
                         <Link
@@ -1459,10 +1432,10 @@ export default function DashboardPage() {
                   {recsLoading
                     ? Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className={`${styles.archiveCard} animate-pulse`}>
-                          <div className="w-full h-full bg-[#f5efe8]" />
+                          <div className="w-full h-full bg-[var(--bg-secondary)]" />
                           <div className={`${styles.archiveOverlay}`}>
-                            <div className="h-3 w-3/4 rounded bg-[#d4a574]/30 mt-2" />
-                            <div className="h-2 w-1/2 rounded bg-[#d4a574]/20 mt-2" />
+                            <div className="h-3 w-3/4 rounded bg-[var(--accent-warm)]/30 mt-2" />
+                            <div className="h-2 w-1/2 rounded bg-[var(--accent-warm)]/20 mt-2" />
                           </div>
                         </div>
                       ))

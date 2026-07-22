@@ -492,7 +492,7 @@ export default function VideoPlayerModal({
               onClick={() => onModeChange("movie")}
               className={`min-h-[40px] rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${
                 !isTrailer
-                  ? "bg-[var(--accent-primary)] text-[var(--text-inverse)]"
+                  ? "bg-[var(--accent-primary)] text-[var(--on-accent)]"
                   : "border border-[var(--border-strong)] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
               }`}
             >
@@ -503,7 +503,7 @@ export default function VideoPlayerModal({
               onClick={() => onModeChange("trailer")}
               className={`min-h-[40px] rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${
                 isTrailer
-                  ? "bg-[var(--accent-primary)] text-[var(--text-inverse)]"
+                  ? "bg-[var(--accent-primary)] text-[var(--on-accent)]"
                   : "border border-[var(--border-strong)] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
               }`}
             >

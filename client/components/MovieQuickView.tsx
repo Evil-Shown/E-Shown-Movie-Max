@@ -38,7 +38,7 @@ export default function MovieQuickView({ movie, onClose }: MovieQuickViewProps) 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[150] bg-[rgba(28,25,23,0.32)] backdrop-blur-[4px]"
+            className="fixed inset-0 z-[150] bg-[var(--bg-dark)]/30 backdrop-blur-[4px]"
             onClick={onClose}
           />
           <motion.div
@@ -49,7 +49,7 @@ export default function MovieQuickView({ movie, onClose }: MovieQuickViewProps) 
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className="glass-panel fixed inset-x-4 bottom-0 top-auto z-[151] mx-auto max-h-[70vh] max-w-4xl overflow-y-auto rounded-t-2xl border border-[var(--border-strong)] p-6 shadow-[0_30px_90px_rgba(28,25,23,0.24)] sm:max-h-[85vh] md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:max-h-[85vh] md:w-full md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl"
+            className="glass-panel fixed inset-x-4 bottom-0 top-auto z-[151] mx-auto max-h-[70vh] max-w-4xl overflow-y-auto rounded-t-2xl border border-[var(--border-strong)] p-6 shadow-[var(--shadow-lg)] sm:max-h-[85vh] md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:max-h-[85vh] md:w-full md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative mb-5 h-36 overflow-hidden rounded-xl ring-1 ring-[var(--border)] md:h-44">
@@ -60,12 +60,12 @@ export default function MovieQuickView({ movie, onClose }: MovieQuickViewProps) 
                 className="object-cover"
                 sizes="800px"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-card)] via-[rgba(247,244,239,0.35)] to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-card)] via-[var(--bg-card)]/35 to-transparent" />
             </div>
 
             <div className="flex flex-col gap-6 md:flex-row">
               <div className="mx-auto w-[140px] shrink-0 md:mx-0">
-                <div className="relative aspect-[2/3] overflow-hidden rounded-xl shadow-[0_16px_42px_rgba(28,25,23,0.22)] ring-1 ring-[var(--border-strong)]">
+                <div className="relative aspect-[2/3] overflow-hidden rounded-xl shadow-[var(--shadow-md)] ring-1 ring-[var(--border-strong)]">
                   <Image
                     src={posterUrl(movie.posterPath, "w500")}
                     alt={movie.title}

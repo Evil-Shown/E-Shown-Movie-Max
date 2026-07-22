@@ -150,7 +150,7 @@ export default function TvSeasonPicker({ movie }: TvSeasonPickerProps) {
                 onClick={() =>
                   openMovie(movie, { season: selectedSeason, episode: ep.episode_number })
                 }
-                className="mt-3 rounded-full bg-[var(--accent-primary)] px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white hover:bg-[#b85f26]"
+                className="mt-3 rounded-full bg-[var(--accent-primary)] px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--on-accent)] hover:brightness-110"
               >
                 ▶ Play Episode
               </button>

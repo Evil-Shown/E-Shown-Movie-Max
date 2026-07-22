@@ -58,7 +58,7 @@ export default function CatalogPagination({
         {nextPage ? (
           <Link
             href={buildHref(basePath, nextPage, query)}
-            className="rounded-md bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-[var(--text-inverse)] hover:bg-[#b85f26]"
+            className="rounded-md bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-[var(--on-accent)] hover:brightness-110"
           >
             Next
           </Link>

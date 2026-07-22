@@ -81,7 +81,7 @@ export default function SearchBar({
           large ? "py-4 pl-6 pr-14 text-lg" : "h-11 py-2.5 pl-4 pr-11 text-sm"
         } ${
           focused
-            ? "border-[var(--accent-primary)] ring-2 ring-[rgba(201,106,43,0.1)]"
+            ? "border-[var(--accent-primary)] ring-2 ring-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)]"
             : "border-[var(--border-strong)]"
         } placeholder:text-[var(--text-muted)]`}
       />

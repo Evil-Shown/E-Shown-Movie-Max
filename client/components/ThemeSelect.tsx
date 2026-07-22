@@ -11,6 +11,24 @@ const OPTIONS = [
   { value: "dim", label: "Theater Dim" },
 ] as const;
 
+/**
+ * Theme selector using native <select> element.
+ *
+ * BROWSER LIMITATION: The <select> element itself is themed via CSS variables
+ * (--bg-card, --text-primary, --border-strong, --accent-primary), but the native
+ * dropdown options panel is rendered by the OS/browser and CANNOT be styled with CSS.
+ * The option list will always appear with system-default colors (typically white
+ * background with dark text) regardless of the active Daylight/Midnight/Theater Dim theme.
+ *
+ * This is a fundamental browser limitation — no CSS property (background, color, etc.)
+ * reliably themes <option> elements across Chrome, Firefox, Safari, and Edge.
+ *
+ * A custom dropdown (e.g., Radix UI Select, Headless UI Listbox, or a manual popover)
+ * would be required to fully theme the options panel. This was intentionally NOT done
+ * because: (1) native <select> has better accessibility and mobile UX out of the box,
+ * (2) it avoids adding a UI library dependency, and (3) the theming inconsistency is
+ * limited to the dropdown popup — the closed select control matches the theme correctly.
+ */
 export default function ThemeSelect() {
   const { theme, setTheme } = useTheme();
   const { user, token, isAuthenticated } = useAuth();

@@ -27,7 +27,7 @@ export default function MovieGrid({ movies, emptyMessage = "No movies found.", c
         <Link
           href="/browse"
           data-cursor="link"
-          className="mt-8 rounded-md bg-[var(--accent-primary)] px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-[var(--text-inverse)] hover:bg-[#b85f26] active:scale-95"
+          className="mt-8 rounded-md bg-[var(--accent-primary)] px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-[var(--on-accent)] hover:brightness-110 active:scale-95"
         >
           Browse All
         </Link>

@@ -516,9 +516,9 @@
 }
 
 .filterPill {
-  background: #faf3e8;
+  background: var(--bg-secondary);
   border: 1px solid rgba(212, 165, 116, 0.2);
-  color: #6b4423;
+  color: var(--text-secondary);
   font-size: 11px;
   font-weight: 600;
   padding: 5px 14px;
@@ -530,18 +530,18 @@
 
 .filterPill:hover {
   border-color: rgba(212, 165, 116, 0.4);
-  color: #e65100;
+  color: var(--accent-primary);
 }
 
 .filterPillActive {
   background: linear-gradient(135deg, #3e2723 0%, #2d1b15 100%);
-  color: #fffbf5;
+  color: var(--text-inverse);
   border-color: transparent;
   box-shadow: 0 2px 8px rgba(62, 39, 35, 0.15);
 }
 
 .filterPillActive:hover {
-  color: #fffbf5;
+  color: var(--text-inverse);
   opacity: 0.9;
 }
 
@@ -957,7 +957,7 @@
 
 :global(.dark) .filterPillActive,
 :global(.dim) .filterPillActive {
-  background: linear-gradient(135deg, var(--bg-dark) 0%, #2d1b15 100%);
+  background: var(--bg-dark);
   color: var(--on-accent);
 }
 

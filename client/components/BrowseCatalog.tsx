@@ -130,7 +130,7 @@ export default function BrowseCatalog({
             type="button"
             onClick={loadMore}
             disabled={loading}
-            className="rounded-md bg-[var(--accent-primary)] px-8 py-3 text-sm font-semibold text-[var(--text-inverse)] hover:bg-[#b85f26] disabled:opacity-60"
+            className="rounded-md bg-[var(--accent-primary)] px-8 py-3 text-sm font-semibold text-[var(--on-accent)] hover:brightness-110 disabled:opacity-60"
           >
             {loading ? "Loading..." : "Load more movies"}
           </button>

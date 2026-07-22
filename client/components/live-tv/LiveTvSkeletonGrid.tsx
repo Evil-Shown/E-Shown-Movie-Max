@@ -1,8 +1,8 @@
 export function LiveTvSkeletonPlayer() {
   return (
-    <div className="overflow-hidden rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.08]">
-      <div className="skeleton aspect-video w-full bg-[#111]" />
-      <div className="space-y-3 bg-gradient-to-r from-[#111] to-[#0d0d0d] p-5">
+    <div className="overflow-hidden rounded-2xl shadow-[var(--shadow-lg)] ring-1 ring-[var(--border)]">
+      <div className="skeleton aspect-video w-full" />
+      <div className="space-y-3 p-5">
         <div className="skeleton h-5 w-40 rounded bg-white/10" />
         <div className="skeleton h-3 w-24 rounded bg-white/5" />
       </div>

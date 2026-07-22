@@ -59,7 +59,7 @@ function RatingBar({ rating }: { rating: number }) {
   const pct = (rating / 10) * 100;
 
   return (
-    <div ref={ref} className="mt-2 h-1 w-32 overflow-hidden rounded-full bg-[rgba(232,164,74,0.15)]">
+    <div ref={ref} className="mt-2 h-1 w-32 overflow-hidden rounded-full bg-[var(--accent-warm)]/15">
       <motion.div
         className="h-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-warm)]"
         initial={prefersReducedMotion ? { width: `${pct}%` } : { width: 0 }}
@@ -95,7 +95,7 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
           <div className="mx-auto shrink-0 lg:mx-0 lg:w-1/3">
             <FloatingCard>
               <div className="animate-float">
-                <div className="mx-auto h-[280px] w-[186px] overflow-hidden rounded-xl bg-[var(--bg-secondary)] shadow-[0_24px_64px_rgba(28,25,23,0.2)] sm:h-[390px] sm:w-[260px]">
+                <div className="mx-auto h-[280px] w-[186px] overflow-hidden rounded-xl bg-[var(--bg-secondary)] shadow-[var(--shadow-lg)] sm:h-[390px] sm:w-[260px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={posterUrl(movie.posterPath, "w500")}

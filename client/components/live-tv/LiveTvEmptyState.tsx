@@ -28,7 +28,7 @@ export default function LiveTvEmptyState({
         <button
           type="button"
           onClick={onAction}
-          className="mt-6 rounded-full bg-[var(--accent-primary)] px-6 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-inverse)] hover:bg-[#b85f26]"
+          className="mt-6 rounded-full bg-[var(--accent-primary)] px-6 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--on-accent)] hover:bg-[#b85f26]"
         >
           {actionLabel}
         </button>

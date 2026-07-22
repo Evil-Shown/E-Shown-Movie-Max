@@ -4,17 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, getApiBase } from "@/lib/api";
 
-const styles = `
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #f2f4f8 !important;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-    display: flex; align-items: center; justify-content: center;
-    min-height: 100dvh;
-  }
-  @keyframes spin { to { transform: rotate(360deg) } }
-`;
-
 export default function AuthCallbackPage() {
   const router = useRouter();
   const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
@@ -82,101 +71,41 @@ export default function AuthCallbackPage() {
   }, [router]);
 
   return (
-    <>
-      <style>{styles}</style>
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)]">
       {status === "processing" && (
-        <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              border: "3px solid #e65100",
-              borderTopColor: "transparent",
-              borderRadius: "50%",
-              animation: "spin 0.7s linear infinite",
-              margin: "0 auto 20px",
-            }}
-          />
-          <p style={{ color: "#5f636b", fontSize: 14 }}>Completing sign in...</p>
+        <div className="text-center">
+          <div className="w-10 h-10 mx-auto mb-5 rounded-full border-[3px] border-[var(--accent-primary)] border-t-transparent animate-spin" />
+          <p className="text-sm text-[var(--text-secondary)]">Completing sign in...</p>
         </div>
       )}
       {status === "success" && (
-        <div style={{ textAlign: "center", padding: 24 }}>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              margin: "0 auto 16px",
-              borderRadius: "50%",
-              background: "#e6f7e6",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#2e7d32"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+        <div className="text-center p-6">
+          <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[var(--accent-cool)]/10 flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent-cool)]">
               <path d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: "#1e2025", marginBottom: 8 }}>Signed in to CHITHRA</h1>
-          <p style={{ fontSize: 14, color: "#5f636b" }}>You can close this tab and return to the app.</p>
+          <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">Signed in to CHITHRA</h1>
+          <p className="text-sm text-[var(--text-secondary)]">You can close this tab and return to the app.</p>
         </div>
       )}
       {status === "error" && (
-        <div style={{ textAlign: "center", padding: 24 }}>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              margin: "0 auto 16px",
-              borderRadius: "50%",
-              background: "#fce8e6",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#d93025"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+        <div className="text-center p-6">
+          <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[var(--accent-primary)]/10 flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent-primary)]">
               <path d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: "#1e2025", marginBottom: 8 }}>Sign in failed</h1>
-          <p style={{ fontSize: 14, color: "#5f636b", marginBottom: 20 }}>{errorMsg}</p>
+          <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">Sign in failed</h1>
+          <p className="text-sm text-[var(--text-secondary)] mb-5">{errorMsg}</p>
           <button
             onClick={() => router.replace("/")}
-            style={{
-              padding: "10px 24px",
-              borderRadius: 10,
-              border: "none",
-              background: "#e65100",
-              color: "white",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
+            className="px-6 py-2.5 rounded-xl border-none bg-[var(--accent-primary)] text-white text-sm font-semibold cursor-pointer"
           >
             Go back
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 }

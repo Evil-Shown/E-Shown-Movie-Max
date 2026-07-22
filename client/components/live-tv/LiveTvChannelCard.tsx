@@ -171,7 +171,7 @@ function LiveTvChannelCard({
 
         {/* Selected / Live indicator */}
         {isSelected && (
-          <span className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[var(--accent-primary)] px-2 py-px text-[7px] font-bold uppercase tracking-wider text-[var(--text-inverse)]">
+          <span className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[var(--accent-primary)] px-2 py-px text-[7px] font-bold uppercase tracking-wider text-[var(--on-accent)]">
             Live
           </span>
         )}

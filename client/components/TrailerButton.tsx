@@ -20,7 +20,7 @@ export default function TrailerButton({
 
   const base =
     variant === "primary"
-      ? "inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-[var(--accent-primary)] px-6 py-3 text-sm font-semibold text-[var(--text-inverse)] hover:bg-[#b85f26] sm:w-auto"
+      ? "inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-[var(--accent-primary)] px-6 py-3 text-sm font-semibold text-[var(--on-accent)] hover:bg-[#b85f26] sm:w-auto"
       : "inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md border border-[var(--border-strong)] bg-transparent px-6 py-3 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] sm:w-auto";
 
   return (

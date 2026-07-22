@@ -61,7 +61,7 @@ function SidebarNavLink({
       </span>
       <span className="flex-1">{label}</span>
       {badge !== undefined && (
-        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold text-[#d4a574]/60 bg-[#d4a574]/10">{badge}</span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold text-[var(--accent-warm)]/60 bg-[var(--accent-warm)]/10">{badge}</span>
       )}
     </Link>
   );
@@ -162,11 +162,11 @@ export default function NotificationsPage() {
       <div className="flex min-h-full">
         {/* Desktop Sidebar */}
         <aside className={`${dashboardStyles.sidebar} fixed left-0 top-0 h-full w-64 z-40 hidden lg:flex flex-col`}>
-          <div className="px-6 py-6 border-b border-[#d4a574]/15">
+          <div className="px-6 py-6 border-b border-[var(--border)]">
             <div className="flex items-center gap-3">
               <div className={`${dashboardStyles.eyeDeco} w-10 h-10 relative`} />
               <div>
-                <h1 className="font-cinzel text-xl font-bold text-[#fffbf5] leading-none">CHITHIRA</h1>
+                <h1 className="font-cinzel text-xl font-bold text-[var(--text-inverse)] leading-none">CHITHIRA</h1>
               </div>
             </div>
           </div>
@@ -195,7 +195,7 @@ export default function NotificationsPage() {
               className={`${dashboardStyles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium text-left w-full border-none cursor-pointer bg-transparent`}
               onClick={handleLogout}
             >
-              <span className="text-[#d4a574]/80 group-hover:text-[#e65100] transition-colors">
+              <span className="text-[var(--accent-warm)]/80 group-hover:text-[var(--accent-primary)] transition-colors">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
@@ -206,35 +206,28 @@ export default function NotificationsPage() {
             </button>
           </nav>
 
-          <div className="p-4 border-t border-[#d4a574]/15">
+          <div className="p-4 border-t border-[var(--border)]">
             <div
-              className="w-full rounded-xl p-3 flex items-center gap-3"
-              style={{
-                background: "linear-gradient(135deg, rgba(212, 165, 116, 0.15) 0%, rgba(107, 68, 35, 0.25) 100%)",
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
-                border: "1px solid rgba(212, 165, 116, 0.2)",
-                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
-              }}
+              className="w-full rounded-xl p-3 flex items-center gap-3 bg-[var(--bg-card)] border border-[var(--border-strong)] shadow-[var(--shadow-sm)]"
             >
               {profileIcon ? (
                 <img
                   src={`/avatars/${profileIcon}`}
                   alt="Profile"
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-[#d4a574]/60"
+                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-[var(--border-strong)]"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#e65100] to-[#cc4d00] flex items-center justify-center font-bold text-[#fffbf5] flex-shrink-0 shadow-lg">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--bg-dark)] flex items-center justify-center font-bold text-[var(--on-accent)] flex-shrink-0 shadow-lg">
                   {getInitials(userName)}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#fffbf5] truncate">{userName}</p>
+                <p className="text-sm font-semibold text-[var(--text-inverse)] truncate">{userName}</p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <svg className="w-3 h-3 text-[#d4a574]" viewBox="0 0 24 24" fill="currentColor">
+                  <svg className="w-3 h-3 text-[var(--accent-warm)]" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
-                  <span className="text-[9px] text-[#d4a574] font-semibold tracking-wide">Member</span>
+                  <span className="text-[9px] text-[var(--accent-warm)] font-semibold tracking-wide">Member</span>
                 </div>
               </div>
             </div>

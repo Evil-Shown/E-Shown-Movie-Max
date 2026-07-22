@@ -41,9 +41,9 @@
   pointer-events: none;
   background: linear-gradient(
     to right,
-    rgba(245, 239, 228, 0.94) 0%,
-    rgba(245, 239, 228, 0.72) 28%,
-    rgba(245, 239, 228, 0.32) 48%,
+    var(--hero-scrim) 0%,
+    var(--hero-scrim-mid) 28%,
+    var(--hero-scrim-soft) 48%,
     transparent 62%
   );
 }
@@ -56,7 +56,7 @@
   z-index: 1;
   height: 140px;
   pointer-events: none;
-  background: linear-gradient(to top, rgba(235, 225, 210, 0.28) 0%, transparent 100%);
+  background: linear-gradient(to top, var(--hero-edge-bottom) 0%, transparent 100%);
 }
 
 .gradientTop {
@@ -67,7 +67,7 @@
   z-index: 1;
   height: 80px;
   pointer-events: none;
-  background: linear-gradient(to bottom, rgba(245, 239, 228, 0.18) 0%, transparent 100%);
+  background: linear-gradient(to bottom, var(--hero-edge-top) 0%, transparent 100%);
 }
 
 /* Dark / Dim only — light hero gradients stay exact */
@@ -318,14 +318,14 @@
 .watchButton {
   padding: 13px 26px;
   border: none;
-  background: #c96a2b;
+  background: var(--accent-primary);
   color: #fff;
-  box-shadow: 0 4px 16px rgba(201, 106, 43, 0.35);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent-primary) 35%, transparent);
 }
 
 .watchButton:hover {
-  background: #b85c24;
-  box-shadow: 0 6px 20px rgba(201, 106, 43, 0.45);
+  filter: brightness(0.9);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent-primary) 45%, transparent);
   transform: translateY(-1px);
 }
 

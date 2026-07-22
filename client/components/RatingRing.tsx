@@ -5,9 +5,9 @@ interface RatingRingProps {
 }
 
 function ratingColor(rating: number): string {
-  if (rating >= 7) return "#2E6B5E";
-  if (rating >= 5) return "#C9943A";
-  return "#8B3A2A";
+  if (rating >= 7) return "var(--rating-high)";
+  if (rating >= 5) return "var(--rating-mid)";
+  return "var(--rating-low)";
 }
 
 export default function RatingRing({ rating, size = 36, className = "" }: RatingRingProps) {
@@ -24,7 +24,7 @@ export default function RatingRing({ rating, size = 36, className = "" }: Rating
       style={{ width: size, height: size }}
     >
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(28,25,23,0.12)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--border)" strokeWidth={stroke} />
         <circle
           cx={size / 2}
           cy={size / 2}

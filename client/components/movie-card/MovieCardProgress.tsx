@@ -16,7 +16,7 @@ export default function MovieCardProgress({ movieId }: MovieCardProgressProps) {
   if (progress <= 0) return null;
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-[2] h-1 bg-black/35">
+    <div className="absolute inset-x-0 bottom-0 z-[2] h-1" style={{ background: "color-mix(in srgb, var(--bg-dark) 35%, transparent)" }}>
       <div className="h-full bg-[var(--accent-warm)]" style={{ width: `${Math.max(progress, 4)}%` }} />
     </div>
   );

@@ -18,7 +18,7 @@ export default function WatchlistPageClient() {
         </p>
         <Link
           href="/browse"
-          className="mt-8 inline-flex rounded-full bg-[var(--accent-primary)] px-6 py-3 text-sm font-semibold text-white hover:bg-[#b85f26]"
+          className="mt-8 inline-flex rounded-full bg-[var(--accent-primary)] px-6 py-3 text-sm font-semibold text-[var(--on-accent)] hover:brightness-110"
         >
           Browse Catalog
         </Link>
