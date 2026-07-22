@@ -101,13 +101,13 @@ function HeroCarousel({ movies }: HeroCarouselProps) {
                     onFocus={() => prefetchMovieStream(movie)}
                     onClick={() => openMovie(movie)}
                   >
-                    ▶ Play Now
+                    Play Now
                   </button>
                   <button type="button" className={styles.trailerButton} onClick={() => openTrailer(movie)}>
                     Watch Trailer
                   </button>
                   <Link href={`/movie/${movie.id}`} className={styles.moreButton}>
-                    ℹ More Info
+                    More Info
                   </Link>
                 </div>
               </div>
