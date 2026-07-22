@@ -15,6 +15,7 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { isSlowConnection } from "@/lib/stream-optimizer";
 import PlayerLoadingOverlay from "./PlayerLoadingOverlay";
+import PlayerScrubber from "./PlayerScrubber";
 import EmbedStreamFrame from "./EmbedStreamFrame";
 import { useProviderFallback } from "./hooks/useProviderFallback";
 import { useResumeTime } from "./hooks/useResumeTime";
@@ -119,6 +120,8 @@ export default function VideoPlayerModal({
     playNextEpisode,
     dismissNextEpisode,
     handleIframeLoadComplete,
+    playbackCurrentTime,
+    playbackDuration,
   } = useVideoPlayer({
     movie,
     mode,
@@ -350,16 +353,27 @@ export default function VideoPlayerModal({
                           </div>
                         </div>
                       )}
-                      <EmbedStreamFrame
-                        key={`${provider}-${season ?? 0}-${episode ?? 0}-${iframeSrc}`}
-                        src={iframeSrc}
-                        title={isTrailer ? `${movie.title} trailer` : `${movie.title} stream`}
-                        iframeRef={iframeRef}
-                        onLoad={() => {
-                          fallback.handleIframeLoad();
-                          handleIframeLoadComplete();
-                          setPlayerEngaged(true);
-                        }}
+                      <div
+                        className="absolute inset-0"
+                        style={{ bottom: !isTrailer && fallback.loaded ? "52px" : "0" }}
+                      >
+                        <EmbedStreamFrame
+                          key={`${provider}-${season ?? 0}-${episode ?? 0}-${iframeSrc}`}
+                          src={iframeSrc}
+                          title={isTrailer ? `${movie.title} trailer` : `${movie.title} stream`}
+                          iframeRef={iframeRef}
+                          onLoad={() => {
+                            fallback.handleIframeLoad();
+                            handleIframeLoadComplete();
+                            setPlayerEngaged(true);
+                          }}
+                        />
+                      </div>
+                      <PlayerScrubber
+                        currentTime={playbackCurrentTime}
+                        duration={playbackDuration || (movie.runtime || 90) * 60}
+                        isTrailer={isTrailer}
+                        loaded={Boolean(fallback.loaded)}
                       />
                       {!isTrailer && subtitles.activeSubtitleCue ? (
                         <div className="pointer-events-none absolute inset-x-0 bottom-[13%] z-[11] flex justify-center px-4 sm:bottom-[11%]">

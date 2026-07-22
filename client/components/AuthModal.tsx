@@ -5,6 +5,11 @@ import { useAuth } from "./AuthProvider";
 import { getApiBase } from "@/lib/api";
 import { getPublicAppOrigin } from "@/lib/app-origin";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import {
+  getLoginRateState,
+  recordLoginFailure,
+  clearLoginRateState,
+} from "@/lib/login-rate-limit";
 
 const cinemaGradients = [
   "radial-gradient(ellipse at 20% 50%, #e65100 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, #0f3460 0%, transparent 50%), #0a0a0f",
@@ -39,6 +44,23 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
     confirmPassword: "",
   });
   const [forgotEmail, setForgotEmail] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+  const [loginLockSeconds, setLoginLockSeconds] = useState(0);
+  const [loginFailures, setLoginFailures] = useState(0);
+
+  useEffect(() => {
+    if (isOpen) {
+      const rate = getLoginRateState();
+      setLoginLockSeconds(rate.waitSeconds);
+      setLoginFailures(rate.failures);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (loginLockSeconds <= 0) return;
+    const timer = setInterval(() => setLoginLockSeconds((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [loginLockSeconds]);
   const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
@@ -90,15 +112,31 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const rate = getLoginRateState();
+    if (!rate.canAttempt) {
+      setLoginLockSeconds(rate.waitSeconds);
+      setLoginFailures(rate.failures);
+      setError(`Too many attempts. Wait ${rate.waitSeconds}s.`);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccessMsg(null);
     try {
       await login(loginForm.email, loginForm.password);
       didAuth.current = true;
+      clearLoginRateState();
+      setLoginLockSeconds(0);
+      setLoginFailures(0);
       setSuccessMsg("Welcome back! You're signed in.");
       setTimeout(() => onClose(true), 800);
     } catch (err) {
+      recordLoginFailure();
+      const updated = getLoginRateState();
+      setLoginLockSeconds(updated.waitSeconds);
+      setLoginFailures(updated.failures);
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);

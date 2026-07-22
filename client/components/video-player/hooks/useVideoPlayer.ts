@@ -9,6 +9,7 @@ import {
   isEmbedNearEnd,
   isEmbedPlaybackEnded,
   isEmbedUpNextSignal,
+  parseEmbedPlayerEvent,
 } from "@/lib/embed-events";
 import { installAdPopupBlocker } from "@/lib/block-ad-nav";
 import { exitAnyFullscreen, getActiveFullscreenElement, requestElementFullscreen } from "@/lib/fullscreen";
@@ -72,6 +73,13 @@ export function useVideoPlayer({
   const stageRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const justExitedFullscreenRef = useRef(false);
+
+  const [playbackCurrentTime, setPlaybackCurrentTime] = useState(0);
+  const [playbackDuration, setPlaybackDuration] = useState(0);
+  const playbackTimeRef = useRef(0);
+  const playbackDurationRef = useRef(0);
+  const saveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastStateUpdateRef = useRef(0);
 
   const stabilityTip = getStabilityTip();
   const trailerId = movie.trailerKey ?? getTrailerId(movie.id);
@@ -323,48 +331,97 @@ export function useVideoPlayer({
     return () => window.removeEventListener("message", onMessage);
   }, [enterWrapperFullscreen, exitWrapperFullscreen, isTrailer]);
 
-  // postMessage only — no wall-clock / fake progress timers.
+  // Listen for playback events from the embed — track position for both movies and TV.
   useEffect(() => {
-    if (isTrailer || !isTvPlayer) return;
+    if (isTrailer) return;
 
     const onMessage = (event: MessageEvent) => {
       if (isEmbedPlaybackMessage(event.data)) {
         confirmPlayback();
       }
 
-      // True end → show overlay and auto-advance after countdown.
+      const parsed = parseEmbedPlayerEvent(event.data);
+      if (parsed) {
+        if (typeof parsed.currentTime === "number" && typeof parsed.duration === "number") {
+          playbackTimeRef.current = parsed.currentTime;
+          playbackDurationRef.current = parsed.duration;
+          const now = Date.now();
+          if (now - lastStateUpdateRef.current >= 1000) {
+            lastStateUpdateRef.current = now;
+            setPlaybackCurrentTime(parsed.currentTime);
+            setPlaybackDuration(parsed.duration);
+          }
+        }
+      }
+
       if (isEmbedPlaybackEnded(event.data)) {
-        openNextEpisodeOverlay({ auto: true });
+        if (isTvPlayer) {
+          openNextEpisodeOverlay({ auto: true });
+        } else {
+          savePlayback({
+            movie,
+            provider,
+            season,
+            episode,
+            currentTime: playbackTimeRef.current || resumeSeconds || 0,
+            duration: playbackDurationRef.current || (movie.runtime || 90) * 60,
+          });
+        }
         return;
       }
 
-      // Up-next / final seconds → show Play Now only (no auto skip).
-      if (isEmbedUpNextSignal(event.data) || isEmbedNearEnd(event.data, 30)) {
-        openNextEpisodeOverlay({ auto: false });
+      if (isTvPlayer) {
+        if (isEmbedUpNextSignal(event.data) || isEmbedNearEnd(event.data, 30)) {
+          openNextEpisodeOverlay({ auto: false });
+        }
       }
     };
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [confirmPlayback, isTrailer, isTvPlayer, openNextEpisodeOverlay]);
+  }, [confirmPlayback, isTrailer, isTvPlayer, movie, openNextEpisodeOverlay, provider, season, episode, resumeSeconds, savePlayback]);
 
   useEffect(() => {
     setPlayerEngaged(false);
   }, [season, episode, provider, iframeSrc, setPlayerEngaged]);
 
+  // Periodic save of playback position
+  const doSavePlayback = useCallback(() => {
+    if (isTrailer) return;
+    const ct = playbackTimeRef.current;
+    const dur = playbackDurationRef.current || (movie.runtime || 90) * 60;
+    if (ct > 0 && dur > 0) {
+      savePlayback({ movie, provider, season, episode, currentTime: ct, duration: dur });
+    }
+  }, [isTrailer, movie, provider, season, episode, savePlayback]);
+
+  useEffect(() => {
+    if (isTrailer || !loaded) return;
+    doSavePlayback();
+    saveIntervalRef.current = setInterval(doSavePlayback, 15000);
+    return () => {
+      if (saveIntervalRef.current) {
+        clearInterval(saveIntervalRef.current);
+        saveIntervalRef.current = null;
+      }
+    };
+  }, [isTrailer, loaded, doSavePlayback]);
+
+  useEffect(() => {
+    if (isTrailer) return;
+    const onUnload = () => doSavePlayback();
+    window.addEventListener("beforeunload", onUnload);
+    return () => {
+      doSavePlayback();
+      window.removeEventListener("beforeunload", onUnload);
+    };
+  }, [isTrailer, doSavePlayback]);
+
   useEffect(() => {
     if (!isTrailer && loaded && movieEmbedUrl) {
       setProvider(provider);
-      savePlayback({
-        movie,
-        provider,
-        season,
-        episode,
-        currentTime: resumeSeconds ?? 0,
-        duration: (movie.runtime || 90) * 60,
-      });
     }
-  }, [loaded, isTrailer, movie, provider, season, episode, resumeSeconds, movieEmbedUrl, savePlayback, setProvider]);
+  }, [isTrailer, loaded, movieEmbedUrl, provider, setProvider]);
 
   useEffect(() => {
     if (!showKeyboardHint) return;
@@ -492,5 +549,7 @@ export function useVideoPlayer({
     playNextEpisode,
     dismissNextEpisode,
     handleIframeLoadComplete,
+    playbackCurrentTime,
+    playbackDuration,
   };
 }

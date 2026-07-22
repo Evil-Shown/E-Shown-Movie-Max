@@ -3,6 +3,7 @@ import HeroCarousel from "@/components/HeroCarousel";
 import HomeSection from "@/components/HomeSection";
 import MovieRow from "@/components/MovieRow";
 import PickedForYouRow from "@/components/PickedForYouRow";
+import SmartShuffleRow from "@/components/SmartShuffleRow";
 import { getHomeCatalogEssential } from "@/lib/movie-service";
 
 type EssentialCatalog = Awaited<ReturnType<typeof getHomeCatalogEssential>>;
@@ -19,6 +20,7 @@ export default async function HomeHero({
       <HeroCarousel movies={heroMovies} />
       <ContinueWatchingRow />
       <PickedForYouRow />
+      <SmartShuffleRow />
       <HomeSection className="section-base py-6 sm:py-12">
         <MovieRow
           embedded
