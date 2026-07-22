@@ -1,7 +1,7 @@
 import type { Movie } from "@/lib/types";
 import type { StreamProvider } from "@/lib/providers";
 import { backdropUrl, formatDisplayYear, posterUrl } from "@/lib/movies";
-import { getMovieEmbedUrl, getRawMovieEmbedUrl, isTvShow } from "@/lib/streaming";
+import { getRawMovieEmbedUrl, isTvShow, type ResolvedMediaStream } from "@/lib/streaming";
 import { getTrailerId } from "@/lib/trailers";
 import { useUserLibraryActions } from "@/components/UserLibraryProvider";
 import {
@@ -32,6 +32,7 @@ interface UseVideoPlayerOptions {
   episode?: number;
   provider: StreamProvider;
   resumeSeconds?: number;
+  resolvedStream: ResolvedMediaStream | null;
   loaded: boolean;
   playerEngaged: boolean;
   setPlayerEngaged: (engaged: boolean) => void;
@@ -47,6 +48,7 @@ export function useVideoPlayer({
   episode,
   provider,
   resumeSeconds,
+  resolvedStream,
   loaded,
   playerEngaged,
   setPlayerEngaged,
@@ -84,21 +86,19 @@ export function useVideoPlayer({
   const stabilityTip = getStabilityTip();
   const trailerId = movie.trailerKey ?? getTrailerId(movie.id);
 
-  const movieEmbedUrl = isTrailer
-    ? null
-    : getMovieEmbedUrl(movie, provider, {
-        season,
-        episode,
-        seek: resumeSeconds,
-      });
+  const isHlsStream = resolvedStream?.type === "hls";
+  const hlsSrc = isHlsStream ? resolvedStream?.url ?? null : null;
+  const movieEmbedUrl = !isTrailer && resolvedStream?.type === "embed" ? resolvedStream.url : null;
 
   const rawEmbedUrl = isTrailer
     ? null
-    : getRawMovieEmbedUrl(movie, provider, {
-        season,
-        episode,
-        seek: resumeSeconds,
-      });
+    : resolvedStream?.type === "embed"
+      ? getRawMovieEmbedUrl(movie, provider, {
+          season,
+          episode,
+          seek: resumeSeconds,
+        })
+      : null;
 
   const iframeSrc = isTrailer
     ? `https://www.youtube.com/embed/${trailerId}?autoplay=1&rel=0&modestbranding=1`
@@ -145,6 +145,9 @@ export function useVideoPlayer({
     },
     [movie.id]
   );
+
+  const loadSeasonEpisodesRef = useRef(loadSeasonEpisodes);
+  loadSeasonEpisodesRef.current = loadSeasonEpisodes;
 
   const playNextEpisode = useCallback(() => {
     if (!nextEpisodeTarget) return;
@@ -254,9 +257,9 @@ export function useVideoPlayer({
 
   useEffect(() => {
     warmStreamProviders();
-    warmEmbedUrl(iframeSrc);
+    if (!isHlsStream) warmEmbedUrl(iframeSrc);
     setPlayerEngaged(false);
-  }, [movie.id, mode, iframeSrc, setPlayerEngaged]);
+  }, [movie.id, mode, iframeSrc, setPlayerEngaged, isHlsStream]);
 
   useEffect(() => {
     if (!isTvPlayer) return;
@@ -280,13 +283,13 @@ export function useVideoPlayer({
 
   useEffect(() => {
     if (!isTvPlayer || !season) return;
-    void loadSeasonEpisodes(season);
-  }, [isTvPlayer, loadSeasonEpisodes, season]);
+    void loadSeasonEpisodesRef.current(season);
+  }, [isTvPlayer, season]);
 
   useEffect(() => {
     if (!nextEpisodeTarget) return;
-    void loadSeasonEpisodes(nextEpisodeTarget.season);
-  }, [loadSeasonEpisodes, nextEpisodeTarget]);
+    void loadSeasonEpisodesRef.current(nextEpisodeTarget.season);
+  }, [nextEpisodeTarget]);
 
   useEffect(() => {
     setShowNextEpisode(false);
@@ -418,10 +421,10 @@ export function useVideoPlayer({
   }, [isTrailer, doSavePlayback]);
 
   useEffect(() => {
-    if (!isTrailer && loaded && movieEmbedUrl) {
+    if (!isTrailer && loaded && (movieEmbedUrl || hlsSrc)) {
       setProvider(provider);
     }
-  }, [isTrailer, loaded, movieEmbedUrl, provider, setProvider]);
+  }, [isTrailer, loaded, movieEmbedUrl, hlsSrc, provider, setProvider]);
 
   useEffect(() => {
     if (!showKeyboardHint) return;
@@ -521,6 +524,7 @@ export function useVideoPlayer({
   return {
     isTrailer,
     isTvPlayer,
+    isHlsStream,
     isFullscreen: isFullscreen || isFauxFullscreen,
     isFauxFullscreen,
     showKeyboardHint,
@@ -534,6 +538,7 @@ export function useVideoPlayer({
     movieEmbedUrl,
     rawEmbedUrl,
     iframeSrc,
+    hlsSrc,
     playerLabel,
     displayYear,
     heroImage,

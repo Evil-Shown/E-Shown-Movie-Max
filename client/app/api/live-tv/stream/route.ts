@@ -1,11 +1,12 @@
 import { enforceRateLimit } from "@/lib/cache/rate-limit";
 import { fetchStreamResource } from "@/lib/live-tv/stream-fetch";
-import { isEphemeralManifest, rewriteHlsManifest } from "@/lib/live-tv/manifest-proxy";
+import { isEphemeralManifest, rewriteHlsManifest, stripAdSegments } from "@/lib/live-tv/manifest-proxy";
 import {
   buildSidProxyUrl,
   lookupProxyTarget,
   registerProxyTarget,
 } from "@/lib/live-tv/proxy-store";
+import { getRegionalProxy } from "@/lib/media/geo-bypass";
 
 const ALLOWED_PROTOCOLS = ["http:", "https:"];
 const BLOCKED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "[::1]"];
@@ -53,6 +54,7 @@ async function resolveProxyRequest(searchParams: URLSearchParams): Promise<{
   rawUrl: string | null;
   referer?: string;
   origin?: string;
+  region?: string;
 }> {
   const sid = searchParams.get("sid");
   if (sid) {
@@ -62,6 +64,7 @@ async function resolveProxyRequest(searchParams: URLSearchParams): Promise<{
       rawUrl: entry.url,
       referer: entry.referer,
       origin: entry.origin,
+      region: entry.region,
     };
   }
 
@@ -69,6 +72,7 @@ async function resolveProxyRequest(searchParams: URLSearchParams): Promise<{
     rawUrl: searchParams.get("url"),
     referer: searchParams.get("referer") ?? undefined,
     origin: searchParams.get("origin") ?? undefined,
+    region: searchParams.get("region") ?? undefined,
   };
 }
 
@@ -76,18 +80,22 @@ async function proxyUpstream(
   request: Request,
   rawUrl: string,
   referer?: string,
-  origin?: string
+  origin?: string,
+  region?: string
 ): Promise<Response> {
   const target = isAllowedUrl(rawUrl);
   if (!target) {
     return new Response("Invalid or blocked URL", { status: 400 });
   }
 
+  const proxyUrl = region ? getRegionalProxy(region) : undefined;
+
   const upstream = await fetchStreamResource(target.toString(), {
     referer,
     origin,
     retries: 3,
     mode: "manifest",
+    proxyUrl,
   });
 
   if (!upstream.ok) {
@@ -108,13 +116,14 @@ async function proxyUpstream(
   }
 
   const body = await upstream.text();
+  const cleanBody = stripAdSegments(body);
 
-  if (isManifestContent(rawUrl, contentType, body) && isOfflineHlsManifest(body)) {
+  if (isManifestContent(rawUrl, contentType, cleanBody) && isOfflineHlsManifest(cleanBody)) {
     return new Response("Stream offline or not broadcasting", { status: 503 });
   }
 
-  if (!isManifestContent(rawUrl, contentType, body)) {
-    return new Response(body, {
+  if (!isManifestContent(rawUrl, contentType, cleanBody)) {
+    return new Response(cleanBody, {
       headers: {
         "Content-Type": contentType ?? "application/octet-stream",
         "Cache-Control": "public, max-age=30",
@@ -124,8 +133,8 @@ async function proxyUpstream(
   }
 
   const proxyBase = new URL("/api/live-tv/stream", request.url).toString();
-  const output = await rewriteHlsManifest(body, target, proxyBase, referer, origin);
-  const ephemeral = isEphemeralManifest(rawUrl, body);
+  const output = await rewriteHlsManifest(cleanBody, target, proxyBase, referer, origin, region);
+  const ephemeral = isEphemeralManifest(rawUrl, cleanBody);
 
   return new Response(output, {
     headers: {
@@ -148,6 +157,7 @@ export async function POST(request: Request) {
       url?: string;
       referer?: string;
       origin?: string;
+      region?: string;
     };
 
     if (!body.url) {
@@ -159,12 +169,12 @@ export async function POST(request: Request) {
       return Response.json({ error: "Invalid or blocked URL" }, { status: 400 });
     }
 
-    const sid = await registerProxyTarget(body.url, body.referer, body.origin);
+    const sid = await registerProxyTarget(body.url, body.referer, body.origin, body.region);
     const proxyBase = new URL("/api/live-tv/stream", request.url).toString();
 
     return Response.json({
       sid,
-      playbackUrl: buildSidProxyUrl(proxyBase, sid),
+      playbackUrl: buildSidProxyUrl(proxyBase, sid, body.region),
     });
   } catch {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
@@ -176,7 +186,7 @@ export async function GET(request: Request) {
   if (limited) return limited;
 
   const { searchParams } = new URL(request.url);
-  const { rawUrl, referer, origin } = await resolveProxyRequest(searchParams);
+  const { rawUrl, referer, origin, region } = await resolveProxyRequest(searchParams);
 
   if (!rawUrl) {
     const sid = searchParams.get("sid");
@@ -187,7 +197,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    return await proxyUpstream(request, rawUrl, referer, origin);
+    return await proxyUpstream(request, rawUrl, referer, origin, region);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Proxy fetch failed";
     return new Response(message, { status: 502 });

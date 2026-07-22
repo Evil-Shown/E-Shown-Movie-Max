@@ -4,6 +4,30 @@ import {
   refererToOrigin,
 } from "@/lib/live-tv/stream-headers";
 
+let ProxyAgent: (new (url: string) => unknown) | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const undici = require("undici") as { ProxyAgent?: new (url: string) => unknown };
+  ProxyAgent = undici.ProxyAgent ?? null;
+} catch {
+  // undici not available — proxy support disabled
+}
+
+const proxyAgentCache = new Map<string, unknown>();
+
+function getOrCreateProxyAgent(proxyUrl: string): unknown | null {
+  if (!ProxyAgent) return null;
+  const cached = proxyAgentCache.get(proxyUrl);
+  if (cached) return cached;
+  try {
+    const agent = new ProxyAgent(proxyUrl);
+    proxyAgentCache.set(proxyUrl, agent);
+    return agent;
+  } catch {
+    return null;
+  }
+}
+
 export type StreamFetchMode = "document" | "manifest" | "api";
 
 export interface StreamFetchOptions {
@@ -13,6 +37,8 @@ export interface StreamFetchOptions {
   mode?: StreamFetchMode;
   /** Allow decoy referer rotation on retries (document scraping only) */
   rotateReferer?: boolean;
+  /** Route request through an HTTP proxy (undici ProxyAgent required) */
+  proxyUrl?: string;
 }
 
 function sleep(ms: number) {
@@ -122,13 +148,26 @@ export async function fetchStreamResource(
   const retries = options.retries ?? 3;
   let lastError: unknown;
 
+  const fetchInit: RequestInit & { dispatcher?: unknown } = {
+    headers: buildHeaders(options, 0),
+    redirect: "follow",
+    signal: AbortSignal.timeout(12_000),
+  };
+
+  if (options.proxyUrl) {
+    const agent = getOrCreateProxyAgent(options.proxyUrl);
+    if (agent) {
+      fetchInit.dispatcher = agent;
+    }
+  }
+
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      const response = await fetch(url, {
-        headers: buildHeaders(options, attempt),
-        redirect: "follow",
-        signal: AbortSignal.timeout(12_000),
-      });
+      if (attempt > 0) {
+        fetchInit.headers = buildHeaders(options, attempt);
+      }
+
+      const response = await fetch(url, fetchInit as RequestInit);
 
       if (response.ok) return response;
 

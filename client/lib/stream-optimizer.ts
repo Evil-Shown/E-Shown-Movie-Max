@@ -1,5 +1,6 @@
 import { PROVIDER_LABELS, STREAM_PROVIDERS, type StreamProvider } from "@/lib/providers";
 import { getRankedProviders } from "@/lib/storage/provider-performance";
+import { MANUAL_HLS_SOURCES } from "@/lib/media/manual-sources";
 
 export const PROVIDER_ORIGINS: Record<StreamProvider, string[]> = {
   vidfast: ["https://vidfast.pro"],
@@ -8,6 +9,8 @@ export const PROVIDER_ORIGINS: Record<StreamProvider, string[]> = {
   autoembed: ["https://autoembed.co"],
   vidsrcpm: ["https://vidsrc.pm"],
   vidsrc: ["https://vidsrc.cc"],
+  dynamic_hls: [],
+  hotstar: [],
 };
 
 const warmedOrigins = new Set<string>();
@@ -73,6 +76,25 @@ export function getNextProvider(current: StreamProvider): StreamProvider {
   const order = getProvidersInOrder(current);
   const index = order.indexOf(current);
   return order[(index + 1) % order.length];
+}
+
+export function getSmartProviderOrder(tmdbId: string | null): StreamProvider[] {
+  if (!tmdbId) return STREAM_PROVIDERS;
+
+  if (MANUAL_HLS_SOURCES[tmdbId]) {
+    const hlsFirst: StreamProvider[] = [];
+    const rest: StreamProvider[] = [];
+    for (const provider of STREAM_PROVIDERS) {
+      if (provider === "dynamic_hls" || provider === "hotstar") {
+        hlsFirst.push(provider);
+      } else {
+        rest.push(provider);
+      }
+    }
+    return [...hlsFirst, ...rest];
+  }
+
+  return STREAM_PROVIDERS;
 }
 
 /** Open early connections to stream hosts before the iframe loads. */

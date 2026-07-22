@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, type RefObject } from "react";
+import { useEffect, useRef, useLayoutEffect, type RefObject } from "react";
 import { getEmbedIframeSandbox } from "@/lib/block-ad-nav";
 
 interface EmbedStreamFrameProps {
@@ -8,6 +8,7 @@ interface EmbedStreamFrameProps {
   title: string;
   iframeRef: RefObject<HTMLIFrameElement | null>;
   onLoad?: () => void;
+  onError?: () => void;
 }
 
 function applyFullscreenPermissions(el: HTMLIFrameElement) {
@@ -26,19 +27,34 @@ function applyFullscreenPermissions(el: HTMLIFrameElement) {
   }
 }
 
-/**
- * Hybrid sandbox embed:
- * - VidFast: no sandbox (detects it and hangs)
- * - Other providers: sandbox without allow-popups (kills iframe popups in browsers)
- * Desktop/mobile add native request blocking on top of this shared iframe.
- */
-export default function EmbedStreamFrame({ src, title, iframeRef, onLoad }: EmbedStreamFrameProps) {
+export default function EmbedStreamFrame({ src, title, iframeRef, onLoad, onError }: EmbedStreamFrameProps) {
   const sandboxAttr = getEmbedIframeSandbox(src);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onErrorRef = useRef(onError);
 
   useLayoutEffect(() => {
     const el = iframeRef.current;
     if (el) applyFullscreenPermissions(el);
   }, [iframeRef, src]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
+  useEffect(() => {
+    if (!src) return;
+
+    timeoutRef.current = setTimeout(() => {
+      onErrorRef.current?.();
+    }, 4000);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [src]);
 
   return (
     <iframe
@@ -53,6 +69,10 @@ export default function EmbedStreamFrame({ src, title, iframeRef, onLoad }: Embe
       {...(sandboxAttr ? { sandbox: sandboxAttr } : {})}
       onLoad={(e) => {
         applyFullscreenPermissions(e.currentTarget);
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
         onLoad?.();
       }}
       className="player-embed-iframe absolute inset-0 z-[10] h-full w-full border-0"

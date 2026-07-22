@@ -251,6 +251,127 @@ ipcMain.handle("open-external", async (_event, url) => {
   }
 });
 
+const activeDownloads = new Map();
+
+ipcMain.handle("download-media", async (event, { tmdbId, type, season, episode }) => {
+  try {
+    const downloadId = `dl_${Date.now()}_${tmdbId}`;
+    const sender = event.sender;
+
+    const resolveUrl = `http://127.0.0.1:${WEB_PORT}/api/v1/media/resolve?provider=dynamic_hls&tmdbId=${encodeURIComponent(tmdbId)}&type=${encodeURIComponent(type)}${season !== undefined && episode !== undefined ? `&season=${season}&episode=${episode}` : ""}`;
+
+    logInfo("Download: resolving media URL", resolveUrl);
+
+    const { default: fetchNode } = await import("node-fetch" in global ? "node-fetch" : "node:http");
+    let resolved;
+    try {
+      const resp = await fetch(resolveUrl);
+      resolved = await resp.json();
+    } catch (err) {
+      try {
+        const http = require("http");
+        resolved = await new Promise((resolvePromise, reject) => {
+          http.get(resolveUrl, (res) => {
+            let data = "";
+            res.on("data", (chunk) => (data += chunk));
+            res.on("end", () => {
+              try { resolvePromise(JSON.parse(data)); } catch (e) { reject(e); }
+            });
+          }).on("error", reject);
+        });
+      } catch (e2) {
+        logError("Download: failed to resolve media URL", err, e2);
+        throw new Error("Failed to resolve stream URL");
+      }
+    }
+
+    if (!resolved?.url) {
+      throw new Error("No HLS stream available for download");
+    }
+
+    const m3u8Url = resolved.url;
+    logInfo("Download: resolved m3u8 URL for", tmdbId);
+
+    const downloadsDir = app.getPath("downloads");
+    const filename =
+      type === "tv"
+        ? `chithra-s${String(season || 1).padStart(2, "0")}e${String(episode || 1).padStart(2, "0")}-${tmdbId}.mp4`
+        : `chithra-movie-${tmdbId}.mp4`;
+    const outputPath = path.join(downloadsDir, filename);
+
+    logInfo("Download: starting ffmpeg", m3u8Url, "->", outputPath);
+
+    const ffmpeg = spawn("ffmpeg", [
+      "-loglevel", "info",
+      "-progress", "pipe:1",
+      "-nostdin",
+      "-user_agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "-i", m3u8Url,
+      "-c", "copy",
+      "-bsf:a", "aac_adtstoasc",
+      "-movflags", "+faststart",
+      "-y",
+      outputPath,
+    ]);
+
+    activeDownloads.set(downloadId, ffmpeg);
+
+    let durationSec = 0;
+    ffmpeg.stdout.on("data", (chunk) => {
+      const text = chunk.toString("utf-8");
+      const timeMatch = text.match(/out_time_us=(\d+)/);
+      if (timeMatch) {
+        const currentSec = parseInt(timeMatch[1], 10) / 1_000_000;
+        if (durationSec > 0) {
+          const pct = Math.min(100, Math.round((currentSec / durationSec) * 100));
+          sender.send("download-progress", { downloadId, percentage: pct, currentSec, durationSec });
+        }
+      }
+      const durMatch = text.match(/duration=(\d+)/);
+      if (durMatch) {
+        durationSec = parseFloat(durMatch[1]);
+      }
+    });
+
+    ffmpeg.stderr.on("data", (chunk) => {
+      const text = chunk.toString("utf-8").trim();
+      if (text) logInfo(`[ffmpeg download ${downloadId}]`, text);
+    });
+
+    return new Promise((resolvePromise, reject) => {
+      ffmpeg.on("close", (code) => {
+        activeDownloads.delete(downloadId);
+        if (code === 0) {
+          sender.send("download-progress", { downloadId, percentage: 100, done: true, outputPath });
+          logInfo("Download complete:", outputPath);
+          resolvePromise({ success: true, outputPath });
+        } else {
+          logError("ffmpeg exited with code", code);
+          reject(new Error(`ffmpeg exited with code ${code}`));
+        }
+      });
+
+      ffmpeg.on("error", (err) => {
+        activeDownloads.delete(downloadId);
+        logError("ffmpeg error:", err);
+        reject(err);
+      });
+    });
+  } catch (err) {
+    logError("Download failed:", err);
+    throw err;
+  }
+});
+
+ipcMain.on("cancel-download", (_event, downloadId) => {
+  const ffmpeg = activeDownloads.get(downloadId);
+  if (ffmpeg) {
+    logInfo("Cancelling download:", downloadId);
+    ffmpeg.kill();
+    activeDownloads.delete(downloadId);
+  }
+});
+
 function isAllowedAppUrl(url) {
   try {
     const parsed = new URL(url);

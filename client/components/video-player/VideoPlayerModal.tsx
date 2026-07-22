@@ -3,26 +3,33 @@
 import type { StreamProvider } from "@/lib/providers";
 import { PROVIDER_LABELS } from "@/lib/providers";
 import { BRAND_NAME } from "@/lib/brand";
-import { isTvShow } from "@/lib/streaming";
-import { getMovieEmbedUrl } from "@/lib/streaming";
+import { isTvShow, resolveMediaStream, resolveTmdbId, type ResolvedMediaStream } from "@/lib/streaming";
+import { proxifySubtitleUrl } from "@/lib/subtitles-client";
 import { getTrailerId } from "@/lib/trailers";
 import { useUserLibraryActions } from "@/components/UserLibraryProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { useAuthModal } from "@/components/AuthModalProvider";
 import PlayerTvSelector from "@/components/PlayerTvSelector";
 import PlayerNextEpisodeOverlay from "@/components/PlayerNextEpisodeOverlay";
-import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { isSlowConnection } from "@/lib/stream-optimizer";
 import PlayerLoadingOverlay from "./PlayerLoadingOverlay";
 import PlayerScrubber from "./PlayerScrubber";
 import EmbedStreamFrame from "./EmbedStreamFrame";
+import HlsStreamFrame, { type HlsStreamFrameHandle, type HlsQualityLevel } from "./HlsStreamFrame";
 import { useProviderFallback } from "./hooks/useProviderFallback";
 import { useResumeTime } from "./hooks/useResumeTime";
 import { useSubtitles } from "./hooks/useSubtitles";
 import { usePlayerViewport } from "./hooks/usePlayerViewport";
 import { useVideoPlayer } from "./hooks/useVideoPlayer";
 import type { ActivePlayer, PlayerMode } from "./types";
+
+interface ActiveDownload {
+  downloadId: string;
+  percentage: number;
+  filename: string;
+}
 
 interface VideoPlayerModalProps {
   active: ActivePlayer;
@@ -44,7 +51,108 @@ export default function VideoPlayerModal({
   const { movie, mode, season, episode, provider, resumeSeconds } = active;
   const { setProvider } = useUserLibraryActions();
   const [playerEngaged, setPlayerEngaged] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [hlsQualityLevels, setHlsQualityLevels] = useState<HlsQualityLevel[]>([]);
+  const [selectedQualityIndex, setSelectedQualityIndex] = useState<number>(-1);
+  const [showQualityDropdown, setShowQualityDropdown] = useState(false);
+  const hlsFrameRef = useRef<HlsStreamFrameHandle>(null);
   const setLoadedRef = useRef<(value: boolean) => void>(() => {});
+
+  const [activeDownloads, setActiveDownloads] = useState<ActiveDownload[]>([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const desktopApi = typeof window !== "undefined" ? window.chithraDesktop : undefined;
+
+  const FadeLoading = ({ children }: { children: React.ReactNode }) => (
+    <AnimatePresence>
+      <motion.div
+        key="loading"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.25 }}
+        className="absolute inset-0 z-[1]"
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+
+  useEffect(() => {
+    const api = desktopApi;
+    if (!api?.onDownloadProgress) return;
+    return api.onDownloadProgress((payload) => {
+      setActiveDownloads((prev) => {
+        const existing = prev.find((d) => d.downloadId === payload.downloadId);
+        if (payload.done) {
+          return prev.filter((d) => d.downloadId !== payload.downloadId);
+        }
+        if (existing) {
+          return prev.map((d) =>
+            d.downloadId === payload.downloadId ? { ...d, percentage: payload.percentage } : d
+          );
+        }
+        return [
+          ...prev,
+          { downloadId: payload.downloadId, percentage: payload.percentage, filename: "Downloading..." },
+        ];
+      });
+    });
+  }, [desktopApi]);
+
+  const handleDownload = useCallback(async () => {
+    const api = desktopApi;
+    if (!api?.downloadMedia) return;
+    const tmdbId = resolveTmdbId(movie);
+    if (!tmdbId) return;
+    const tv = isTvShow(movie);
+    try {
+      await api.downloadMedia({
+        tmdbId,
+        type: tv ? "tv" : "movie",
+        season: tv ? (season ?? 1) : undefined,
+        episode: tv ? (episode ?? 1) : undefined,
+      });
+    } catch {
+      // download failed silently — progress listener handles UI
+    }
+  }, [desktopApi, movie, season, episode]);
+
+  const handleCancelDownload = useCallback(
+    (downloadId: string) => {
+      desktopApi?.cancelDownload?.(downloadId);
+      setActiveDownloads((prev) => prev.filter((d) => d.downloadId !== downloadId));
+    },
+    [desktopApi]
+  );
+
+  const showToast = useCallback((message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 4000);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        setShowDiagnostics((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (!showQualityDropdown) return;
+    const onPointer = () => setShowQualityDropdown(false);
+    document.addEventListener("pointerdown", onPointer);
+    return () => document.removeEventListener("pointerdown", onPointer);
+  }, [showQualityDropdown]);
+
+  useEffect(() => {
+    if (hlsFrameRef.current) {
+      hlsFrameRef.current.setQualityLevel(selectedQualityIndex);
+    }
+  }, [selectedQualityIndex]);
 
   // Auth gate: block playback if not authenticated
   useEffect(() => {
@@ -69,30 +177,72 @@ export default function VideoPlayerModal({
   });
 
   const trailerId = movie.trailerKey ?? getTrailerId(movie.id);
-  const movieEmbedUrl = isTrailer
-    ? null
-    : getMovieEmbedUrl(movie, provider, {
-        season,
-        episode,
-        seek: resumeSeconds,
-      });
+  const [resolvedStream, setResolvedStream] = useState<ResolvedMediaStream | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
+
+  const resolveOptions = { season, episode, seek: resumeSeconds };
+
+  useEffect(() => {
+    let cancelled = false;
+    setResolvedStream(null);
+    setIsResolving(true);
+
+    if (isTrailer) {
+      setIsResolving(false);
+      return;
+    }
+
+    resolveMediaStream(movie, provider, resolveOptions).then((result) => {
+      if (!cancelled) {
+        setResolvedStream(result);
+        setIsResolving(false);
+        if (result?.isGeoBypassed) {
+          showToast("Bypassing regional restriction (IN)...");
+        }
+        if (result?.isAdStripped && !result?.isGeoBypassed) {
+          showToast("Ads removed from stream.");
+        }
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [movie.id, provider, season, episode, mode, resumeSeconds]);
+
+  const streamSrc = isTrailer ? null : resolvedStream?.url ?? null;
   const iframeSrc = isTrailer
     ? `https://www.youtube.com/embed/${trailerId}?autoplay=1&rel=0&modestbranding=1`
-    : movieEmbedUrl;
+    : resolvedStream?.type === "embed"
+      ? resolvedStream.url
+      : null;
+  const currentTmdbId = resolveTmdbId(movie);
 
-  const fallback = useProviderFallback({
+  const {
+    loaded: fallbackLoaded,
+    setLoaded: fallbackSetLoaded,
+    loadFailed: fallbackLoadFailed,
+    autoSwitchMessage: fallbackAutoSwitchMessage,
+    providerLogs,
+    handleProviderSwitch: fallbackHandleProviderSwitch,
+    handleStreamError: fallbackHandleStreamError,
+    confirmPlayback: fallbackConfirmPlayback,
+    handleIframeLoad: fallbackHandleIframeLoad,
+  } = useProviderFallback({
     provider,
     isTrailer,
-    iframeSrc,
+    streamSrc,
     playerEngaged,
+    tmdbId: currentTmdbId,
     onProviderChange,
     setProvider,
     resetKey: `${movie.id}-${mode}`,
   });
 
   useEffect(() => {
-    setLoadedRef.current = fallback.setLoaded;
-  }, [fallback.setLoaded]);
+    setLoadedRef.current = fallbackSetLoaded;
+  }, [fallbackSetLoaded]);
 
   const resume = useResumeTime(resumeSeconds);
 
@@ -113,6 +263,7 @@ export default function VideoPlayerModal({
     heroImage,
     posterImage,
     episodeLabel,
+    isHlsStream,
     stageRef,
     iframeRef,
     toggleFullscreen,
@@ -129,10 +280,11 @@ export default function VideoPlayerModal({
     episode,
     provider,
     resumeSeconds,
-    loaded: fallback.loaded,
+    resolvedStream,
+    loaded: fallbackLoaded,
     playerEngaged,
     setPlayerEngaged,
-    confirmPlayback: fallback.confirmPlayback,
+    confirmPlayback: fallbackConfirmPlayback,
     onClose,
     onSeasonEpisodeChange,
   });
@@ -163,6 +315,20 @@ export default function VideoPlayerModal({
           />
           <div className="player-vignette absolute inset-0" />
           <div className="cinema-sweep pointer-events-none absolute inset-x-0 top-0 h-1/2 max-sm:hidden" />
+          <AnimatePresence>
+            {toastMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="pointer-events-none absolute left-1/2 top-4 z-[220] -translate-x-1/2"
+              >
+                <div className="rounded-full border border-[rgba(232,164,74,0.4)] bg-[rgba(28,25,23,0.92)] px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#f4c27a] shadow-lg backdrop-blur-sm">
+                  {toastMessage}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       ) : null}
 
@@ -234,7 +400,50 @@ export default function VideoPlayerModal({
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-              {iframeSrc ? (
+              {isHlsStream && hlsQualityLevels.length > 1 ? (
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setShowQualityDropdown((prev) => !prev); }}
+                    aria-label="Video quality"
+                    title="Video quality"
+                    className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white active:scale-95 sm:h-10 sm:w-10"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden>
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {showQualityDropdown && (
+                    <div className="absolute bottom-full right-0 mb-2 min-w-[120px] rounded-lg border border-[rgba(232,164,74,0.35)] bg-[rgba(28,25,23,0.96)] p-1 shadow-xl backdrop-blur-sm">
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedQualityIndex(-1); setShowQualityDropdown(false); }}
+                        className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-[11px] transition-colors ${
+                          selectedQualityIndex === -1 ? "bg-[rgba(232,164,74,0.2)] text-[#f4c27a]" : "text-stone-300 hover:bg-white/10"
+                        }`}
+                      >
+                        Auto
+                        {selectedQualityIndex === -1 && <span className="ml-auto text-[9px]">✓</span>}
+                      </button>
+                      {hlsQualityLevels.map((level) => (
+                        <button
+                          key={level.index}
+                          type="button"
+                          onClick={() => { setSelectedQualityIndex(level.index); setShowQualityDropdown(false); }}
+                          className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-[11px] transition-colors ${
+                            selectedQualityIndex === level.index ? "bg-[rgba(232,164,74,0.2)] text-[#f4c27a]" : "text-stone-300 hover:bg-white/10"
+                          }`}
+                        >
+                          {level.label}
+                          {selectedQualityIndex === level.index && <span className="ml-auto text-[9px]">✓</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+              {streamSrc ? (
                 <button
                   type="button"
                   onPointerDown={(e) => {
@@ -310,22 +519,104 @@ export default function VideoPlayerModal({
                     </div>
                   )}
 
-                  {iframeSrc ? (
+                  {isHlsStream ? (
                     <>
-                      {!fallback.loaded && (
-                        <PlayerLoadingOverlay
-                          movie={movie}
-                          isTrailer={isTrailer}
-                          provider={provider}
-                          episodeLabel={episodeLabel}
-                          resumeSeconds={resumeSeconds}
-                          heroImage={heroImage}
-                          posterImage={posterImage}
-                          autoSwitchMessage={fallback.autoSwitchMessage}
-                          stabilityTip={stabilityTip}
-                        />
+                      {!fallbackLoaded && (
+                        <FadeLoading>
+                          <PlayerLoadingOverlay
+                            movie={movie}
+                            isTrailer={isTrailer}
+                            provider={provider}
+                            episodeLabel={episodeLabel}
+                            resumeSeconds={resumeSeconds}
+                            heroImage={heroImage}
+                            posterImage={posterImage}
+                            autoSwitchMessage={fallbackAutoSwitchMessage}
+                            stabilityTip={stabilityTip}
+                          />
+                        </FadeLoading>
                       )}
-                      {fallback.loadFailed && !fallback.loaded && (
+                      {fallbackLoadFailed && !fallbackLoaded && (
+                        <div className="absolute inset-0 z-[3] flex flex-col items-center justify-center gap-4 bg-black/85 px-6 text-center">
+                          <p className="font-[var(--font-playfair)] text-xl text-stone-100">No HLS stream on this source</p>
+                          <p className="max-w-sm text-sm leading-relaxed text-stone-300">
+                            {PROVIDER_LABELS[provider]} couldn&apos;t resolve a playable HLS manifest for this title
+                            right now. We&apos;ll try another source automatically.
+                          </p>
+                          <div className="flex flex-wrap items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={fallbackHandleProviderSwitch}
+                              className="rounded-full bg-[#f4c27a] px-5 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-stone-950 hover:bg-white"
+                            >
+                              Try Next Source
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {resolvedStream?.url ? (
+                        <div className="absolute inset-0">
+                          <HlsStreamFrame
+                            ref={hlsFrameRef}
+                            key={`${provider}-${season ?? 0}-${episode ?? 0}-${resolvedStream.url}`}
+                            src={resolvedStream.url}
+                            title={`${movie.title} stream`}
+                            subtitles={subtitles.subtitleTracks.map((t) => ({
+                              lang: t.language,
+                              label: t.label,
+                              src: proxifySubtitleUrl(t.url),
+                            }))}
+                            defaultSubtitle={
+                              subtitles.subtitleLang !== "off" ? subtitles.subtitleLang : undefined
+                            }
+                            onLevelsLoaded={(levels) => {
+                              setHlsQualityLevels(levels);
+                              setSelectedQualityIndex(-1);
+                            }}
+                            onLoad={() => {
+                              fallbackHandleIframeLoad();
+                              handleIframeLoadComplete();
+                              setPlayerEngaged(true);
+                            }}
+                            onError={() => {
+                              fallbackHandleStreamError();
+                            }}
+                          />
+                        </div>
+                      ) : null}
+                      {isTvPlayer && nextEpisodeTarget ? (
+                        <PlayerNextEpisodeOverlay
+                          visible={showNextEpisode}
+                          showTitle={movie.title}
+                          nextSeason={nextEpisodeTarget.season}
+                          nextEpisode={nextEpisodeTarget.episode}
+                          episode={nextEpisodeSummary}
+                          countdown={nextEpisodeCountdown}
+                          progress={nextEpisodeProgress}
+                          autoAdvance={nextEpisodeAuto}
+                          onPlayNow={playNextEpisode}
+                          onCancel={dismissNextEpisode}
+                        />
+                      ) : null}
+                    </>
+                  ) : iframeSrc ? (
+                    <>
+                      {!fallbackLoaded && (
+                        <FadeLoading>
+                          <PlayerLoadingOverlay
+                            movie={movie}
+                            isTrailer={isTrailer}
+                            provider={provider}
+                            episodeLabel={episodeLabel}
+                            resumeSeconds={resumeSeconds}
+                            heroImage={heroImage}
+                            posterImage={posterImage}
+                            autoSwitchMessage={fallbackAutoSwitchMessage}
+                            stabilityTip={stabilityTip}
+                          />
+                        </FadeLoading>
+                      )}
+                      {fallbackLoadFailed && !fallbackLoaded && (
                         <div className="absolute inset-0 z-[3] flex flex-col items-center justify-center gap-4 bg-black/85 px-6 text-center">
                           <p className="font-[var(--font-playfair)] text-xl text-stone-100">No stream on this source</p>
                           <p className="max-w-sm text-sm leading-relaxed text-stone-300">
@@ -336,7 +627,7 @@ export default function VideoPlayerModal({
                           <div className="flex flex-wrap items-center justify-center gap-2">
                             <button
                               type="button"
-                              onClick={fallback.handleProviderSwitch}
+                              onClick={fallbackHandleProviderSwitch}
                               className="rounded-full bg-[#f4c27a] px-5 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-stone-950 hover:bg-white"
                             >
                               Try Next Source
@@ -355,7 +646,7 @@ export default function VideoPlayerModal({
                       )}
                       <div
                         className="absolute inset-0"
-                        style={{ bottom: !isTrailer && fallback.loaded ? "52px" : "0" }}
+                        style={{ bottom: !isTrailer && fallbackLoaded ? "52px" : "0" }}
                       >
                         <EmbedStreamFrame
                           key={`${provider}-${season ?? 0}-${episode ?? 0}-${iframeSrc}`}
@@ -363,9 +654,12 @@ export default function VideoPlayerModal({
                           title={isTrailer ? `${movie.title} trailer` : `${movie.title} stream`}
                           iframeRef={iframeRef}
                           onLoad={() => {
-                            fallback.handleIframeLoad();
+                            fallbackHandleIframeLoad();
                             handleIframeLoadComplete();
                             setPlayerEngaged(true);
+                          }}
+                          onError={() => {
+                            fallbackHandleStreamError("Embed 404 or timeout");
                           }}
                         />
                       </div>
@@ -373,7 +667,7 @@ export default function VideoPlayerModal({
                         currentTime={playbackCurrentTime}
                         duration={playbackDuration || (movie.runtime || 90) * 60}
                         isTrailer={isTrailer}
-                        loaded={Boolean(fallback.loaded)}
+                        loaded={Boolean(fallbackLoaded)}
                       />
                       {!isTrailer && subtitles.activeSubtitleCue ? (
                         <div className="pointer-events-none absolute inset-x-0 bottom-[13%] z-[11] flex justify-center px-4 sm:bottom-[11%]">
@@ -406,6 +700,20 @@ export default function VideoPlayerModal({
                         />
                       ) : null}
                     </>
+                  ) : isResolving ? (
+                    <FadeLoading>
+                      <PlayerLoadingOverlay
+                        movie={movie}
+                        isTrailer={isTrailer}
+                        provider={provider}
+                        episodeLabel={episodeLabel}
+                        resumeSeconds={resumeSeconds}
+                        heroImage={heroImage}
+                        posterImage={posterImage}
+                        autoSwitchMessage="Resolving stream source…"
+                        stabilityTip={stabilityTip}
+                      />
+                    </FadeLoading>
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-[radial-gradient(circle_at_center,rgba(201,106,43,0.2),transparent_42%),#0f0d0b] px-6 text-center">
                       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#f4c27a]/30 bg-[#f4c27a]/10 text-[#f4c27a]">
@@ -426,7 +734,7 @@ export default function VideoPlayerModal({
                       </button>
                     </div>
                   )}
-                  {showKeyboardHint && fallback.loaded && !isFullscreen && (
+                  {showKeyboardHint && fallbackLoaded && !isFullscreen && (
                     <div className="pointer-events-none absolute bottom-3 left-1/2 z-[4] -translate-x-1/2 max-sm:hidden">
                       <p className="rounded-full border border-white/10 bg-black/65 px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] text-stone-200 backdrop-blur">
                         Click video · Space to play/pause · Arrows to seek
@@ -437,7 +745,7 @@ export default function VideoPlayerModal({
                   {showFloatChrome ? (
                     <div className="player-float-chrome sm:hidden">
                       <div className="player-float-chrome__actions">
-                        {iframeSrc ? (
+              {streamSrc ? (
                           <button
                             type="button"
                             onPointerDown={(e) => {
@@ -477,7 +785,7 @@ export default function VideoPlayerModal({
                   ) : null}
                 </div>
               </div>
-              {fallback.loaded && iframeSrc && (
+              {fallbackLoaded && streamSrc && (
                 <p className="player-modal-helper mt-2 hidden text-center text-[10px] text-[var(--text-secondary)] sm:block lg:text-left">
                   Use the player timeline to jump to any moment. Click inside the video first for keyboard shortcuts.
                 </p>
@@ -489,10 +797,10 @@ export default function VideoPlayerModal({
                 movie={movie}
                 season={season ?? 1}
                 episode={episode ?? 1}
-                disabled={!fallback.loaded && !fallback.loadFailed}
+                disabled={!fallbackLoaded && !fallbackLoadFailed}
                 forceCollapsed={immersiveLandscape || fsActive}
                 onChange={onSeasonEpisodeChange}
-                onSwitchProvider={fallback.handleProviderSwitch}
+                onSwitchProvider={fallbackHandleProviderSwitch}
               />
             )}
           </div>
@@ -516,7 +824,7 @@ export default function VideoPlayerModal({
             </div>
           ) : null}
           <div className="player-modal-footer__actions flex flex-wrap items-center justify-end gap-2">
-            {iframeSrc ? (
+            {streamSrc ? (
               <button
                 type="button"
                 onPointerDown={(e) => {
@@ -528,11 +836,11 @@ export default function VideoPlayerModal({
                 {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
               </button>
             ) : null}
-            {!isTrailer && iframeSrc && (
+            {!isTrailer && streamSrc && (
               <>
                 <button
                   type="button"
-                  onClick={fallback.handleProviderSwitch}
+                  onClick={fallbackHandleProviderSwitch}
                   className="min-h-[44px] rounded-full border border-[var(--border-strong)] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)] hover:bg-[var(--bg-primary)] sm:min-h-[40px]"
                 >
                   Not working? Switch
@@ -545,6 +853,28 @@ export default function VideoPlayerModal({
                   >
                     Open in Tab
                   </button>
+                ) : null}
+                {desktopApi?.isDesktopApp && isHlsStream && resolvedStream?.url ? (
+                  activeDownloads.length > 0 ? (
+                    activeDownloads.map((dl) => (
+                      <button
+                        key={dl.downloadId}
+                        type="button"
+                        onClick={() => handleCancelDownload(dl.downloadId)}
+                        className="min-h-[44px] rounded-full border border-[var(--border-strong)] bg-[rgba(232,164,74,0.1)] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#f4c27a] hover:bg-[rgba(232,164,74,0.2)] sm:min-h-[40px]"
+                      >
+                        {dl.percentage < 100 ? `Downloading ${dl.percentage}%` : "Complete"}
+                      </button>
+                    ))
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleDownload}
+                      className="min-h-[44px] rounded-full border border-[var(--border-strong)] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)] hover:bg-[var(--bg-primary)] sm:min-h-[40px]"
+                    >
+                      Download
+                    </button>
+                  )
                 ) : null}
               </>
             )}
@@ -573,6 +903,62 @@ export default function VideoPlayerModal({
           </div>
         </div>
       </motion.div>
+      {showDiagnostics && (
+        <div className="pointer-events-none absolute bottom-4 right-4 z-[210] max-w-[340px]">
+          <div className="pointer-events-auto rounded-lg border border-[rgba(232,164,74,0.35)] bg-[rgba(18,15,12,0.92)] p-3 text-left text-[10px] font-mono leading-relaxed text-stone-200 backdrop-blur-sm shadow-xl">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#f4c27a]">
+                Diagnostics
+              </span>
+              <span className="text-[9px] text-stone-500">Ctrl+D to toggle</span>
+            </div>
+            {currentTmdbId && (
+              <p className="mb-2 text-[9px] text-stone-500">
+                TMDB: {currentTmdbId}
+                {!isResolving && !resolvedStream && !isTrailer ? " · HLS resolve FAILED" : ""}
+                {resolvedStream?.isGeoBypassed ? " · Geo-bypass active" : ""}
+              </p>
+            )}
+            {providerLogs.length === 0 ? (
+              <p className="text-stone-500 italic">No provider activity yet.</p>
+            ) : (
+              <ul className="space-y-1">
+                {providerLogs.map((entry, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <span
+                      className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
+                        entry.status === "success"
+                          ? "bg-green-400"
+                          : entry.status === "error"
+                            ? "bg-red-400"
+                            : "bg-yellow-400 animate-pulse"
+                      }`}
+                    />
+                    <span className="text-stone-400 text-[9px]">
+                      {new Date(entry.timestamp).toLocaleTimeString()}
+                    </span>
+                    <span className="font-semibold text-stone-100">{entry.provider}</span>
+                    <span
+                      className={
+                        entry.status === "success"
+                          ? "text-green-300"
+                          : entry.status === "error"
+                            ? "text-red-300"
+                            : "text-yellow-300"
+                      }
+                    >
+                      {entry.status}
+                    </span>
+                    {entry.reason ? (
+                      <span className="text-stone-500 text-[9px]">({entry.reason})</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

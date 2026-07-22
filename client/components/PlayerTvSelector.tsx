@@ -58,10 +58,15 @@ export default function PlayerTvSelector({
     [onChange, season]
   );
 
+  const seasonsFetchedRef = useRef<string | null>(null);
+  const episodesFetchedRef = useRef<string | null>(null);
+
   useEffect(() => {
     let cancelled = false;
 
     async function loadSeasons() {
+      if (seasonsFetchedRef.current === movie.id) return;
+      seasonsFetchedRef.current = movie.id;
       setLoadingSeasons(true);
       try {
         const res = await fetch(`/api/tv/${movie.id}/seasons`);
@@ -84,6 +89,8 @@ export default function PlayerTvSelector({
     let cancelled = false;
 
     async function loadEpisodes() {
+      if (episodesFetchedRef.current === `${movie.id}:${season}`) return;
+      episodesFetchedRef.current = `${movie.id}:${season}`;
       setLoadingEpisodes(true);
       try {
         const res = await fetch(`/api/tv/${movie.id}/seasons`, {

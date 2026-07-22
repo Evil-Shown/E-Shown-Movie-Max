@@ -17,4 +17,11 @@ contextBridge.exposeInMainWorld("chithraDesktop", {
     return () => ipcRenderer.removeListener("app-window-event", handler);
   },
   openExternal: (url) => ipcRenderer.invoke("open-external", url),
+  downloadMedia: (params) => ipcRenderer.invoke("download-media", params),
+  onDownloadProgress: (callback) => {
+    const handler = (_event, payload) => callback(payload);
+    ipcRenderer.on("download-progress", handler);
+    return () => ipcRenderer.removeListener("download-progress", handler);
+  },
+  cancelDownload: (downloadId) => ipcRenderer.send("cancel-download", downloadId),
 });

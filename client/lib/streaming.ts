@@ -1,5 +1,5 @@
 import type { Movie } from "@/lib/types";
-import { buildEmbedUrl, DEFAULT_STREAM_PROVIDER, type StreamProvider } from "./providers";
+import { buildEmbedUrl, DEFAULT_STREAM_PROVIDER, isHlsProvider, type StreamProvider } from "./providers";
 import { proxifyEmbedUrl } from "./embed-proxy";
 
 /** TMDB IDs for curated local slug-based movies */
@@ -125,4 +125,64 @@ export function getRawMovieEmbedUrl(
   }
 
   return buildEmbedUrl(provider, mediaId, "movie", undefined, undefined, embedOptions);
+}
+
+export type MediaStreamType = "embed" | "hls";
+
+export interface ResolvedMediaStream {
+  type: MediaStreamType;
+  url: string;
+  isGeoBypassed?: boolean;
+  isAdStripped?: boolean;
+}
+
+export async function resolveMediaStream(
+  movie: Movie,
+  provider: StreamProvider = DEFAULT_STREAM_PROVIDER,
+  options?: StreamEmbedOptions
+): Promise<ResolvedMediaStream | null> {
+  const mediaId = resolveMediaId(movie);
+  if (!mediaId) return null;
+
+  if (isHlsProvider(provider)) {
+    const tv = isTvShow(movie);
+    const params = new URLSearchParams({
+      provider,
+      tmdbId: mediaId,
+      type: tv ? "tv" : "movie",
+    });
+    if (tv) {
+      params.set("season", String(options?.season ?? 1));
+      params.set("episode", String(options?.episode ?? 1));
+    }
+
+    try {
+      const res = await fetch(`/api/v1/media/resolve?${params.toString()}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const reason = (body as { reason?: string }).reason ?? `HTTP ${res.status}`;
+        console.error("[resolveMediaStream] HLS resolution failed:", reason);
+        return null;
+      }
+      const data = (await res.json()) as {
+        type: string;
+        url: string;
+        isGeoBypassed?: boolean;
+        isAdStripped?: boolean;
+      };
+      if (data.type !== "hls" || !data.url) return null;
+      return {
+        type: "hls",
+        url: data.url,
+        isGeoBypassed: data.isGeoBypassed,
+        isAdStripped: data.isAdStripped,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  const embedUrl = getMovieEmbedUrl(movie, provider, options);
+  if (!embedUrl) return null;
+  return { type: "embed", url: embedUrl };
 }

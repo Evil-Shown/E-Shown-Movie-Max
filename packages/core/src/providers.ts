@@ -4,7 +4,47 @@ export type StreamProvider =
   | "superembed"
   | "autoembed"
   | "vidsrcpm"
-  | "vidsrc";
+  | "vidsrc"
+  | "dynamic_hls"
+  | "hotstar";
+
+export type ProviderType = "embed" | "hls";
+
+export interface ProviderMeta {
+  name: string;
+  type: ProviderType;
+  requiresBackendResolution: boolean;
+  timeout: number;
+}
+
+export const PROVIDER_META: Record<StreamProvider, ProviderMeta> = {
+  vidfast: { name: "VidFast", type: "embed", requiresBackendResolution: false, timeout: 8000 },
+  vidlink: { name: "VidLink", type: "embed", requiresBackendResolution: false, timeout: 8000 },
+  superembed: { name: "SuperEmbed", type: "embed", requiresBackendResolution: false, timeout: 8000 },
+  autoembed: { name: "AutoEmbed", type: "embed", requiresBackendResolution: false, timeout: 8000 },
+  vidsrcpm: { name: "VidSrc.pm", type: "embed", requiresBackendResolution: false, timeout: 7000 },
+  vidsrc: { name: "VidSrc", type: "embed", requiresBackendResolution: false, timeout: 7000 },
+  dynamic_hls: {
+    name: "Dynamic HLS Resolver",
+    type: "hls",
+    requiresBackendResolution: true,
+    timeout: 10000,
+  },
+  hotstar: {
+    name: "Hotstar (IN)",
+    type: "hls",
+    requiresBackendResolution: true,
+    timeout: 12000,
+  },
+};
+
+export function isEmbedProvider(provider: StreamProvider): boolean {
+  return PROVIDER_META[provider]?.type === "embed";
+}
+
+export function isHlsProvider(provider: StreamProvider): boolean {
+  return PROVIDER_META[provider]?.type === "hls";
+}
 
 /** VidFast first — best uptime in current embed catalog. */
 export const DEFAULT_STREAM_PROVIDER: StreamProvider = "vidfast";
@@ -16,6 +56,8 @@ export const STREAM_PROVIDERS: StreamProvider[] = [
   "vidsrcpm",
   "vidsrc",
   "autoembed",
+  "dynamic_hls",
+  "hotstar",
 ];
 
 export const PROVIDER_LABELS: Record<StreamProvider, string> = {
@@ -25,6 +67,8 @@ export const PROVIDER_LABELS: Record<StreamProvider, string> = {
   autoembed: "AutoEmbed",
   vidsrcpm: "VidSrc.pm",
   vidsrc: "VidSrc",
+  dynamic_hls: "Dynamic HLS",
+  hotstar: "Hotstar (IN)",
 };
 
 /** Site palette passed to embed players so controls match Chithra. */
@@ -138,6 +182,8 @@ export function buildEmbedUrl(
         poster: "false",
       });
     }
+    default:
+      return "";
   }
 }
 
@@ -160,6 +206,8 @@ export function getProviderOrigin(provider: StreamProvider): string {
       return "https://vidsrc.pm";
     case "vidsrc":
       return "https://vidsrc.cc";
+    default:
+      return "";
   }
 }
 

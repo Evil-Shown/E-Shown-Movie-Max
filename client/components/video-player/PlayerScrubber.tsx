@@ -27,8 +27,6 @@ export default function PlayerScrubber({
   const trackRef = useRef<HTMLDivElement>(null);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
 
-  if (isTrailer || !loaded || duration <= 0) return null;
-
   const progress = currentTime / duration;
   const hoverRatio = hoverTime !== null ? hoverTime / duration : 0;
 
@@ -53,6 +51,8 @@ export default function PlayerScrubber({
   const handlePointerLeave = useCallback(() => {
     setHoverTime(null);
   }, []);
+
+  if (isTrailer || !loaded || duration <= 0) return null;
 
   return (
     <div

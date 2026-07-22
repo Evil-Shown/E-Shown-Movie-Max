@@ -4,7 +4,7 @@ import { sortByStability } from "@/lib/live-tv/stream-stability";
 const MAX_PROBE = 8;
 const UNSTABLE_HOSTS = ["jmp2.uk", "allinonereborn", "149.71.34.166"];
 
-function isPlayableManifest(body: string, contentType: string | null): boolean {
+export function isPlayableManifest(body: string, contentType: string | null): boolean {
   const trimmed = body.trim();
   if (trimmed.startsWith("#EXTM3U")) {
     if (trimmed.includes("#EXT-X-ERROR")) return false;
