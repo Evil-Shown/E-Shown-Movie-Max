@@ -57,10 +57,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const subtitle = filtersActive
     ? `Refine by year, genre, rating, and sort — results update from TMDB discover`
     : params.type === "tv"
-      ? "Find series from TMDB — use filters to narrow by year, genre, and rating"
+      ? "Find series — use filters to narrow by year, genre, and rating"
       : params.type === "anime"
         ? "Japanese animation — filter by year, genre, and minimum rating"
-        : "Search movies from TMDB — combine text search with filters below";
+        : "Search movies — combine text search with filters below";
 
   const emptyMessage = params.q
     ? `No ${label} found for "${params.q}" with the current filters. Try adjusting filters or another search.`

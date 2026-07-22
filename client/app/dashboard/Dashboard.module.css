@@ -482,6 +482,12 @@
   box-shadow: 0 0 8px rgba(230, 81, 0, 0.25);
 }
 
+@media (max-width: 640px) {
+  .activityCardAccent {
+    display: none;
+  }
+}
+
 .activityRow {
   transition: background 0.2s ease;
 }
