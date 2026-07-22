@@ -36,7 +36,7 @@ export default function UserDashboard() {
     return (
       <button
         onClick={() => openAuthModal()}
-        className="block rounded-full transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2"
+        className="block rounded-full transition-transform hover:scale-105"
         aria-label="Login"
       >
         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-warm)] text-white shadow-md ring-2 ring-white/60">
@@ -59,12 +59,12 @@ export default function UserDashboard() {
   return (
     <Link
       href="/dashboard"
-      className="block rounded-full transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2"
+      className="block rounded-full transition-transform hover:scale-105"
       aria-label="User dashboard"
     >
       {avatarUrl ? (
         <div className="h-11 w-11 rounded-full overflow-hidden shadow-md ring-2 ring-white/60">
-          <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
+          <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" loading="lazy" />
         </div>
       ) : (
         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-warm)] text-white shadow-md ring-2 ring-white/60">

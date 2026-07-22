@@ -72,7 +72,7 @@
   color: var(--brown);
   background: transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -92,7 +92,7 @@
   color: #fff;
   background: var(--deep-orange);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -131,7 +131,7 @@
   background: var(--faint-white);
   border: 1px solid rgba(212, 165, 116, 0.25);
   border-radius: 12px;
-  transition: all 0.25s ease;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
   position: relative;
 }
 
@@ -238,7 +238,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
   position: relative;
 }
 
@@ -258,6 +258,7 @@
   box-shadow: 0 8px 32px rgba(62, 39, 35, 0.12);
   z-index: 60;
   min-width: 140px;
+  max-width: min(90vw, 280px);
   padding: 4px;
   overflow: hidden;
 }
@@ -274,7 +275,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
   text-align: left;
   border-radius: 8px;
 }

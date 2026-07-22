@@ -103,6 +103,7 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
                     width={260}
                     height={390}
                     className="h-full w-full object-cover"
+                    loading="lazy"
                   />
                 </div>
                 <div className="poster-reflection relative mx-auto mt-2 hidden h-20 w-[260px] overflow-hidden sm:block">
@@ -113,6 +114,7 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
                     width={260}
                     height={80}
                     className="h-full w-full object-cover"
+                    loading="lazy"
                   />
                 </div>
               </div>

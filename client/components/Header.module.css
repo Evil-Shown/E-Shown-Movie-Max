@@ -57,6 +57,13 @@
   padding: 0 1rem 0 3.25rem;
 }
 
+@media (max-width: 400px) {
+  .inner {
+    gap: 0.25rem;
+    padding: 0 0.5rem 0 3rem;
+  }
+}
+
 @media (min-width: 640px) {
   .header {
     height: calc(118px + env(safe-area-inset-top, 0px));
@@ -234,7 +241,10 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  transition: all 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .tBoomButton:hover {
@@ -302,6 +312,12 @@
   color: var(--text-primary);
 }
 
+.mobileLinkActive {
+  color: var(--accent-primary);
+  border-left: 3px solid var(--accent-primary);
+  padding-left: 12px;
+}
+
 .mobileWatch {
   display: inline-flex;
   align-items: center;
@@ -349,7 +365,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 375px) {
   .logoSubtitle,
   .logoRegion {
     display: none;

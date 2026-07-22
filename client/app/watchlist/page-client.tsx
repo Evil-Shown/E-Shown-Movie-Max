@@ -54,7 +54,7 @@ export default function WatchlistPageClient() {
 
       <ExternalRatingsProvider
         movies={movies}
-        className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+        className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4"
       >
         {movies.map((movie) => (
           <MovieCardClient key={movie.id} movie={movie} />

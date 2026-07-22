@@ -83,6 +83,7 @@ export default function InstantSearch({ className = "" }: InstantSearchProps) {
     <div ref={containerRef} className={`relative ${className}`}>
       <input
         type="search"
+        aria-label="Search movies and series"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);

@@ -42,7 +42,7 @@ export default function MovieGrid({ movies, emptyMessage = "No movies found.", c
           {countLabel}
         </p>
       )}
-      <MovieCardGrid movies={movies} className="grid grid-cols-2 gap-5 md:grid-cols-4 xl:grid-cols-6" />
+      <MovieCardGrid movies={movies} className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-5" />
     </div>
   );
 }

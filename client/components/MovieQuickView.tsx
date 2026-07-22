@@ -42,11 +42,14 @@ export default function MovieQuickView({ movie, onClose }: MovieQuickViewProps) 
             onClick={onClose}
           />
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quick-view-title"
             initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className="glass-panel fixed inset-x-4 bottom-0 top-auto z-[151] mx-auto max-h-[90vh] max-w-4xl overflow-y-auto rounded-t-2xl border border-[var(--border-strong)] p-6 shadow-[0_30px_90px_rgba(28,25,23,0.24)] md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:max-h-[85vh] md:w-full md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl"
+            className="glass-panel fixed inset-x-4 bottom-0 top-auto z-[151] mx-auto max-h-[70vh] max-w-4xl overflow-y-auto rounded-t-2xl border border-[var(--border-strong)] p-6 shadow-[0_30px_90px_rgba(28,25,23,0.24)] sm:max-h-[85vh] md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:max-h-[85vh] md:w-full md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative mb-5 h-36 overflow-hidden rounded-xl ring-1 ring-[var(--border)] md:h-44">
@@ -74,7 +77,7 @@ export default function MovieQuickView({ movie, onClose }: MovieQuickViewProps) 
               </div>
 
               <div className="flex-1">
-                <h2 className="font-[var(--font-playfair)] text-2xl text-[var(--text-primary)] md:text-3xl">
+                <h2 id="quick-view-title" className="font-[var(--font-playfair)] text-2xl text-[var(--text-primary)] md:text-3xl">
                   {movie.title}
                 </h2>
                 <p className="mt-1 font-[var(--font-playfair)] text-sm italic text-[var(--text-secondary)]">

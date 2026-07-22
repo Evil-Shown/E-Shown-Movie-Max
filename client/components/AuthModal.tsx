@@ -155,6 +155,9 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
 
       <div
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
         className={`relative z-10 w-full max-w-[440px] max-h-[90dvh] transition-all duration-500 ${
           mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"
         }`}
@@ -189,6 +192,7 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
                   <path d="M4 22h16" strokeWidth="1.5" opacity="0.3" />
                 </svg>
                 <span
+                  id="auth-modal-title"
                   className="text-xl font-bold tracking-wider text-white"
                   style={{ fontFamily: "var(--font-cinzel), serif" }}
                 >
@@ -362,7 +366,8 @@ export default function AuthModal({ isOpen, onClose, redirectOnClose = false }: 
 
             <button
               onClick={handleClose}
-              className="absolute top-3 right-3 flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+              aria-label="Close dialog"
+              className="absolute top-4 right-4 flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all z-10"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -462,7 +467,7 @@ function SubmitButton({ loading, text, loadingText }: { loading: boolean; text: 
 
 function EyeToggle({ shown, onToggle }: { shown: boolean; onToggle: () => void }) {
   return (
-    <button type="button" onClick={onToggle} className="text-gray-500 hover:text-gray-300 transition-colors">
+    <button type="button" onClick={onToggle} aria-label={shown ? "Hide password" : "Show password"} className="text-gray-500 hover:text-gray-300 transition-colors">
       {shown ? <EyeOffIcon /> : <EyeIcon />}
     </button>
   );

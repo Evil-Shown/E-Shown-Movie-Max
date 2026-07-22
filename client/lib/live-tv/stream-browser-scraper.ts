@@ -35,6 +35,7 @@ function collectFromManifestBody(text: string, bucket: Set<string>) {
 export async function scrapePageWithBrowser(target: ScrapeTarget): Promise<string[]> {
   let puppeteer;
   try {
+    // @ts-expect-error puppeteer is an optional dependency
     puppeteer = await import("puppeteer");
   } catch {
     puppeteer = null;

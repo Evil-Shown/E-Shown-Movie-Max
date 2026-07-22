@@ -81,7 +81,7 @@ export default function UpgradeBanner({ onUpgradeClick }: { onUpgradeClick: () =
             {features.map((feat) => (
               <div
                 key={feat.text}
-                className="flex items-center gap-2 text-sm text-[#FFFBF5]/80 bg-[#FFFBF5]/5 px-3 py-2 rounded-lg border border-[#FFFBF5]/10"
+                className="flex items-center gap-2 text-xs sm:text-sm text-[#FFFBF5]/80 bg-[#FFFBF5]/5 px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-[#FFFBF5]/10"
               >
                 {feat.icon}
                 {feat.text}

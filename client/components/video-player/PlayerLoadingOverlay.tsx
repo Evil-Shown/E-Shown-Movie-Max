@@ -71,7 +71,7 @@ export default function PlayerLoadingOverlay({
       <div className="relative flex h-full flex-col items-center justify-center px-6 py-8 text-center">
         <div className="player-loading-poster mb-5 overflow-hidden rounded-lg border border-[rgba(232,164,74,0.35)] shadow-[0_18px_48px_rgba(0,0,0,0.45)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={posterImage} alt="" className="h-28 w-[4.5rem] object-cover sm:h-36 sm:w-24" />
+          <img src={posterImage} alt="" className="h-28 w-[4.5rem] object-cover sm:h-36 sm:w-24" loading="lazy" />
         </div>
 
         <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#f4c27a]/80">

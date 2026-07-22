@@ -2,7 +2,7 @@
 
 import LiveTvChannelCard from "@/components/live-tv/LiveTvChannelCard";
 import type { LiveTvChannel } from "@/lib/live-tv/types";
-import { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 
 interface LiveTvSectionRowProps {
   title: string;
@@ -15,7 +15,7 @@ interface LiveTvSectionRowProps {
   emptyState?: ReactNode;
 }
 
-export default function LiveTvSectionRow({
+function LiveTvSectionRow({
   title,
   subtitle,
   channels,
@@ -62,3 +62,5 @@ export default function LiveTvSectionRow({
     </section>
   );
 }
+
+export default memo(LiveTvSectionRow);

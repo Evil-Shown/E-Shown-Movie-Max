@@ -35,7 +35,7 @@ function MovieCardClient({ movie, priority = false, rank }: MovieCardClientProps
 
         <MovieCardQuickViewTrigger movie={movie}>
           <div className={styles.poster}>
-            <div className="absolute right-2 top-2 z-[3]">
+            <div className="absolute right-3 top-3 z-[3]">
               <WatchlistButton movie={movie} />
             </div>
 

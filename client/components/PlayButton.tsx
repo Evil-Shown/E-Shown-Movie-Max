@@ -32,10 +32,11 @@ export default function PlayButton({
       onClick={() => openMovie(movie)}
       onMouseEnter={() => prefetchMovieStream(movie)}
       onFocus={() => prefetchMovieStream(movie)}
+      aria-label={variant === "circle" ? `Play ${movie.title}` : undefined}
       className={`${base} active:scale-95 ${className}`}
     >
       {variant !== "circle" && label}
-      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden="true">
         <path d="M8 5v14l11-7z" />
       </svg>
     </button>

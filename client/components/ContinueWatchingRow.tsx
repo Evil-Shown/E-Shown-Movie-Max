@@ -5,8 +5,9 @@ import { usePlaybackLibrary, useUserLibraryActions } from "@/components/UserLibr
 import { prefetchMovieStream } from "@/lib/stream-prefetch";
 import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import { useAfterHydration } from "@/lib/hooks/use-after-hydration";
+import { memo } from "react";
 
-export default function ContinueWatchingRow() {
+function ContinueWatchingRow() {
   const { continueWatching } = usePlaybackLibrary();
   const { removeContinueItem, clearContinueWatching } = useUserLibraryActions();
   const { openMovie } = useVideoPlayer();
@@ -40,9 +41,11 @@ export default function ContinueWatchingRow() {
                 type="button"
                 aria-label={`Remove ${item.title} from continue watching`}
                 onClick={() => removeContinueItem(item.id)}
-                className="absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-xs text-white opacity-0 transition group-hover:opacity-100"
+                className="absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-xs text-white opacity-0 transition group-hover:opacity-100 focus:opacity-100"
               >
-                x
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                </svg>
               </button>
               <button
                 type="button"
@@ -131,3 +134,5 @@ export default function ContinueWatchingRow() {
     </section>
   );
 }
+
+export default memo(ContinueWatchingRow);

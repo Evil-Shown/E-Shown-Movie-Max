@@ -1,6 +1,7 @@
 import ExternalRatingsProvider from "@/components/external-ratings/ExternalRatingsProvider";
 import MovieCard from "@/components/movie-card/MovieCard";
 import type { Movie } from "@/lib/types";
+import { memo } from "react";
 import MovieRowHeader from "./movie-row/MovieRowHeader";
 import MovieRowScroller from "./movie-row/MovieRowScroller";
 import styles from "./MovieRow.module.css";
@@ -16,7 +17,7 @@ interface MovieRowProps {
   seeAllHref?: string;
 }
 
-export default function MovieRow({
+function MovieRow({
   title,
   subtitle,
   eyebrow,
@@ -44,3 +45,5 @@ export default function MovieRow({
     </ExternalRatingsProvider>
   );
 }
+
+export default memo(MovieRow);

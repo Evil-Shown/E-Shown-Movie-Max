@@ -29,7 +29,7 @@ export default function Footer() {
   return (
     <footer className="mt-auto border-t border-[var(--border-strong)] bg-[var(--bg-secondary)]">
       <div className="mx-auto max-w-[1280px] px-6 py-12">
-        <div className="grid gap-10 md:grid-cols-4">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="font-[var(--font-playfair)] text-xl font-bold tracking-wide text-[var(--text-primary)]">
               {BRAND_NAME}

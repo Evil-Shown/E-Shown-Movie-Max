@@ -2,6 +2,7 @@
 
 import LiveTvChannelCard from "@/components/live-tv/LiveTvChannelCard";
 import type { LiveTvChannel } from "@/lib/live-tv/types";
+import { memo } from "react";
 
 interface LiveTvChannelGridProps {
   channels: LiveTvChannel[];
@@ -11,7 +12,7 @@ interface LiveTvChannelGridProps {
   onToggleFavorite: (channel: LiveTvChannel) => void;
 }
 
-export default function LiveTvChannelGrid({
+function LiveTvChannelGrid({
   channels,
   selectedChannelId,
   favoriteIds,
@@ -34,3 +35,5 @@ export default function LiveTvChannelGrid({
     </div>
   );
 }
+
+export default memo(LiveTvChannelGrid);

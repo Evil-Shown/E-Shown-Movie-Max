@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Oswald } from "next/font/google";
 import type { GodsEyeSearch } from "./gods-eye/hooks/useGodsEyeSearch";
 
@@ -33,6 +34,7 @@ export default function GodsEyeHero({
   fetchTrendingSearches,
   setSearchFocused,
 }: GodsEyeHeroProps) {
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollToResults = () => {
     const results = document.getElementById("results");
     if (results) {
@@ -78,7 +80,7 @@ export default function GodsEyeHero({
 
         <h1
           id="gods-eye-title"
-          className="font-cinzel text-5xl font-bold leading-[1.1] tracking-wide text-[#3E2723] dark:text-[var(--text-primary)] sm:text-6xl lg:text-7xl"
+          className="font-cinzel text-4xl font-bold leading-[1.1] tracking-wide text-[#3E2723] dark:text-[var(--text-primary)] sm:text-6xl lg:text-7xl"
         >
           THE GOD&apos;S <span className="text-[#E65100]">EYE</span>
         </h1>
@@ -144,7 +146,9 @@ export default function GodsEyeHero({
               setSearchFocused(true);
               fetchTrendingSearches();
             }}
-            onBlur={() => window.setTimeout(() => setSearchFocused(false), 150)}
+            onBlur={() => {
+              focusTimerRef.current = setTimeout(() => setSearchFocused(false), 150);
+            }}
             placeholder="Search for your next obsession..."
             className={`${oswald.className} h-12 flex-1 bg-transparent px-4 text-sm uppercase tracking-wider text-[#3E2723] outline-none placeholder:text-[#8D6E63] dark:text-[var(--text-primary)] dark:placeholder:text-[var(--text-muted)] sm:h-14 sm:px-6 sm:text-base`}
           />

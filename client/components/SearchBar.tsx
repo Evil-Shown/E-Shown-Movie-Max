@@ -70,6 +70,7 @@ export default function SearchBar({
     <form onSubmit={handleSubmit} className="relative w-full">
       <input
         type="search"
+        aria-label="Search for movies, series, directors, and actors"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setFocused(true)}

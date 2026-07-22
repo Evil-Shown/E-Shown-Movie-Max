@@ -33,6 +33,12 @@
   color: var(--text-primary);
 }
 
+@media (max-width: 480px) {
+  .title {
+    font-size: 22px;
+  }
+}
+
 .subtitle {
   margin: 4px 0 0;
   font-family: var(--font-inter), Inter, sans-serif;
@@ -42,6 +48,7 @@
 
 .seeAll {
   flex-shrink: 0;
+  white-space: nowrap;
   font-family: var(--font-inter), Inter, sans-serif;
   font-size: 12px;
   font-weight: 500;
@@ -78,16 +85,7 @@
   box-shadow: var(--shadow-sm);
   opacity: 0;
   transform: translateY(-50%);
-  transition: all 0.2s ease;
-}
-
-.row:hover .scrollBtn {
-  opacity: 1;
-}
-
-.scrollBtn:hover {
-  color: var(--accent-primary);
-  border-color: var(--border-strong);
+  transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .scrollBtnLeft {

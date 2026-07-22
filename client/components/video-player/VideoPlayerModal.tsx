@@ -157,6 +157,9 @@ export default function VideoPlayerModal({
       ) : null}
 
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="video-player-title"
         initial={isTvPlayer ? { opacity: 0 } : { scale: 0.94, opacity: 0, y: 28 }}
         animate={isTvPlayer ? { opacity: 1 } : { scale: 1, opacity: 1, y: 0 }}
         exit={isTvPlayer ? { opacity: 0 } : { scale: 0.95, opacity: 0, y: 12 }}
@@ -182,7 +185,7 @@ export default function VideoPlayerModal({
             <div className="flex min-w-0 items-center gap-3">
               <div className="hidden h-12 w-8 overflow-hidden rounded-md border border-[rgba(201,106,43,0.2)] bg-white shadow-sm sm:block">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={posterImage} alt="" className="h-full w-full object-cover" />
+                <img src={posterImage} alt="" className="h-full w-full object-cover" loading="lazy" />
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -195,7 +198,7 @@ export default function VideoPlayerModal({
                     </span>
                   )}
                 </div>
-                <h2 className="mt-1 truncate font-[var(--font-playfair)] text-xl text-[var(--text-primary)] sm:text-2xl">
+                <h2 id="video-player-title" className="mt-1 truncate font-[var(--font-playfair)] text-xl text-[var(--text-primary)] sm:text-2xl">
                   {movie.title}
                 </h2>
                 <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-[var(--text-secondary)]">
@@ -451,7 +454,7 @@ export default function VideoPlayerModal({
               </p>
             </div>
           ) : null}
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-center gap-2">
             {iframeSrc ? (
               <button
                 type="button"

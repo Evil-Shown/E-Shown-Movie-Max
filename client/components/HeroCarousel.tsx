@@ -7,14 +7,14 @@ import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import styles from "./HeroBanner.module.css";
 
 interface HeroCarouselProps {
   movies: Movie[];
 }
 
-export default function HeroCarousel({ movies }: HeroCarouselProps) {
+function HeroCarousel({ movies }: HeroCarouselProps) {
   const prefersReducedMotion = useReducedMotion();
   const { openMovie, openTrailer } = useVideoPlayer();
   const [index, setIndex] = useState(0);
@@ -143,3 +143,5 @@ export default function HeroCarousel({ movies }: HeroCarouselProps) {
     </section>
   );
 }
+
+export default memo(HeroCarousel);

@@ -2,7 +2,7 @@
 
 import type { CatalogSource, SearchMediaFilter } from "@/lib/movie-service";
 import { AnimatePresence, motion } from "framer-motion";
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 
 interface SearchResultsProps {
   query: string;
@@ -29,7 +29,7 @@ function mediaLabel(filter: SearchMediaFilter = "movie") {
   return "movies";
 }
 
-export default function SearchResults({
+function SearchResults({
   query,
   page,
   totalPages,
@@ -55,7 +55,7 @@ export default function SearchResults({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
       >
-        <p className="mb-6 text-sm text-[var(--text-secondary)]">
+        <p className="mb-6 text-xs sm:text-sm text-[var(--text-secondary)] break-words">
           {countLabel}
           {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
         </p>
@@ -64,3 +64,5 @@ export default function SearchResults({
     </AnimatePresence>
   );
 }
+
+export default memo(SearchResults);

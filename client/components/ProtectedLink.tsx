@@ -9,15 +9,19 @@ interface ProtectedLinkProps {
   children: React.ReactNode;
   className?: string;
   onClick?: () => void;
+  "aria-label"?: string;
+  "aria-current"?: "page" | "step" | "location" | "date" | "time" | "true" | "false";
 }
 
-export default function ProtectedLink({ href, children, className = "", onClick }: ProtectedLinkProps) {
+export default function ProtectedLink({ href, children, className = "", onClick, "aria-label": ariaLabel, "aria-current": ariaCurrent }: ProtectedLinkProps) {
   const { isAuthenticated, setPendingAction } = useAuth();
   const { openAuthModal } = useAuthModal();
 
   return (
     <Link
       href={href}
+      aria-label={ariaLabel}
+      aria-current={ariaCurrent}
       onClick={(e) => {
         if (!isAuthenticated) {
           e.preventDefault();

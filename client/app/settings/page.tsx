@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { api } from "@/lib/api";
 import { getProfileIcon, PROFILE_ICONS, setProfileIcon } from "@/lib/storage/profile-icon";
@@ -43,6 +43,13 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     setProfileIconState(getProfileIcon());
@@ -87,7 +94,7 @@ export default function SettingsPage() {
       }
 
       setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      savedTimerRef.current = setTimeout(() => setSaved(false), 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save profile");
     } finally {
@@ -169,7 +176,7 @@ export default function SettingsPage() {
                         : "border-transparent hover:border-[#D4A574]"
                     }`}
                   >
-                    <img src={`/avatars/${icon}`} alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={`/avatars/${icon}`} alt="Avatar" className="w-full h-full object-cover" loading="lazy" />
                     {profileIcon === icon && (
                       <div className="absolute inset-0 bg-[#E65100]/20 flex items-center justify-center">
                         <svg className="w-5 h-5 text-[#E65100]" viewBox="0 0 24 24" fill="currentColor">

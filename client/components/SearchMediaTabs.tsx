@@ -15,13 +15,14 @@ interface SearchMediaTabsProps {
 
 export default function SearchMediaTabs({ params }: SearchMediaTabsProps) {
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className="flex flex-wrap justify-center gap-2" role="group" aria-label="Media type filter">
       {MEDIA_OPTIONS.map((option) => {
         const active = params.type === option.value;
         return (
           <Link
             key={option.value}
             href={buildSearchPath({ type: option.value }, params)}
+            aria-current={active ? "page" : undefined}
             className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
               active
                 ? "border-[var(--bg-dark)] bg-[var(--bg-dark)] text-[var(--text-inverse)]"

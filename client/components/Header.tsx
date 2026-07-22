@@ -61,7 +61,7 @@ function NavLink({
 
   if (isProtected) {
     return (
-      <ProtectedLink href={href} className="inline-block">
+      <ProtectedLink href={href} className="inline-block" aria-current={afterHydration && active ? "page" : undefined}>
         {linkContent}
       </ProtectedLink>
     );
@@ -70,8 +70,59 @@ function NavLink({
   return (
     <Link
       href={href}
+      aria-current={afterHydration && active ? "page" : undefined}
       className={`${styles.navLink} ${afterHydration && active ? styles.navLinkActive : ""} whitespace-nowrap`}
     >
+      {label}
+    </Link>
+  );
+}
+
+function MobileNavLink({
+  href,
+  label,
+  series,
+  protected: isProtected,
+  onClick,
+}: {
+  href: string;
+  label: string;
+  series?: boolean;
+  protected?: boolean;
+  onClick?: () => void;
+}) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const afterHydration = useAfterHydration();
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    const isBrowse = pathname === "/browse";
+    const isTv = searchParams.get("type") === "tv";
+
+    if (href === "/") {
+      setActive(pathname === "/");
+    } else if (series) {
+      setActive(isBrowse && isTv);
+    } else if (href === "/browse") {
+      setActive(isBrowse && !isTv);
+    } else {
+      setActive(pathname === href || pathname.startsWith(`${href}/`));
+    }
+  }, [afterHydration, href, pathname, searchParams, series]);
+
+  const cls = `${styles.mobileLink} ${afterHydration && active ? styles.mobileLinkActive : ""}`;
+
+  if (isProtected) {
+    return (
+      <ProtectedLink href={href} onClick={onClick} className="inline-flex" aria-current={afterHydration && active ? "page" : undefined}>
+        <span className={cls}>{label}</span>
+      </ProtectedLink>
+    );
+  }
+
+  return (
+    <Link href={href} onClick={onClick} aria-current={afterHydration && active ? "page" : undefined} className={cls}>
       {label}
     </Link>
   );
@@ -87,8 +138,13 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const lastScrollY = useRef(0);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuOpenRef = useRef(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   useFocusTrap(menuRef, menuOpen, closeMenu);
+
+  useEffect(() => {
+    menuOpenRef.current = menuOpen;
+  }, [menuOpen]);
 
   useEffect(() => {
     document.body.classList.toggle("dashboard-page", isDashboard);
@@ -108,7 +164,7 @@ export default function Header() {
 
         setScrolled(currentY > 24);
 
-        if (menuOpen) {
+        if (menuOpenRef.current) {
           setHidden(false);
         } else if (currentY < 80) {
           setHidden(false);
@@ -126,7 +182,7 @@ export default function Header() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [menuOpen]);
+  }, []);
 
   useEffect(() => {
     document.body.classList.toggle("header-hidden", hidden && !menuOpen);
@@ -248,9 +304,14 @@ export default function Header() {
           aria-label="Main navigation"
         >
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} onClick={closeMenu} className={styles.mobileLink}>
-              {link.label}
-            </Link>
+            <MobileNavLink
+              key={link.href}
+              href={link.href}
+              label={link.label}
+              series={link.series}
+              protected={link.protected}
+              onClick={closeMenu}
+            />
           ))}
           <ProtectedLink href="/gods-eye" onClick={closeMenu} className={styles.mobileWatch}>
             THE GOD&apos;S EYE

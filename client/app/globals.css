@@ -373,7 +373,7 @@ body::before {
     radial-gradient(ellipse 80% 50% at 10% -10%, var(--light-orange-faint) 0%, transparent 55%),
     radial-gradient(ellipse 60% 40% at 90% 100%, var(--brown) 0%, transparent 50%),
     var(--bg-primary);
-  animation: ambientDrift 22s ease-in-out infinite alternate;
+  animation: ambientDrift 30s ease-in-out infinite alternate;
 }
 
 body::after {
@@ -383,12 +383,21 @@ body::after {
   z-index: -1;
   pointer-events: none;
   will-change: transform;
-  opacity: 0.22;
+  opacity: 0.18;
   background:
     radial-gradient(circle at 20% 20%, var(--light-orange-faint), transparent 24%),
     radial-gradient(circle at 80% 30%, var(--tan), transparent 22%),
     radial-gradient(circle at 50% 80%, var(--light-orange), transparent 28%);
-  animation: ambientGlowShift 18s ease-in-out infinite alternate;
+  animation: ambientGlowShift 24s ease-in-out infinite alternate;
+}
+
+@media (max-width: 768px) {
+  body::before {
+    animation-duration: 45s;
+  }
+  body::after {
+    opacity: 0.10;
+  }
 }
 
 /* Dark / Dim only — Daylight body wash stays exact */
@@ -814,16 +823,16 @@ input,
     transform: scale(1) translate3d(0, 0, 0);
   }
   100% {
-    transform: scale(1.03) translate3d(0, -0.5%, 0);
+    transform: scale(1.01) translate3d(0, -0.3%, 0);
   }
 }
 
 @keyframes ambientGlowShift {
   0% {
-    transform: translate3d(-1.5%, -1%, 0);
+    transform: translate3d(-1%, -0.5%, 0);
   }
   100% {
-    transform: translate3d(1.5%, 1%, 0);
+    transform: translate3d(1%, 0.5%, 0);
   }
 }
 
@@ -959,6 +968,16 @@ input,
 .row-scroll {
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+.genre-pills-scroll {
+  mask-image: linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%);
+}
+
+.scroll-mask-right {
+  mask-image: linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%);
 }
 
 .genre-pills-scroll::-webkit-scrollbar,

@@ -114,7 +114,7 @@ export default function BrowseCatalog({
           : ""}
       </p>
 
-      <ExternalRatingsProvider movies={movies} className="grid grid-cols-2 gap-5 md:grid-cols-4 xl:grid-cols-6">
+      <ExternalRatingsProvider movies={movies} className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-5">
         {movies.map((movie) => (
           <MovieCardClient key={movie.id} movie={movie} />
         ))}

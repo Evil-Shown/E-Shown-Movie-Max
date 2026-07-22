@@ -28,6 +28,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -137,6 +138,13 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
   const [watchedEpisodes, setWatchedEpisodes] = useState<Record<string, boolean>>({});
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -153,7 +161,7 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
   const showToast = useCallback((message: string) => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message }].slice(-3));
-    setTimeout(() => {
+    toastTimerRef.current = setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 2800);
   }, []);
@@ -303,7 +311,7 @@ export default function UserLibraryProvider({ children }: { children: ReactNode 
       <WatchlistContext.Provider value={watchlistValue}>
         <PlaybackContext.Provider value={playbackValue}>
           <MemoizedChildren>{children}</MemoizedChildren>
-          <div className="toast-stack" aria-live="polite">
+          <div className="toast-stack" role="status" aria-live="polite" aria-atomic="true">
             {toasts.map((toast) => (
               <div key={toast.id} className="toast-item">
                 {toast.message}

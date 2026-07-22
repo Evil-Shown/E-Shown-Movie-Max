@@ -56,7 +56,7 @@ export default function PlayerNextEpisodeOverlay({
             <div className="grid grid-cols-1 sm:grid-cols-[220px_1fr]">
               <div className="relative aspect-video overflow-hidden sm:aspect-auto sm:min-h-[180px]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={thumb} alt="" className="h-full w-full object-cover" />
+                <img src={thumb} alt="" className="h-full w-full object-cover" loading="lazy" />
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.35),transparent)] sm:bg-[linear-gradient(0deg,transparent,rgba(0,0,0,0.45))]" />
                 <div className="absolute left-3 top-3 rounded-full border border-[#f4c27a]/35 bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#f4c27a] backdrop-blur">
                   Up Next

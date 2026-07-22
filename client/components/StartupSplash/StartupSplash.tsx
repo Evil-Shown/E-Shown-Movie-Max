@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import FloatingIcons from "@/components/CinemaIntro/FloatingIcons";
 import ProjectorSVG from "@/components/CinemaIntro/ProjectorSVG";
 import { BRAND_NAME, BRAND_NAME_SINHALA } from "@/lib/brand";
+import "@/components/CinemaIntro/cinema-intro.css";
 import {
   getStartupSplashMode,
   markFullIntroCompleted,

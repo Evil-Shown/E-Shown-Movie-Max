@@ -25,6 +25,7 @@ import UpgradeBanner from "@/components/dashboard/UpgradeBanner";
 import PricingModal from "@/components/dashboard/PricingModal";
 import ProBadge from "@/components/dashboard/ProBadge";
 import ThemeSelect from "@/components/ThemeSelect";
+import NavIcon from "@/components/NavIcon";
 import welcomeHero from "@/assets/images/welcome.webp";
 import styles from "./Dashboard.module.css";
 
@@ -114,88 +115,6 @@ const libraryNav = [
 
 const accountNav = [{ href: "/settings", label: "Settings", icon: "settings" }];
 
-function NavIcon({ name }: { name: string }) {
-  const className = "w-5 h-5";
-  switch (name) {
-    case "home":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-      );
-    case "movies":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="2" y="2" width="20" height="20" rx="2.18" />
-          <line x1="7" y1="2" x2="7" y2="22" />
-          <line x1="17" y1="2" x2="17" y2="22" />
-          <line x1="2" y1="7" x2="22" y2="7" />
-          <line x1="2" y1="17" x2="22" y2="17" />
-        </svg>
-      );
-    case "series":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="2" y="7" width="20" height="15" rx="2" />
-          <polyline points="17 2 12 7 7 2" />
-        </svg>
-      );
-    case "live":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 19c-3.87 0-7-3.13-7-7 0-3.87 3.13-7 7-7 3.87 0 7 3.13 7 7 0 3.87-3.13 7-7 7z" />
-          <circle cx="12" cy="12" r="3" fill="currentColor" />
-        </svg>
-      );
-    case "dashboard":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="3" y="3" width="7" height="7" />
-          <rect x="14" y="3" width="7" height="7" />
-          <rect x="3" y="14" width="7" height="7" />
-          <rect x="14" y="14" width="7" height="7" />
-        </svg>
-      );
-    case "watchlist":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-        </svg>
-      );
-    case "history":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-      );
-    case "downloads":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
-      );
-    case "favorites":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M20.84 4.61a5.5 5.5 0 0 1-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 1-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 1 0-7.78z" />
-        </svg>
-      );
-    case "settings":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-        </svg>
-      );
-    default:
-      return null;
-  }
-}
-
 function SidebarNavLink({
   href,
   label,
@@ -212,6 +131,7 @@ function SidebarNavLink({
   return (
     <Link
       href={href}
+      aria-current={active ? "page" : undefined}
       className={`${styles.sidebarLink} group flex items-center gap-3 px-5 py-3 text-sm font-medium ${active ? styles.sidebarLinkActive : ""}`}
     >
       <span className={`transition-colors ${active ? "text-white/80" : "text-white/80 group-hover:text-white/80"}`}>
@@ -263,7 +183,7 @@ function StatCard({
         {/* Glowing Progress Line */}
         {progress !== undefined && progress > 0 && (
           <div className={styles.progressGlowTrack}>
-            <div className={styles.progressGlowFill} style={{ width: `${progress}%` }} />
+            <div className={styles.progressGlowFill} style={{ transform: `scaleX(${progress / 100})` }} />
           </div>
         )}
       </div>
@@ -373,7 +293,7 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
             <span>{totalDuration}</span>
           </div>
           <div className={styles.progressTrack}>
-            <div className={styles.progressFill} style={{ width: `${Math.min(item.progress, 100)}%` }} />
+            <div className={styles.progressFill} style={{ transform: `scaleX(${Math.min(item.progress, 100) / 100})` }} />
           </div>
         </div>
       </div>
@@ -633,6 +553,19 @@ export default function DashboardPage() {
       });
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileMenuOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [mobileMenuOpen]);
 
   const activeItems = useMemo(() => continueWatching.filter((item) => item.progress < 98).length, [continueWatching]);
   const streak = useMemo(() => computeStreak(continueWatching, watchlist), [continueWatching, watchlist]);
@@ -902,14 +835,18 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Mobile Menu Overlay */}
+        {/* Mobile Menu Drawer */}
         {mobileMenuOpen && (
           <>
             <div
-              className="lg:hidden fixed inset-0 z-40 bg-black/50"
+              className="lg:hidden fixed inset-0 z-40 bg-black/50 transition-opacity"
               onClick={() => setMobileMenuOpen(false)}
+              aria-hidden
             />
-            <div className="lg:hidden fixed inset-0 z-50 bg-faint-white pt-20 px-6 pb-6 overflow-y-auto">
+            <nav
+              className="lg:hidden fixed top-0 left-0 z-50 h-full w-[min(20rem,80vw)] overflow-y-auto bg-faint-white px-6 pb-6 pt-20 shadow-2xl"
+              aria-label="Mobile navigation"
+            >
               <div className="space-y-6">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold mb-2">Browse</p>
@@ -919,6 +856,7 @@ export default function DashboardPage() {
                         key={link.href}
                         href={link.href}
                         onClick={() => setMobileMenuOpen(false)}
+                        aria-current={isActive(link.href) ? "page" : undefined}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium min-h-[44px] ${
                           isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
                         }`}
@@ -937,6 +875,7 @@ export default function DashboardPage() {
                         key={link.label}
                         href={link.href}
                         onClick={() => setMobileMenuOpen(false)}
+                        aria-current={isActive(link.href) ? "page" : undefined}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium min-h-[44px] ${
                           isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
                         }`}
@@ -948,7 +887,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </nav>
           </>
         )}
 
@@ -1046,6 +985,7 @@ export default function DashboardPage() {
                                     src={posterUrl(n.posterPath, "w342")}
                                     alt=""
                                     className="w-full h-full object-cover"
+                                    loading="lazy"
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center">
@@ -1102,7 +1042,7 @@ export default function DashboardPage() {
                 aria-label="Change profile icon"
               >
                 {profileIcon ? (
-                  <img src={`/avatars/${profileIcon}`} alt="Profile" className="w-full h-full object-cover" />
+                  <img src={`/avatars/${profileIcon}`} alt="Profile" className="w-full h-full object-cover" loading="lazy" />
                 ) : (
                   <div className="w-full h-full rounded-full bg-gradient-to-br from-light-orange to-deep-orange flex items-center justify-center font-bold text-chocolate">
                     {getInitials(userName)}
@@ -1122,7 +1062,7 @@ export default function DashboardPage() {
                       Appearance
                     </p>
                     <h2 className="font-cinzel text-lg font-bold text-[#3e2723] dark:text-[var(--text-primary)]">Theme</h2>
-                    <p className="mt-1 text-sm text-[#6b4423] dark:text-[var(--text-secondary)]">
+                    <p className="mt-1 text-sm text-[#6b4423] dark:text-[var(--text-secondary)] hidden sm:block">
                       Switch between Daylight, Midnight, and Theater Dim.
                     </p>
                   </div>
@@ -1255,6 +1195,7 @@ export default function DashboardPage() {
                         src={posterUrl(dailyPick.posterPath, "w342")}
                         alt={dailyPick.title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-chocolate/40 to-transparent" />
                     </div>
@@ -1598,7 +1539,7 @@ export default function DashboardPage() {
                           : "border-transparent hover:border-tan"
                       }`}
                     >
-                      <img src={`/avatars/${icon}`} alt="Avatar option" className="w-full h-full object-cover" />
+                      <img src={`/avatars/${icon}`} alt="Avatar option" className="w-full h-full object-cover" loading="lazy" />
                       {profileIcon === icon && (
                         <div className="absolute inset-0 bg-deep-orange/20 flex items-center justify-center">
                           <svg className="w-5 h-5 text-deep-orange" viewBox="0 0 24 24" fill="currentColor">
@@ -1614,22 +1555,6 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
-      <style jsx global>{`
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: var(--cream);
-        }
-        ::-webkit-scrollbar-thumb {
-          background: var(--tan);
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: var(--deep-orange);
-        }
-      `}</style>
     </div>
   );
 }

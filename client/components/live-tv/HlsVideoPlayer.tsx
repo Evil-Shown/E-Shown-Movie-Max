@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Hls from "hls.js";
 import LiveTvPlayerChrome from "@/components/live-tv/LiveTvPlayerChrome";
 import LiveTvPlayerLoading, { type LiveTvLoadingPhase } from "@/components/live-tv/LiveTvPlayerLoading";
 import { createHlsConfig, STREAM_ATTEMPT_TIMEOUT_MS } from "@/lib/live-tv/hls-config";
@@ -28,7 +27,7 @@ export default function HlsVideoPlayer({
 }: HlsVideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const hlsRef = useRef<Hls | null>(null);
+  const hlsRef = useRef<any>(null);
   const hideTimerRef = useRef<number | null>(null);
   const loadTimeoutRef = useRef<number | null>(null);
   const startedRef = useRef(false);
@@ -182,46 +181,52 @@ export default function HlsVideoPlayer({
 
       const video = videoRef.current;
 
-      if (Hls.isSupported()) {
-        const hls = new Hls(createHlsConfig());
-        hlsRef.current = hls;
-        hls.loadSource(src);
-        hls.attachMedia(video);
+      try {
+        const HlsModule = await import("hls.js");
+        const Hls = HlsModule.default;
+        if (Hls.isSupported()) {
+          const hls = new Hls(createHlsConfig());
+          hlsRef.current = hls;
+          hls.loadSource(src);
+          hls.attachMedia(video);
 
-        hls.on(Hls.Events.FRAG_BUFFERED, () => {
-          if (video.readyState >= 2) {
+          hls.on(Hls.Events.FRAG_BUFFERED, () => {
+            if (video.readyState >= 2) {
+              video.play().catch(() => {});
+              markPlaying();
+            }
+          });
+
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            setBuffering(true);
             video.play().catch(() => {});
-            markPlaying();
-          }
-        });
+          });
 
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          setBuffering(true);
-          video.play().catch(() => {});
-        });
-
-        hls.on(Hls.Events.ERROR, (_, data) => {
-          if (!data.fatal) return;
-
-          if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-            hls.recoverMediaError();
-            return;
-          }
-
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-            if (
-              data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR ||
-              data.details === Hls.ErrorDetails.LEVEL_LOAD_ERROR
-            ) {
-              hls.startLoad(-1);
+          hls.on(Hls.Events.ERROR, (_, data) => {
+            if (!data.fatal) return;
+            if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+              hls.recoverMediaError();
               return;
             }
-          }
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+              if (
+                data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR ||
+                data.details === Hls.ErrorDetails.LEVEL_LOAD_ERROR
+              ) {
+                hls.startLoad(-1);
+                return;
+              }
+            }
+            clearLoadTimeout();
+            tryNextSource(urlIndex, useProxy);
+          });
+          return;
+        }
+      } catch {
+        /* hls.js not available */
+      }
 
-          clearLoadTimeout();
-          tryNextSource(urlIndex, useProxy);
-        });
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = src;
         const onLoaded = () => {
           video.play().catch(() => {});

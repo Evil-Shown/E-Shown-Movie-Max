@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface AuthPageProps {
   defaultMode?: "login" | "register";
@@ -10,6 +10,13 @@ interface AuthPageProps {
 export default function AuthPage({ defaultMode = "login" }: AuthPageProps) {
   const [mode, setMode] = useState<"login" | "register">(defaultMode);
   const [loading, setLoading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
   const [agreed, setAgreed] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
@@ -23,13 +30,13 @@ export default function AuthPage({ defaultMode = "login" }: AuthPageProps) {
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => setLoading(false), 1200);
+    timerRef.current = setTimeout(() => setLoading(false), 1200);
   };
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => setLoading(false), 1200);
+    timerRef.current = setTimeout(() => setLoading(false), 1200);
   };
 
   const updateRegister = (field: keyof typeof registerForm, value: string) => {
@@ -128,7 +135,7 @@ export default function AuthPage({ defaultMode = "login" }: AuthPageProps) {
           {/* Decorative floating card */}
           <div className="hidden xl:block absolute -top-6 -right-20 w-40 bg-[#FFFBF5] border border-[#D4A574]/30 rounded-2xl p-2 shadow-xl rotate-3 hover:rotate-0 transition duration-500">
             <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-              <img src="/auth/Blog-10.jpg" alt="Cinema" className="w-full h-full object-cover" />
+              <img src="/auth/Blog-10.jpg" alt="Cinema" className="w-full h-full object-cover" loading="lazy" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#3E2723]/70 to-transparent" />
               <div className="absolute bottom-2 left-2 right-2">
                 <p className="text-[9px] uppercase tracking-wider text-[#FFB87A] font-semibold">Now Streaming</p>

@@ -189,7 +189,7 @@ export default function LiveTvPageClient() {
               <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--text-muted)]">
                 Categories
               </p>
-              <div className="-mx-1 overflow-x-auto px-1 pb-0.5 scrollbar-hide">
+              <div className="-mx-1 overflow-x-auto px-1 pb-0.5 scrollbar-hide scroll-mask-right">
                 <LiveTvCategoryTabs
                   activeCategory={activeCategory}
                   onCategoryChange={setActiveCategory}

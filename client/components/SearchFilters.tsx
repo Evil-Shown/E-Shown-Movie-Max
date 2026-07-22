@@ -68,13 +68,14 @@ export default function SearchFilters({ params }: SearchFiltersProps) {
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Sort order">
         {SORT_OPTIONS.map((option) => {
           const active = params.sort === option.value;
           return (
             <Link
               key={option.value}
               href={buildSearchPath({ sort: option.value }, params)}
+              aria-current={active ? "true" : undefined}
               className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                 active
                   ? "border-[var(--bg-dark)] bg-[var(--bg-dark)] text-[var(--text-inverse)]"
@@ -131,12 +132,13 @@ export default function SearchFilters({ params }: SearchFiltersProps) {
       </div>
 
       <div className="mt-4">
-        <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[var(--text-secondary)]">
+        <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[var(--text-secondary)]" id="genre-filter-label">
           Genre
         </p>
-        <div className="genre-pills-scroll flex gap-2 overflow-x-auto pb-1">
+        <div className="genre-pills-scroll flex gap-2 overflow-x-auto pb-1" role="group" aria-labelledby="genre-filter-label">
           <Link
             href={buildSearchPath({ genre: null }, params)}
+            aria-current={!params.genre ? "true" : undefined}
             className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
               !params.genre
                 ? "border-[var(--bg-dark)] bg-[var(--bg-dark)] text-[var(--text-inverse)]"
@@ -151,6 +153,7 @@ export default function SearchFilters({ params }: SearchFiltersProps) {
               <Link
                 key={genre}
                 href={buildSearchPath({ genre: genre as Genre }, params)}
+                aria-current={active ? "true" : undefined}
                 className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                   active
                     ? "border-[var(--bg-dark)] bg-[var(--bg-dark)] text-[var(--text-inverse)]"

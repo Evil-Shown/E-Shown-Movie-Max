@@ -35,6 +35,7 @@ export default function PosterImage({
   sizes = "(max-width: 640px) 45vw, (max-width: 1024px) 22vw, 200px",
   onLoad,
 }: PosterImageProps) {
+  const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const src = posterPath ? posterUrl(posterPath, "w500") : "";
 
@@ -43,17 +44,23 @@ export default function PosterImage({
   }
 
   return (
-    <Image
-      src={src}
-      alt={title}
-      width={width}
-      height={height}
-      priority={priority}
-      sizes={sizes}
-      className={className}
-      onError={() => setFailed(true)}
-      onLoad={onLoad}
-      style={{ width: "100%", height: "100%" }}
-    />
+    <>
+      {!loaded && <div className="skeleton absolute inset-0 z-[1]" />}
+      <Image
+        src={src}
+        alt={title}
+        width={width}
+        height={height}
+        priority={priority}
+        sizes={sizes}
+        className={className}
+        onError={() => setFailed(true)}
+        onLoad={(e) => {
+          setLoaded(true);
+          onLoad?.();
+        }}
+        style={{ width: "100%", height: "100%" }}
+      />
+    </>
   );
 }
