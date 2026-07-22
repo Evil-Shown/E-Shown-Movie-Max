@@ -634,15 +634,19 @@ html.dim body::after {
 /* Fallback when browser Fullscreen API is blocked (common on mobile). */
 .player-stage--faux-fullscreen {
   position: fixed !important;
-  inset: 0 !important;
+  top: var(--player-vv-top, 0px) !important;
+  left: var(--player-vv-left, 0px) !important;
+  right: auto !important;
+  bottom: auto !important;
   z-index: 320;
-  width: 100vw !important;
-  height: 100dvh !important;
+  width: var(--player-vvw, 100vw) !important;
+  height: var(--player-vvh, 100dvh) !important;
   max-width: none !important;
   max-height: none !important;
   border-radius: 0 !important;
   border: none !important;
   background: #000 !important;
+  padding: 0 !important;
 }
 
 .player-stage--faux-fullscreen .player-video-fit {
@@ -658,6 +662,163 @@ html.dim body::after {
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+/* Floating chrome for mobile fullscreen / landscape immersive */
+.player-float-chrome {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+}
+
+.player-float-chrome__actions {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: absolute;
+  top: max(0.65rem, env(safe-area-inset-top, 0px));
+  right: max(0.65rem, env(safe-area-inset-right, 0px));
+}
+
+.player-float-chrome__btn {
+  display: flex;
+  height: 2.75rem;
+  width: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(18, 15, 12, 0.72);
+  color: #fffdf9;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.player-float-chrome__btn:active {
+  transform: scale(0.94);
+  background: rgba(201, 106, 43, 0.92);
+}
+
+.player-float-chrome__hint {
+  pointer-events: none;
+  position: absolute;
+  bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  border: 1px solid rgba(232, 164, 74, 0.28);
+  background: rgba(18, 15, 12, 0.68);
+  padding: 0.4rem 0.85rem;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(244, 194, 122, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  white-space: nowrap;
+  animation: playerFloatHintFade 4.5s ease forwards;
+}
+
+@keyframes playerFloatHintFade {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Mobile player shell — portrait compact + landscape immersive. Desktop unchanged. */
+@media (max-width: 639px) {
+  .player-modal-shell {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .player-modal-header {
+    padding-left: max(0.85rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.85rem, env(safe-area-inset-right, 0px));
+  }
+
+  .player-modal-footer {
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    padding-bottom: max(0.55rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .player-modal-footer__actions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    mask-image: linear-gradient(90deg, #000 86%, transparent);
+  }
+
+  .player-modal-footer__actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .player-modal-footer__actions > * {
+    flex-shrink: 0;
+  }
+
+  .player-stage:not(.player-stage--faux-fullscreen) {
+    border-radius: 0.85rem;
+  }
+
+  .player-video-fit {
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+  }
+}
+
+@media (max-width: 1023px) and (orientation: landscape) {
+  .player-modal-shell--immersive .player-modal-header,
+  .player-modal-shell--immersive .player-modal-footer,
+  .player-modal-shell--immersive .player-modal-helper,
+  .player-modal-shell--immersive .player-tv-aside {
+    display: none !important;
+  }
+
+  .player-modal-shell--immersive .player-modal-body {
+    padding: 0 !important;
+  }
+
+  .player-modal-shell--immersive .player-stage {
+    border-radius: 0 !important;
+    min-height: 100%;
+  }
+
+  .player-modal-shell--immersive .player-video-fit {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    aspect-ratio: auto !important;
+  }
+
+  .player-modal-shell--immersive .player-embed-iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+@media (max-width: 1023px) {
+  .player-modal-shell--fs-active .player-modal-header,
+  .player-modal-shell--fs-active .player-modal-footer,
+  .player-modal-shell--fs-active .player-modal-helper,
+  .player-modal-shell--fs-active .player-tv-aside {
+    display: none !important;
+  }
 }
 
 .player-loading-overlay {

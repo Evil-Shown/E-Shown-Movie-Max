@@ -198,16 +198,4 @@
   .cardSlot {
     width: 118px;
   }
-
-  .scrollWrap::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0.75rem;
-    width: 36px;
-    pointer-events: none;
-    background: linear-gradient(to right, transparent, var(--bg-primary));
-    z-index: 5;
-  }
 }
