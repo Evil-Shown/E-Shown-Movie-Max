@@ -65,7 +65,7 @@ export function toAuthUser(user: User & { settings?: UserSettings | null }): Aut
   const now = new Date();
 
   const trialDaysLeft = user.trialStartDate
-    ? Math.max(0, 7 - Math.floor((now.getTime() - user.trialStartDate.getTime()) / 86400000))
+    ? Math.max(0, 60 - Math.floor((now.getTime() - user.trialStartDate.getTime()) / 86400000))
     : 0;
 
   const isExpired = user.subscriptionExpiry ? user.subscriptionExpiry < now : true;
