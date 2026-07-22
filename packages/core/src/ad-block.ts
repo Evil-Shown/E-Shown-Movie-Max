@@ -150,7 +150,10 @@ export function shouldBypassEmbedSandbox(embedUrl: string): boolean {
 }
 
 export function getEmbedIframeSandbox(embedUrl: string): string | undefined {
-  return shouldBypassEmbedSandbox(embedUrl) ? undefined : EMBED_IFRAME_SANDBOX;
+  // No sandbox for any known embed provider — sandbox causes
+  // "Playback blocked" errors on providers that detect it.
+  // Ad popups are blocked separately via installAdPopupBlocker.
+  return undefined;
 }
 
 export function isEmbedSupportHost(hostname: string): boolean {
