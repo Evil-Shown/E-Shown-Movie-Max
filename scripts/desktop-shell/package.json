@@ -1,7 +1,7 @@
 {
   "name": "chithra-cinema",
   "productName": "CHITHRA - CINEMA",
-  "version": "2.3.8",
+  "version": "2.3.9",
   "description": "CHITHRA - CINEMA desktop app",
   "main": "main.js",
   "author": "CHITHRA - CINEMA",
@@ -88,7 +88,7 @@
           ]
         }
       ],
-      "icon": "assets/icon.ico",
+      "icon": "icon.ico",
       "artifactName": "Chithra-Cinema-Setup-${version}.${ext}",
       "signAndEditExecutable": false
     },

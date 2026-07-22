@@ -172,13 +172,13 @@ export default function LiveTvPageClient() {
   return (
     <div>
       {/* Header */}
-      <section className="browse-hero-bg px-6 pb-6 pt-10">
+      <section className="browse-hero-bg px-4 pb-5 pt-6 sm:px-6 sm:pb-6 sm:pt-10">
         <div className="mx-auto max-w-[1280px]">
           <LiveTvHero />
 
           <LiveTvBetaBanner />
 
-          <div className="mt-5 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-[var(--shadow-sm)] sm:p-5">
+          <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3 shadow-[var(--shadow-sm)] sm:mt-5 sm:p-5">
             <LiveTvSearchBar
               value={searchQuery}
               onChange={setSearchQuery}
@@ -201,7 +201,7 @@ export default function LiveTvPageClient() {
       </section>
 
       {/* Theater player */}
-      <section className="relative px-6 pb-10">
+      <section className="relative px-4 pb-8 sm:px-6 sm:pb-10">
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-full max-h-[520px] bg-gradient-to-b from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent"
           aria-hidden
@@ -219,7 +219,7 @@ export default function LiveTvPageClient() {
       </section>
 
       {/* Channel grids */}
-      <div className="mx-auto max-w-[1280px] px-6 pb-20">
+      <div className="mx-auto max-w-[1280px] px-4 pb-14 sm:px-6 sm:pb-20">
         <>
             {showSectionRows && (
               <div className="mb-12 space-y-2">

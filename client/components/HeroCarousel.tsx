@@ -7,7 +7,7 @@ import { useVideoPlayer } from "@/components/VideoPlayerProvider";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./HeroBanner.module.css";
 
 interface HeroCarouselProps {
@@ -19,6 +19,8 @@ export default function HeroCarousel({ movies }: HeroCarouselProps) {
   const { openMovie, openTrailer } = useVideoPlayer();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchDeltaX = useRef(0);
 
   const movie = movies[index] ?? movies[0];
   const primaryGenre = movie?.genres[0];
@@ -27,16 +29,48 @@ export default function HeroCarousel({ movies }: HeroCarouselProps) {
     setIndex((i) => (i + 1) % movies.length);
   }, [movies.length]);
 
+  const prev = useCallback(() => {
+    setIndex((i) => (i - 1 + movies.length) % movies.length);
+  }, [movies.length]);
+
   useEffect(() => {
     if (movies.length <= 1 || paused || prefersReducedMotion) return;
     const timer = setInterval(next, 7000);
     return () => clearInterval(timer);
   }, [movies.length, paused, prefersReducedMotion, next]);
 
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0]?.clientX ?? null;
+    touchDeltaX.current = 0;
+    setPaused(true);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current == null) return;
+    touchDeltaX.current = (e.touches[0]?.clientX ?? 0) - touchStartX.current;
+  };
+
+  const onTouchEnd = () => {
+    const delta = touchDeltaX.current;
+    touchStartX.current = null;
+    touchDeltaX.current = 0;
+    setPaused(false);
+    if (Math.abs(delta) < 48 || movies.length <= 1) return;
+    if (delta < 0) next();
+    else prev();
+  };
+
   if (!movie) return null;
 
   return (
-    <section className={styles.hero} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+    <section
+      className={styles.hero}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       <AnimatePresence mode="wait">
         <motion.div
           key={movie.id}
@@ -47,13 +81,14 @@ export default function HeroCarousel({ movies }: HeroCarouselProps) {
           className={styles.backdropWrap}
         >
           <Image
-            src={backdropUrl(movie.backdropPath, "w1920")}
+            src={backdropUrl(movie.backdropPath, "w1280")}
             alt=""
             fill
             priority
-            quality={95}
-            sizes="100vw"
+            quality={90}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1280px"
             className={styles.backdropImage}
+            style={{ objectFit: "cover" }}
           />
         </motion.div>
       </AnimatePresence>
@@ -101,13 +136,27 @@ export default function HeroCarousel({ movies }: HeroCarouselProps) {
                     onFocus={() => prefetchMovieStream(movie)}
                     onClick={() => openMovie(movie)}
                   >
-                    ▶ Play Now
+                    <span className={styles.playIcon} aria-hidden>
+                      ▶
+                    </span>
+                    <span className={styles.playLabel}>Play Now</span>
                   </button>
-                  <button type="button" className={styles.trailerButton} onClick={() => openTrailer(movie)}>
-                    Watch Trailer
+                  <button
+                    type="button"
+                    className={styles.trailerButton}
+                    onClick={() => openTrailer(movie)}
+                    aria-label="Watch Trailer"
+                  >
+                    <span className={styles.trailerIcon} aria-hidden>
+                      ▷
+                    </span>
+                    <span className={styles.trailerLabel}>Watch Trailer</span>
                   </button>
-                  <Link href={`/movie/${movie.id}`} className={styles.moreButton}>
-                    ℹ More Info
+                  <Link href={`/movie/${movie.id}`} className={styles.moreButton} aria-label="More Info">
+                    <span className={styles.moreIcon} aria-hidden>
+                      ℹ
+                    </span>
+                    <span className={styles.moreLabel}>More Info</span>
                   </Link>
                 </div>
               </div>
@@ -126,16 +175,14 @@ export default function HeroCarousel({ movies }: HeroCarouselProps) {
       </div>
 
       {movies.length > 1 && (
-        <div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 gap-2">
+        <div className={styles.dots}>
           {movies.map((m, i) => (
             <button
               key={m.id}
               type="button"
               aria-label={`Show ${m.title}`}
               onClick={() => setIndex(i)}
-              className={`h-1.5 rounded-full transition-all ${
-                i === index ? "w-8 bg-[var(--accent-warm)]" : "w-3 bg-white/40 hover:bg-white/70"
-              }`}
+              className={`${styles.dot} ${i === index ? styles.dotActive : ""}`}
             />
           ))}
         </div>

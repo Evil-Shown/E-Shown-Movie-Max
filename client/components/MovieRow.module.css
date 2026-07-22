@@ -115,6 +115,8 @@
   padding: 4px 1.5rem 1rem;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
 }
 
 .track::-webkit-scrollbar {
@@ -125,6 +127,7 @@
   position: relative;
   width: 152px;
   flex-shrink: 0;
+  scroll-snap-align: start;
 }
 
 @media (min-width: 640px) {
@@ -136,5 +139,75 @@
 @media (min-width: 768px) {
   .cardSlot {
     width: 200px;
+  }
+}
+
+@media (max-width: 639px) {
+  .row {
+    padding-bottom: 0.25rem;
+  }
+
+  .header {
+    margin-bottom: 0.85rem;
+    padding: 0 1rem;
+  }
+
+  .headerInner {
+    gap: 0.65rem;
+    align-items: flex-end;
+  }
+
+  .eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    margin-bottom: 2px;
+    color: var(--accent-primary);
+  }
+
+  .title {
+    font-size: 1.25rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .subtitle {
+    display: none;
+  }
+
+  .seeAll {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-primary);
+    padding: 0.4rem 0.65rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    text-decoration: none;
+  }
+
+  .seeAll:hover {
+    text-decoration: none;
+    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+  }
+
+  .track {
+    gap: 0.7rem;
+    padding: 2px 1rem 0.75rem;
+    scroll-padding-left: 1rem;
+  }
+
+  .cardSlot {
+    width: 118px;
+  }
+
+  .scrollWrap::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0.75rem;
+    width: 36px;
+    pointer-events: none;
+    background: linear-gradient(to right, transparent, var(--bg-primary));
+    z-index: 5;
   }
 }

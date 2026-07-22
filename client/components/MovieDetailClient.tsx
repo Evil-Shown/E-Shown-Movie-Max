@@ -90,12 +90,12 @@ export default function MovieDetailClient({ movie }: MovieDetailClientProps) {
         background: "linear-gradient(to bottom, transparent, var(--bg-base) 15%)",
       }}
     >
-      <div className="relative -mt-24 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-[var(--shadow-sm)] sm:-mt-40 sm:p-8">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:gap-10">
+      <div className="relative -mt-16 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-[var(--shadow-sm)] sm:-mt-40 sm:p-8">
+        <div className="flex flex-col gap-6 sm:gap-8 lg:flex-row lg:items-end lg:gap-10">
           <div className="mx-auto shrink-0 lg:mx-0 lg:w-1/3">
             <FloatingCard>
               <div className="animate-float">
-                <div className="mx-auto h-[280px] w-[186px] overflow-hidden rounded-xl bg-[var(--bg-secondary)] shadow-[0_24px_64px_rgba(28,25,23,0.2)] sm:h-[390px] sm:w-[260px]">
+                <div className="mx-auto h-[240px] w-[160px] overflow-hidden rounded-xl bg-[var(--bg-secondary)] shadow-[0_24px_64px_rgba(28,25,23,0.2)] sm:h-[390px] sm:w-[260px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={posterUrl(movie.posterPath, "w500")}

@@ -1,9 +1,10 @@
-.hero {
+﻿.hero {
   position: relative;
-  /* Natural landscape frame (≈16:9 of viewport width) — no tall stretch/upscale */
+  /* Natural landscape frame (â‰ˆ16:9 of viewport width) â€” no tall stretch/upscale */
   height: clamp(380px, 56.25vw, 720px);
   overflow: hidden;
   background: var(--bg-primary);
+  touch-action: pan-y;
 }
 
 .backdropWrap {
@@ -15,9 +16,18 @@
 }
 
 .backdropImage {
-  object-fit: cover;
-  object-position: center top;
+  object-fit: cover !important;
+  object-position: center center;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none;
   opacity: 1;
+}
+
+@media (min-width: 640px) {
+  .backdropImage {
+    object-position: center top;
+  }
 }
 
 .gradientLeft {
@@ -56,7 +66,7 @@
   background: linear-gradient(to bottom, rgba(245, 239, 228, 0.18) 0%, transparent 100%);
 }
 
-/* Dark / Dim only — light hero gradients stay exact */
+/* Dark / Dim only â€” light hero gradients stay exact */
 :global(.dark) .backdropImage,
 :global(.dim) .backdropImage {
   opacity: 1;
@@ -212,7 +222,7 @@
   color: #2a2218;
 }
 
-/* Dark / Dim only — light hero copy stays exact */
+/* Dark / Dim only â€” light hero copy stays exact */
 :global(.dark) .contentWrap,
 :global(.dim) .contentWrap {
   padding: 1.25rem 1.35rem;
@@ -274,14 +284,31 @@
 
 @media (max-width: 639px) {
   .buttonRow {
-    flex-direction: column;
-    width: 100%;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    width: auto;
+    gap: 8px;
   }
 
-  .watchButton,
-  .moreButton {
-    width: 100%;
-    min-height: 44px;
+  .watchButton {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 0 16px;
+    font-size: 12px;
+    border-radius: 999px;
+    gap: 6px;
+  }
+
+  .moreButton,
+  .trailerButton {
+    flex: 0 0 auto;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0;
+    width: 38px;
+    font-size: 13px;
+    border-radius: 999px;
   }
 }
 
@@ -482,6 +509,35 @@
   animation: bounceDown 1.8s ease-in-out infinite;
 }
 
+.dots {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 50%;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+  transform: translateX(-50%);
+}
+
+.dot {
+  height: 6px;
+  width: 12px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.4);
+  transition: all 0.25s ease;
+}
+
+.dotActive {
+  width: 28px;
+  background: var(--accent-warm);
+}
+
+.dot:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
 .fadeItem {
   opacity: 0;
   animation: fadeUp 0.5s ease-out forwards;
@@ -554,17 +610,182 @@
   }
 }
 
-@media (max-width: 480px) {
+
+/* Mobile hero — cinematic, readable, refined CTAs */
+@media (max-width: 639px) {
+  .hero {
+    height: min(62vh, 520px);
+    aspect-ratio: auto;
+    min-height: 400px;
+    max-height: 560px;
+  }
+
+  .backdropWrap {
+    transform: none;
+  }
+
+  .backdropImage {
+    object-fit: cover !important;
+    object-position: center 18%;
+  }
+
+  .gradientLeft {
+    background: linear-gradient(
+      to top,
+      rgba(245, 239, 228, 0.98) 0%,
+      rgba(245, 239, 228, 0.9) 18%,
+      rgba(245, 239, 228, 0.55) 42%,
+      rgba(245, 239, 228, 0.15) 62%,
+      transparent 78%
+    );
+  }
+
+  .gradientBottom {
+    height: 72%;
+    background: linear-gradient(
+      to top,
+      rgba(235, 225, 210, 0.55) 0%,
+      transparent 100%
+    );
+  }
+
+  .gradientTop {
+    height: 80px;
+    background: linear-gradient(to bottom, rgba(245, 239, 228, 0.45) 0%, transparent 100%);
+  }
+
+  :global(.dark) .gradientLeft,
+  :global(.dim) .gradientLeft {
+    background: linear-gradient(
+      to top,
+      rgba(14, 14, 16, 0.97) 0%,
+      rgba(14, 14, 16, 0.82) 24%,
+      rgba(14, 14, 16, 0.4) 52%,
+      transparent 76%
+    );
+  }
+
+  :global(.dark) .gradientBottom,
+  :global(.dim) .gradientBottom {
+    height: 65%;
+    background: linear-gradient(to top, rgba(14, 14, 16, 0.75) 0%, transparent 100%);
+  }
+
+  .inner {
+    align-items: flex-end;
+    padding: 0.85rem 1rem 2.4rem;
+  }
+
+  .contentCol {
+    max-width: 100%;
+  }
+
+  .contentWrap {
+    max-width: 100%;
+    padding: 0.9rem 1rem;
+    margin: 0;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--bg-card) 78%, transparent);
+    backdrop-filter: blur(14px) saturate(1.05);
+    -webkit-backdrop-filter: blur(14px) saturate(1.05);
+    border: 1px solid color-mix(in srgb, var(--border-strong) 70%, transparent);
+    box-shadow: 0 10px 36px rgba(62, 39, 35, 0.1);
+  }
+
   .badge {
-    font-size: 10px;
+    font-size: 9px;
+    margin-bottom: 6px;
+    letter-spacing: 0.16em;
+    color: #9a4f1f;
+    border-left-width: 2px;
+    padding-left: 10px;
+  }
+
+  .title {
+    margin-bottom: 8px;
+    font-size: clamp(1.45rem, 6.2vw, 1.85rem);
+    line-height: 1.1;
+    color: #0f0702;
+    text-shadow: none;
+  }
+
+  .metaRow {
+    gap: 5px;
     margin-bottom: 10px;
   }
 
-  .trailerButton {
+  .ratingPill,
+  .genrePill {
+    padding: 3px 9px;
+    font-size: 10px;
+    border-radius: 999px;
+  }
+
+  .metaText {
+    font-size: 11px;
+    color: #1c1917;
+  }
+
+  .description {
     display: none;
   }
 
-  .hero {
-    height: clamp(360px, 62vw, 520px);
+  .playIcon {
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  :global(.dark) .contentWrap,
+  :global(.dim) .contentWrap {
+    padding: 0.9rem 1rem;
+    margin: 0;
+    border-radius: 16px;
+    background: rgba(14, 14, 16, 0.62);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  :global(.dark) .title,
+  :global(.dim) .title {
+    color: #f5f5f7;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+  }
+
+  :global(.dark) .badge,
+  :global(.dim) .badge {
+    color: var(--hero-badge);
+  }
+
+  .dots {
+    bottom: 0.5rem;
+    gap: 5px;
+  }
+
+  .dot {
+    height: 5px;
+    width: 5px;
+  }
+
+  .dotActive {
+    width: 18px;
+  }
+
+  .trailerLabel,
+  .moreLabel {
+    display: none;
+  }
+
+  .posterImage {
+    object-fit: cover;
+    object-position: center center;
+  }
+}
+
+@media (min-width: 640px) {
+  .trailerIcon,
+  .moreIcon {
+    display: none;
   }
 }

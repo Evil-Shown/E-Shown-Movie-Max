@@ -220,7 +220,7 @@ export default function Header() {
               THE GOD&apos;S EYE
             </ProtectedLink>
 
-            <ProtectedLink href="/watchlist" aria-label="Watchlist" className={`${styles.searchButton} relative`}>
+            <ProtectedLink href="/watchlist" aria-label="Watchlist" className={`${styles.searchButton} relative ${styles.hideOnNarrow}`}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
@@ -238,7 +238,9 @@ export default function Header() {
               </svg>
             </Link>
 
-            <UserDashboard />
+            <div className={styles.profileSlot}>
+              <UserDashboard />
+            </div>
           </div>
         </div>
       </header>
@@ -252,11 +254,13 @@ export default function Header() {
           aria-modal="true"
           aria-label="Main navigation"
         >
-          {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} onClick={closeMenu} className={styles.mobileLink}>
-              {link.label}
-            </Link>
-          ))}
+          <nav className={styles.mobileNavList}>
+            {navLinks.map((link) => (
+              <Link key={link.href} href={link.href} onClick={closeMenu} className={styles.mobileLink}>
+                {link.label}
+              </Link>
+            ))}
+          </nav>
           <ProtectedLink href="/gods-eye" onClick={closeMenu} className={styles.mobileWatch}>
             THE GOD&apos;S EYE
           </ProtectedLink>

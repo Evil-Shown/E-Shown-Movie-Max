@@ -19,6 +19,7 @@
 
   --accent-primary: var(--deep-orange);
   --accent-warm: var(--light-orange);
+  --accent-cool: #2e6b5e;
 
   --text-primary: var(--chocolate);
   --text-secondary: var(--brown);
@@ -105,6 +106,7 @@
 
   --accent-primary: #ff6a1a;
   --accent-warm: #ffb07a;
+  --accent-cool: #4a9b8a;
 
   --text-primary: #f5f5f7;
   --text-secondary: #c7c7cc;
@@ -188,6 +190,7 @@
 
   --accent-primary: #e06a28;
   --accent-warm: #d4a574;
+  --accent-cool: #5a9e8c;
 
   --text-primary: #f8f2ea;
   --text-secondary: #ddd0c2;
@@ -349,7 +352,7 @@ section[id] {
 }
 
 .site-main {
-  padding-top: calc(72px + env(safe-area-inset-top, 0px));
+  padding-top: calc(60px + env(safe-area-inset-top, 0px));
 }
 
 @media (min-width: 640px) {
@@ -960,6 +963,14 @@ input,
 .row-scroll {
   scrollbar-width: none;
   -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  padding-bottom: 2px;
+}
+
+.genre-pills-scroll > *,
+.row-scroll > * {
+  scroll-snap-align: start;
 }
 
 .genre-pills-scroll::-webkit-scrollbar,
@@ -1231,4 +1242,44 @@ input,
 
 .perspective-500 {
   perspective: 500px;
+}
+
+/* ── Mobile-only polish (desktop unchanged) ─────────────────────────── */
+@media (max-width: 639px) {
+  section[id] {
+    scroll-margin-top: 4.5rem;
+  }
+
+  .browse-hero-bg {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+
+  .search-bg-text {
+    font-size: clamp(3.5rem, 18vw, 5rem);
+    opacity: 0.5;
+  }
+
+  .search-hero-core {
+    min-height: 200px;
+    padding-top: 1.75rem;
+    padding-bottom: 1.75rem;
+  }
+
+  .home-section + .home-section {
+    border-top-width: 0;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .touch-always-visible {
+    opacity: 1 !important;
+  }
+}
+
+/* Cover helpers — never distort media in framed containers */
+.media-cover,
+[data-media-cover] {
+  object-fit: cover;
+  object-position: center center;
 }
