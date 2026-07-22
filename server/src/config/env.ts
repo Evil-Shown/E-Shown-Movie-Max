@@ -22,6 +22,7 @@ const URL_OR_DEFAULT = (prodMsg: string, devDefault: string) =>
 const envSchema = z.object({
   NODE_ENV: z.literal(rawNodeEnv),
   PORT: z.coerce.number().int().min(1).max(65535).default(5000),
+  RENDER_API_URL: z.string().url().optional(),
 
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: notEmptyOrPlaceholder("SUPABASE_ANON_KEY"),

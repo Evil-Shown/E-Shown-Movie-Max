@@ -25,6 +25,7 @@ import { supabaseAdmin } from "./infrastructure/supabase";
 
 import { errorHandler } from "./middleware/error-handler";
 import { redisRateLimit } from "./middleware/rate-limit";
+import { createProxySensitive } from "./middleware/proxy-sensitive";
 
 import healthRoutes from "./domains/health/health.routes";
 import authRoutes from "./domains/auth/auth.routes";
@@ -87,21 +88,31 @@ app.use("/api/v1/health", healthRoutes);
 // Global rate limiting for API routes
 app.use("/api/v1", redisRateLimit);
 
-// API v1 routes
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/users", userRoutes);
-app.use("/api/v1/watchlist", watchlistRoutes);
-app.use("/api/v1/continue", continueRoutes);
-app.use("/api/v1/episodes", episodesRoutes);
-app.use("/api/v1/search", searchRoutes);
-app.use("/api/v1/embed", embedRoutes);
-app.use("/api/v1/analytics", analyticsRoutes);
-app.use("/api/v1/telemetry", telemetryRoutes);
-app.use("/api/v1/security", securityRoutes);
-app.use("/api/v1/mobile", mobileRoutes);
-app.use("/api/v1/subscription", subscriptionRoutes);
-app.use("/api/v1/tmdb", tmdbRoutes);
-app.use("/api/v1", bffRoutes);
+if (env.RENDER_API_URL) {
+  // ── Desktop proxy mode ─────────────────────────────────────────
+  // Public routes handled locally (no secrets needed)
+  app.use("/api/v1/search", searchRoutes);
+  app.use("/api/v1/embed", embedRoutes);
+
+  // Everything else → Render server (TMDB, auth, DB, etc.)
+  app.use("/api/v1", createProxySensitive(env.RENDER_API_URL));
+} else {
+  // ── Normal mode — all routes ───────────────────────────────────
+  app.use("/api/v1/auth", authRoutes);
+  app.use("/api/v1/users", userRoutes);
+  app.use("/api/v1/watchlist", watchlistRoutes);
+  app.use("/api/v1/continue", continueRoutes);
+  app.use("/api/v1/episodes", episodesRoutes);
+  app.use("/api/v1/search", searchRoutes);
+  app.use("/api/v1/embed", embedRoutes);
+  app.use("/api/v1/analytics", analyticsRoutes);
+  app.use("/api/v1/telemetry", telemetryRoutes);
+  app.use("/api/v1/security", securityRoutes);
+  app.use("/api/v1/mobile", mobileRoutes);
+  app.use("/api/v1/subscription", subscriptionRoutes);
+  app.use("/api/v1/tmdb", tmdbRoutes);
+  app.use("/api/v1", bffRoutes);
+}
 
 // Legacy route redirects (301 permanent) — avoids double middleware execution
 app.use("/api/auth", (_req, res) => { res.redirect(301, `/api/v1/auth${_req.url}`); });
@@ -139,55 +150,61 @@ Sentry.setupExpressErrorHandler(app);
 app.use(errorHandler);
 
 async function main() {
-  // ── Database connectivity check ──────────────────────────────────
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    logger.info("✔ PostgreSQL database connected successfully");
-    const versionResult = await prisma.$queryRaw`SELECT version() as version`;
-    const dbVersion = Array.isArray(versionResult) ? (versionResult[0] as { version?: string })?.version : "unknown";
-    if (dbVersion && dbVersion !== "unknown") {
-      logger.info(`  Database: ${dbVersion}`);
+  if (env.RENDER_API_URL) {
+    // ── Desktop proxy mode — skip local DB/Supabase checks ──────
+    logger.info("○ Desktop proxy mode — sensitive routes forward to Render");
+    logger.info(`  Render API: ${env.RENDER_API_URL}`);
+  } else {
+    // ── Database connectivity check ──────────────────────────────
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      logger.info("✔ PostgreSQL database connected successfully");
+      const versionResult = await prisma.$queryRaw`SELECT version() as version`;
+      const dbVersion = Array.isArray(versionResult) ? (versionResult[0] as { version?: string })?.version : "unknown";
+      if (dbVersion && dbVersion !== "unknown") {
+        logger.info(`  Database: ${dbVersion}`);
+      }
+    } catch (dbError) {
+      logger.error({ err: dbError }, "✘ Failed to connect to PostgreSQL database");
+      logger.error("  Check your DATABASE_URL in server/.env");
+      process.exit(1);
     }
-  } catch (dbError) {
-    logger.error({ err: dbError }, "✘ Failed to connect to PostgreSQL database");
-    logger.error("  Check your DATABASE_URL in server/.env");
-    process.exit(1);
-  }
 
-  // ── Supabase Auth check ─────────────────────────────────────────
-  const supabaseUrlOk = env.SUPABASE_URL?.startsWith("http");
-  const supabaseKeyOk = env.SUPABASE_ANON_KEY?.length > 20;
-  const supabaseSecretOk = env.SUPABASE_SERVICE_ROLE_KEY?.length > 20;
-  if (supabaseUrlOk && supabaseKeyOk && supabaseSecretOk) {
-    const { error: supabaseAdminError } = await supabaseAdmin.auth.admin.listUsers({
-      page: 1,
-      perPage: 1,
-    });
-    if (supabaseAdminError) {
-      logger.error(
-        { err: supabaseAdminError.message },
-        "✘ Supabase service role key rejected — registration/login will fail"
-      );
-      logger.error(
-        "  Fix server/.env: set SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY from Supabase Dashboard → Settings → API"
-      );
-      if (/unregistered api key/i.test(supabaseAdminError.message)) {
+    // ── Supabase Auth check ──────────────────────────────────────
+    const supabaseUrlOk = env.SUPABASE_URL?.startsWith("http");
+    const supabaseKeyOk = env.SUPABASE_ANON_KEY?.length > 20;
+    const supabaseSecretOk = env.SUPABASE_SERVICE_ROLE_KEY?.length > 20;
+    if (supabaseUrlOk && supabaseKeyOk && supabaseSecretOk) {
+      const { error: supabaseAdminError } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1,
+      });
+      if (supabaseAdminError) {
         logger.error(
-          "  Use the project's active secret key (sb_secret_...) or legacy service_role JWT — deleted/rotated keys cause this error"
+          { err: supabaseAdminError.message },
+          "✘ Supabase service role key rejected — registration/login will fail"
         );
+        logger.error(
+          "  Fix server/.env: set SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY from Supabase Dashboard → Settings → API"
+        );
+        if (/unregistered api key/i.test(supabaseAdminError.message)) {
+          logger.error(
+            "  Use the project's active secret key (sb_secret_...) or legacy service_role JWT — deleted/rotated keys cause this error"
+          );
+        }
+      } else {
+        logger.info("✔ Supabase Auth configured");
       }
     } else {
-      logger.info("✔ Supabase Auth configured");
+      logger.warn("✘ Supabase Auth not fully configured — auth endpoints will fail");
     }
-  } else {
-    logger.warn("✘ Supabase Auth not fully configured — auth endpoints will fail");
-  }
 
-  // ── Redis check ─────────────────────────────────────────────────
-  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
-    logger.info("✔ Upstash Redis configured");
-  } else {
-    logger.warn("○ Upstash Redis not configured — using in-memory cache fallback");
+    // ── Redis check ──────────────────────────────────────────────
+    if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
+      logger.info("✔ Upstash Redis configured");
+    } else {
+      logger.warn("○ Upstash Redis not configured — using in-memory cache fallback");
+    }
   }
 
   // ── Start HTTP server ───────────────────────────────────────────
@@ -209,7 +226,9 @@ main().catch((err) => {
 // Graceful shutdown
 async function shutdown(signal: string) {
   logger.info(`Received ${signal}. Shutting down gracefully...`);
-  await prisma.$disconnect();
+  if (!env.RENDER_API_URL) {
+    await prisma.$disconnect();
+  }
   process.exit(0);
 }
 
