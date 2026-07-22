@@ -29,19 +29,19 @@ export default function UserDashboard() {
   const avatarUrl = localIcon ? `/avatars/${localIcon}` : user?.avatarUrl;
 
   if (!mounted) {
-    return <div className="h-11 w-11" />;
+    return <div className="h-9 w-9 shrink-0 sm:h-11 sm:w-11" />;
   }
 
   if (!isAuthenticated) {
     return (
       <button
         onClick={() => openAuthModal()}
-        className="block rounded-full transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2"
+        className="block shrink-0 rounded-full transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2"
         aria-label="Login"
       >
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-warm)] text-white shadow-md ring-2 ring-white/60">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-warm)] text-white shadow-md ring-2 ring-white/60 sm:h-11 sm:w-11">
           <svg
-            className="h-6 w-6"
+            className="h-5 w-5 sm:h-6 sm:w-6"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -59,16 +59,16 @@ export default function UserDashboard() {
   return (
     <Link
       href="/dashboard"
-      className="block rounded-full transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2"
+      className="block shrink-0 rounded-full transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2"
       aria-label="User dashboard"
     >
       {avatarUrl ? (
-        <div className="h-11 w-11 rounded-full overflow-hidden shadow-md ring-2 ring-white/60">
+        <div className="h-9 w-9 overflow-hidden rounded-full shadow-md ring-2 ring-white/60 sm:h-11 sm:w-11">
           <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
         </div>
       ) : (
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-warm)] text-white shadow-md ring-2 ring-white/60">
-          <span className="text-sm font-bold">{user?.displayName?.[0] || user?.username?.[0] || "?"}</span>
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-warm)] text-white shadow-md ring-2 ring-white/60 sm:h-11 sm:w-11">
+          <span className="text-xs font-bold sm:text-sm">{user?.displayName?.[0] || user?.username?.[0] || "?"}</span>
         </div>
       )}
     </Link>

@@ -34,15 +34,15 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
   return (
     <div>
-      <section className="browse-hero-bg px-6 py-16">
-        <div className="mx-auto max-w-[1280px] rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-sm)] sm:p-8">
+      <section className="browse-hero-bg px-4 py-8 sm:px-6 sm:py-16">
+        <div className="mx-auto max-w-[1280px] rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-sm)] sm:p-8">
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--accent-cool)]">
             {isSeries ? "TV Library" : "Movie Library"}
           </p>
-          <h1 className="font-[var(--font-playfair)] text-[32px] font-bold text-[var(--text-primary)]">
+          <h1 className="font-[var(--font-playfair)] text-[26px] font-bold text-[var(--text-primary)] sm:text-[32px]">
             {isSeries ? "Browse Series" : "Browse Movies"}
           </h1>
-          <p className="mt-3 text-[15px] leading-[1.7] text-[var(--text-secondary)]">
+          <p className="mt-2 text-[14px] leading-[1.6] text-[var(--text-secondary)] sm:mt-3 sm:text-[15px] sm:leading-[1.7]">
             {tmdbReady
               ? `${totalResults.toLocaleString()} ${isSeries ? "series" : "movies"} available — scroll or tap load more`
               : `${totalResults} curated titles — connect TMDB for the full catalog`}
@@ -62,7 +62,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
         </div>
       </section>
 
-      <div className="mx-auto max-w-[1280px] px-6 py-16">
+      <div className="mx-auto max-w-[1280px] px-4 py-8 sm:px-6 sm:py-16">
         {!tmdbReady && <TmdbSetupBanner />}
         <BrowseCatalog
           initialMovies={movies}

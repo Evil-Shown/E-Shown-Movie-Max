@@ -38,13 +38,14 @@ export default function HeroBanner({ movie }: HeroBannerProps) {
         className={styles.backdropWrap}
       >
         <Image
-          src={backdropUrl(movie.backdropPath, "w1920")}
+          src={backdropUrl(movie.backdropPath, "w1280")}
           alt=""
           fill
           priority
-          quality={95}
-          sizes="100vw"
+          quality={90}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1280px"
           className={styles.backdropImage}
+          style={{ objectFit: "cover" }}
         />
       </motion.div>
 

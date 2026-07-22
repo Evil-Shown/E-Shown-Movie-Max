@@ -241,15 +241,56 @@ function Prepare-ClientEnvForPackage {
   Set-Content -Path $DestPath -Value $lines -Encoding UTF8
 }
 
+function Prepare-ServerEnvForPackage {
+  param(
+    [string]$DestPath
+  )
+
+  # Generate a clean .env for the desktop server — no real secrets.
+  # Sensitive routes are proxied to Render via RENDER_API_URL.
+  $envContent = @"
+# ── Desktop Proxy Mode ─────────────────────────────────────────────
+RENDER_API_URL=https://chithra-cinema-api.onrender.com
+
+# ── Server ─────────────────────────────────────────────────────────
+PORT=5000
+NODE_ENV=production
+
+# ── Application URLs ──────────────────────────────────────────────
+APP_URL=http://localhost:3000
+API_URL=http://localhost:5000
+
+# ── Logging ───────────────────────────────────────────────────────
+LOG_LEVEL=info
+
+# ── Dummy values (required by Zod schema, never actually used) ────
+# All sensitive routes are forwarded to Render — these exist only
+# so the server starts without crashing in proxy mode.
+DATABASE_URL=postgresql://desktop:desktop@localhost:5432/desktop?sslmode=require
+SUPABASE_URL=https://lviiplpwcyufuiisoyib.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_desktop_proxy
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_desktop_proxy
+TMDB_API_KEY=desktop_proxy_tmdb_key
+ADMIN_TELEMETRY_KEY=desktop_proxy_telemetry_key
+
+# ── Non-sensitive defaults ─────────────────────────────────────────
+PAYHERE_MERCHANT_ID=
+PAYHERE_SECRET=
+PAYHERE_API_URL=https://sandbox.payhere.lk
+EMBED_PROXY_LIST=
+EMBED_CACHE_TTL_MS=3600000
+EMBED_REQUEST_TIMEOUT_MS=15000
+"@
+
+  Write-Utf8NoBom -Path $DestPath -Content $envContent
+}
+
 Write-Host ""
 Write-Host "=== CHITHRA - CINEMA - Desktop Installer Build ===" -ForegroundColor Cyan
 Write-Host ""
 
 if (-not (Test-Path $clientEnvFile)) {
   throw "Missing $clientEnvFile"
-}
-if (-not (Test-Path $serverEnvFile)) {
-  throw "Missing $serverEnvFile"
 }
 
 $desktopPackageJson = Get-Content $desktopPackage -Raw | ConvertFrom-Json
@@ -290,7 +331,7 @@ foreach ($dir in @($clientStaging, $serverStaging, (Join-Path $desktop "resource
   }
 }
 
-Write-Host "[1/6] Staging client..."
+Write-Host "[1/8] Staging client..."
 $excludeDirs = @("node_modules", ".next")
 Get-ChildItem -Path $client -Force | Where-Object { $excludeDirs -notcontains $_.Name } | ForEach-Object {
   Robocopy-Item -Source $_.FullName -Dest (Join-Path $clientStaging $_.Name)
@@ -298,13 +339,14 @@ Get-ChildItem -Path $client -Force | Where-Object { $excludeDirs -notcontains $_
 Prepare-ClientEnvForPackage -SourceEnv $clientEnvFile -DestPath (Join-Path $clientStaging ".env.local")
 $coreStaging = Stage-MonorepoCorePackage -ClientStagingDir $clientStaging
 
-Write-Host "[2/6] Staging server..."
+Write-Host "[2/8] Staging server..."
 Get-ChildItem -Path $server -Force | Where-Object { $_.Name -ne "node_modules" } | ForEach-Object {
   Robocopy-Item -Source $_.FullName -Dest (Join-Path $serverStaging $_.Name)
 }
-Copy-Item $serverEnvFile (Join-Path $serverStaging ".env") -Force
+# Generate a clean .env with dummy values — secrets stay on Render
+Prepare-ServerEnvForPackage -DestPath (Join-Path $serverStaging ".env")
 
-Write-Host "[3/6] Installing and building client..."
+Write-Host "[3/8] Installing and building client..."
 Push-Location $clientStaging
   npm install
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "client npm install failed" }
@@ -313,7 +355,7 @@ npm install --omit=dev
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "client npm install --omit=dev failed" }
 Pop-Location
 
-Write-Host "[4/6] Installing and building server..."
+Write-Host "[4/8] Installing and building server..."
 Push-Location $serverStaging
 npm install
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "server npm install failed" }
@@ -323,7 +365,7 @@ npm install --omit=dev
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "server npm install --omit=dev failed" }
 Pop-Location
 
-Write-Host "[5/6] Copying bundled resources into desktop/..."
+Write-Host "[5/8] Copying bundled resources into desktop/..."
 New-Item -ItemType Directory -Path $resourcesApp -Force | Out-Null
 New-Item -ItemType Directory -Path $resourcesServer -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $desktop "assets") -Force | Out-Null
@@ -352,12 +394,85 @@ if ($coreStaging) {
   Remove-Item $coreStaging -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-Write-Host "[6/6] Building Electron installer (this can take several minutes)..."
+Write-Host "[6/8] Building Electron installer (this can take several minutes)..."
 Sync-DesktopShell
 Push-Location $desktop
 
 npm install
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "desktop npm install failed" }
+
+Write-Host "[7/8] Obfuscating desktop shell files..."
+$obfuscatorPkg = Join-Path $desktopShell "node_modules\javascript-obfuscator"
+if (-not (Test-Path $obfuscatorPkg)) {
+  Write-Host "  javascript-obfuscator not found in desktop-shell, skipping obfuscation" -ForegroundColor Yellow
+} else {
+  # Generate a temp script that obfuscates using the programmatic API.
+  # Using a temp .js file avoids PowerShell command-line parsing issues.
+  $obfScript = @"
+const fs = require("fs");
+const path = require("path");
+const Obfuscator = require("$($obfuscatorPkg -replace '\\', '/')");
+
+const targets = ["main.js", "preload.js", "block-ad-nav.js", "embed-headers.js"];
+const opts = {
+  compact: true,
+  controlFlowFlattening: true,
+  controlFlowFlatteningThreshold: 0.5,
+  deadCodeInjection: true,
+  deadCodeInjectionThreshold: 0.2,
+  identifierNamesGenerator: "hexadecimal",
+  renameGlobals: false,
+  stringArray: true,
+  stringArrayEncoding: ["rc4"],
+  stringArrayThreshold: 0.75,
+  transformObjectKeys: true,
+  unicodeEscapeSequence: false,
+};
+
+for (const name of targets) {
+  const fp = path.resolve(name);
+  if (!fs.existsSync(fp)) continue;
+  try {
+    const code = fs.readFileSync(fp, "utf8");
+    const result = Obfuscator.obfuscate(code, opts);
+    fs.writeFileSync(fp, result.getObfuscatedCode());
+    console.log("  obfuscated " + name);
+  } catch (e) {
+    console.warn("  Warning: obfuscation failed for " + name + " - using original");
+  }
+}
+"@
+  $obfScriptPath = Join-Path $desktop "_obfuscate.js"
+  Write-Utf8NoBom -Path $obfScriptPath -Content $obfScript
+  node $obfScriptPath
+  Remove-Item $obfScriptPath -Force -ErrorAction SilentlyContinue
+  Write-Host "  Obfuscation complete" -ForegroundColor DarkGray
+}
+
+# ── Set Electron Fuses ───────────────────────────────────────────
+Write-Host "  Setting Electron security fuses..." -ForegroundColor DarkGray
+$fuseScript = @"
+const { flipFuses, FuseVersion, FuseV1Options } = require('@electron/fuses');
+const electronPath = require('electron');
+flipFuses(electronPath, {
+  version: FuseVersion.V1,
+  [FuseV1Options.RunAsNode]: false,
+  [FuseV1Options.EnableNodeCliInspectArguments]: false,
+}).then(() => {
+  console.log('  Fuses set successfully');
+}).catch((err) => {
+  console.error('  Warning: fuse setting failed:', err.message);
+  process.exit(1);
+});
+"@
+$fuseScriptPath = Join-Path $desktop "_set-fuses.js"
+Write-Utf8NoBom -Path $fuseScriptPath -Content $fuseScript
+node $fuseScriptPath
+if ($LASTEXITCODE -ne 0) {
+  Pop-Location
+  throw "Electron fuse setting failed"
+}
+Remove-Item $fuseScriptPath -Force -ErrorAction SilentlyContinue
 
 # Skip Authenticode signing (avoids winCodeSign symlink extraction on Windows without Developer Mode).
 $env:CSC_IDENTITY_AUTO_DISCOVERY = "false"

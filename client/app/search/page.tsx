@@ -57,10 +57,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const subtitle = filtersActive
     ? `Refine by year, genre, rating, and sort — results update from TMDB discover`
     : params.type === "tv"
-      ? "Find series from TMDB — use filters to narrow by year, genre, and rating"
+      ? "Find series — use filters to narrow by year, genre, and rating"
       : params.type === "anime"
         ? "Japanese animation — filter by year, genre, and minimum rating"
-        : "Search movies from TMDB — combine text search with filters below";
+        : "Search movies — combine text search with filters below";
 
   const emptyMessage = params.q
     ? `No ${label} found for "${params.q}" with the current filters. Try adjusting filters or another search.`
@@ -68,29 +68,29 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <div className="section-base min-h-full">
-      <div className="mx-auto max-w-[1280px] px-6 py-16">
+      <div className="mx-auto max-w-[1280px] px-4 py-8 sm:px-6 sm:py-16">
         <section className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-sm)]">
-          <div className="search-hero-core relative flex min-h-[280px] flex-col items-center justify-center px-6 py-12 text-center">
+          <div className="search-hero-core relative flex min-h-[200px] flex-col items-center justify-center px-4 py-8 text-center sm:min-h-[280px] sm:px-6 sm:py-12">
             <span aria-hidden className="search-bg-text">
               SEARCH
             </span>
             <p className="relative z-10 mb-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--accent-cool)]">
               Discover
             </p>
-            <h1 className="relative z-10 font-[var(--font-playfair)] text-[32px] font-bold text-[var(--text-primary)]">
+            <h1 className="relative z-10 font-[var(--font-playfair)] text-[26px] font-bold text-[var(--text-primary)] sm:text-[32px]">
               {heading}
             </h1>
-            <div className="relative z-10 mt-6 w-full max-w-3xl">
+            <div className="relative z-10 mt-5 w-full max-w-3xl sm:mt-6">
               <Suspense fallback={null}>
                 <SearchBar defaultValue={params.q} large autoFocus />
               </Suspense>
             </div>
-            <div className="relative z-10 mt-5">
+            <div className="relative z-10 mt-4 sm:mt-5">
               <SearchMediaTabs params={params} />
             </div>
           </div>
 
-          <div className="relative z-10 border-t border-[var(--border)] px-6 py-8 text-center">
+          <div className="relative z-10 border-t border-[var(--border)] px-4 py-5 text-center sm:px-6 sm:py-8">
             <Suspense fallback={null}>
               <SearchFilters params={params} />
             </Suspense>
@@ -99,7 +99,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </section>
       </div>
 
-      <div className="section-alt border-t border-[var(--border)] px-6 pb-16 pt-10">
+      <div className="section-alt border-t border-[var(--border)] px-4 pb-10 pt-8 sm:px-6 sm:pb-16 sm:pt-10">
         <div className="mx-auto max-w-[1280px]">
           <SearchResults
             query={params.q}

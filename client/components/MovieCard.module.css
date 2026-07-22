@@ -63,6 +63,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center center;
   transition: transform 0.3s ease;
 }
 
@@ -183,4 +184,71 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Touch devices — always show subtle affordances (desktop hover unchanged) */
+@media (hover: none) {
+  .posterOverlay {
+    opacity: 0.55;
+    background: linear-gradient(to top, rgba(28, 25, 23, 0.55) 0%, transparent 48%);
+  }
+
+  .watchBtn {
+    opacity: 1;
+    padding: 7px 14px;
+    background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  }
+
+  .watchBtn:active {
+    background: var(--accent-primary);
+    color: var(--text-inverse);
+  }
+}
+
+@media (max-width: 639px) {
+  .poster {
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(62, 39, 35, 0.08);
+  }
+
+  .posterImage {
+    object-fit: cover !important;
+    object-position: center center;
+  }
+
+  .rank {
+    font-size: 40px;
+    bottom: -4px;
+    color: color-mix(in srgb, var(--text-primary) 10%, transparent);
+  }
+
+  .bodyRanked {
+    padding-left: 0.75rem;
+  }
+
+  .title {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .seriesBadge {
+    font-size: 8px;
+    padding: 2px 6px;
+  }
+
+  .statsRow {
+    font-size: 10px;
+    margin-top: 3px;
+  }
+
+  .meta {
+    margin-top: 7px;
+  }
+
+  .watchBtn {
+    padding: 6px 12px;
+    font-size: 10px;
+  }
 }

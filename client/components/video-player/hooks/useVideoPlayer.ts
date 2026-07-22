@@ -12,6 +12,7 @@ import {
 } from "@/lib/embed-events";
 import { installAdPopupBlocker } from "@/lib/block-ad-nav";
 import { exitAnyFullscreen, getActiveFullscreenElement, requestElementFullscreen } from "@/lib/fullscreen";
+import { syncPlayerViewportVars } from "./usePlayerViewport";
 import {
   getEpisodeSummary,
   getNextEpisodeTarget,
@@ -186,6 +187,7 @@ export function useVideoPlayer({
     if (getActiveFullscreenElement() || isFauxFullscreen) return;
 
     const enterFaux = () => {
+      syncPlayerViewportVars();
       setIsFauxFullscreen(true);
       setIsFullscreen(true);
       focusPlayer();
@@ -235,7 +237,11 @@ export function useVideoPlayer({
   }, [rawEmbedUrl]);
 
   const handleIframeLoadComplete = useCallback(() => {
-    setShowKeyboardHint(true);
+    // Keyboard shortcuts tip is desktop-only — hide on touch phones.
+    const touchLike =
+      typeof window !== "undefined" &&
+      (window.matchMedia("(hover: none)").matches || window.matchMedia("(pointer: coarse)").matches);
+    setShowKeyboardHint(!touchLike);
   }, []);
 
   useEffect(() => {
@@ -420,6 +426,40 @@ export function useVideoPlayer({
       setIsFauxFullscreen(false);
     };
   }, [exitFauxFullscreen, isFauxFullscreen, onClose, toggleFullscreen]);
+
+  // Keep faux-fullscreen glued to the visual viewport when the phone rotates.
+  useEffect(() => {
+    if (!isFauxFullscreen) return;
+
+    const sync = () => {
+      const vv = window.visualViewport;
+      const height = Math.round(vv?.height ?? window.innerHeight);
+      const width = Math.round(vv?.width ?? window.innerWidth);
+      const top = Math.round(vv?.offsetTop ?? 0);
+      const left = Math.round(vv?.offsetLeft ?? 0);
+      document.documentElement.style.setProperty("--player-vvh", `${height}px`);
+      document.documentElement.style.setProperty("--player-vvw", `${width}px`);
+      document.documentElement.style.setProperty("--player-vv-top", `${top}px`);
+      document.documentElement.style.setProperty("--player-vv-left", `${left}px`);
+      // Nudge layout after iOS orientation settle.
+      stageRef.current?.getBoundingClientRect();
+    };
+
+    sync();
+    const timer = window.setTimeout(sync, 350);
+    window.addEventListener("resize", sync);
+    window.addEventListener("orientationchange", sync);
+    window.visualViewport?.addEventListener("resize", sync);
+    window.visualViewport?.addEventListener("scroll", sync);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("resize", sync);
+      window.removeEventListener("orientationchange", sync);
+      window.visualViewport?.removeEventListener("resize", sync);
+      window.visualViewport?.removeEventListener("scroll", sync);
+    };
+  }, [isFauxFullscreen]);
 
   return {
     isTrailer,

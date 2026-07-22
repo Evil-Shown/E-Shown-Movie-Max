@@ -23,6 +23,8 @@ interface PlayerTvSelectorProps {
   season: number;
   episode: number;
   disabled?: boolean;
+  /** Force collapsed episode drawer (e.g. mobile landscape immersive). */
+  forceCollapsed?: boolean;
   onChange: (season: number, episode: number) => void;
   onSwitchProvider?: () => void;
 }
@@ -32,6 +34,7 @@ export default function PlayerTvSelector({
   season,
   episode,
   disabled = false,
+  forceCollapsed = false,
   onChange,
   onSwitchProvider,
 }: PlayerTvSelectorProps) {
@@ -41,7 +44,11 @@ export default function PlayerTvSelector({
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
   const activeEpisodeRef = useRef<HTMLButtonElement>(null);
   const [mobileExpanded, setMobileExpanded] = useState(false);
-  const mobileCollapsed = !mobileExpanded;
+  const mobileCollapsed = forceCollapsed || !mobileExpanded;
+
+  useEffect(() => {
+    if (forceCollapsed) setMobileExpanded(false);
+  }, [forceCollapsed]);
 
   const handleEpisodeChange = useCallback(
     (ep: number) => {
@@ -128,8 +135,8 @@ export default function PlayerTvSelector({
 
   return (
     <aside
-      className={`flex min-h-0 w-full flex-col rounded-none border-t border-[rgba(201,106,43,0.2)] bg-[linear-gradient(180deg,#fffdf9,#f6efe4)] transition-[height,max-height] duration-300 lg:h-full lg:max-h-none lg:w-[380px] lg:shrink-0 lg:border-t-0 lg:border-l xl:w-[420px] ${
-        mobileCollapsed ? "h-auto max-h-none shrink-0" : "h-full max-h-[min(60dvh,520px)] lg:max-h-none"
+      className={`player-tv-aside flex min-h-0 w-full flex-col rounded-none border-t border-[rgba(201,106,43,0.2)] bg-[linear-gradient(180deg,#fffdf9,#f6efe4)] transition-[height,max-height] duration-300 max-lg:landscape:hidden lg:h-full lg:max-h-none lg:w-[380px] lg:shrink-0 lg:border-t-0 lg:border-l xl:w-[420px] ${
+        mobileCollapsed ? "h-auto max-h-none shrink-0" : "h-full max-h-[min(52dvh,420px)] lg:max-h-none"
       }`}
     >
       <div className="flex shrink-0 items-center justify-between border-b border-[rgba(201,106,43,0.12)] px-3 py-2 lg:block lg:py-3">
