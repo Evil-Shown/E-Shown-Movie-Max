@@ -37,6 +37,11 @@ yarn-error.log*
 # Playwright
 /test-results/
 /playwright-report/
+/blob-report/
+/.playwright/
+/screenshots/
+/videos/
+/traces/
 
 # vercel
 .vercel
