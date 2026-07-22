@@ -137,8 +137,8 @@ export async function getSubscriptionStatus(userId: string) {
 
   const now = new Date();
   const trialDaysLeft = user.trialStartDate
-    ? Math.max(0, 7 - Math.floor((now.getTime() - user.trialStartDate.getTime()) / 86400000))
-    : 7;
+    ? Math.max(0, 60 - Math.floor((now.getTime() - user.trialStartDate.getTime()) / 86400000))
+    : 60;
 
   const isExpired = user.subscriptionExpiry ? user.subscriptionExpiry < now : false;
   const effectiveTier = isExpired ? "FREE" : user.subscriptionTier;
@@ -154,7 +154,7 @@ export async function getSubscriptionStatus(userId: string) {
 
 export async function setTrialStartDate(userId: string) {
   const now = new Date();
-  const expiryDate = new Date(now.getTime() + 7 * 86400000);
+  const expiryDate = new Date(now.getTime() + 60 * 86400000);
 
   await prisma.user.update({
     where: { id: userId },

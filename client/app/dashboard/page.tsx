@@ -253,12 +253,12 @@ function StatCard({
       </div>
 
       {/* Content */}
-      <div className="p-4 pb-5 flex-1 flex flex-col justify-center">
-        <p className="font-cinzel text-2xl sm:text-3xl font-bold text-[#3e2723] dark:text-[var(--text-primary)] leading-tight">
+      <div className="p-3 sm:p-4 pb-4 sm:pb-5 flex-1 flex flex-col justify-center">
+        <p className="font-cinzel text-xl sm:text-2xl md:text-3xl font-bold text-[#3e2723] dark:text-[var(--text-primary)] leading-tight">
           {value}
-          {valueUnit && <span className="text-sm sm:text-base text-[#a0785a] dark:text-[var(--text-muted)] font-normal ml-1">{valueUnit}</span>}
+          {valueUnit && <span className="text-[10px] sm:text-sm md:text-base text-[#a0785a] dark:text-[var(--text-muted)] font-normal ml-0.5 sm:ml-1">{valueUnit}</span>}
         </p>
-        <p className="text-xs sm:text-sm text-[#6b4423] dark:text-[var(--text-secondary)] mt-1.5 font-medium">{label}</p>
+        <p className="text-[10px] sm:text-xs md:text-sm text-[#6b4423] dark:text-[var(--text-secondary)] mt-1 sm:mt-1.5 font-medium leading-snug">{label}</p>
 
         {/* Glowing Progress Line */}
         {progress !== undefined && progress > 0 && (
@@ -290,10 +290,10 @@ function ResumeCard({ item }: { item: ContinueWatchingItem }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         <div className={`absolute top-3 left-3 ${styles.resumeGenreTag}`}>{genreLabel}</div>
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+        <div className={`absolute inset-0 bg-black/40 transition flex items-center justify-center ${styles.resumePlayOverlay}`}>
           <button
             type="button"
-            className={`${styles.playBtn} w-14 h-14 rounded-full flex items-center justify-center text-white`}
+            className={`${styles.playBtn} w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-white`}
           >
             <svg className="w-6 h-6 ml-1" viewBox="0 0 24 24" fill="currentColor">
               <path d="M8 5v14l11-7z" />
@@ -751,6 +751,78 @@ export default function DashboardPage() {
               <span>Logout</span>
             </button>
 
+            {showLogoutConfirm && (
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+                style={{ background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(4px)" }}
+                onClick={() => setShowLogoutConfirm(false)}
+              >
+                <div
+                  className="relative w-full max-w-md rounded-2xl p-6 text-center"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(255, 250, 240, 0.98) 0%, rgba(255, 245, 230, 0.98) 100%)",
+                    backdropFilter: "blur(20px)",
+                    WebkitBackdropFilter: "blur(20px)",
+                    border: "1px solid rgba(212, 165, 116, 0.4)",
+                    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+                    style={{ background: "rgba(230, 81, 0, 0.15)" }}
+                  >
+                    <svg
+                      className="w-8 h-8"
+                      style={{ color: "#e65100" }}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2" style={{ color: "#3d2a10" }}>
+                    Logout
+                  </h3>
+                  <p className="mb-6 text-base leading-relaxed" style={{ color: "#6b4a1e" }}>
+                    Are you sure you want to logout of your account? You&apos;ll need to sign in again to continue
+                    watching.
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={() => setShowLogoutConfirm(false)}
+                      className="px-6 py-2.5 rounded-xl font-medium text-sm transition-all"
+                      style={{
+                        background: "rgba(255, 255, 255, 0.8)",
+                        color: "#6b4a1e",
+                        border: "1px solid rgba(212, 165, 116, 0.3)",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await logout();
+                        window.location.href = "/";
+                      }}
+                      className="px-6 py-2.5 rounded-xl font-medium text-sm transition-all"
+                      style={{
+                        background: "linear-gradient(135deg, #e65100 0%, #cc4d00 100%)",
+                        color: "#fffbf5",
+                        border: "none",
+                        boxShadow: "0 4px 16px rgba(230, 81, 0, 0.4)",
+                      }}
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </nav>
 
           <div className="p-4 border-t border-[#d4a574]/15">
@@ -805,188 +877,217 @@ export default function DashboardPage() {
           </div>
         </aside>
 
-        {showLogoutConfirm && (
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-            style={{ background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(4px)" }}
-            onClick={() => setShowLogoutConfirm(false)}
-          >
-            <div
-              className="relative w-full max-w-md rounded-2xl p-6 text-center"
-              style={{
-                background: "linear-gradient(135deg, rgba(255, 250, 240, 0.98) 0%, rgba(255, 245, 230, 0.98) 100%)",
-                backdropFilter: "blur(20px)",
-                WebkitBackdropFilter: "blur(20px)",
-                border: "1px solid rgba(212, 165, 116, 0.4)",
-                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
-              }}
-              onClick={(e) => e.stopPropagation()}
+        {/* Mobile Header */}
+        <div className={`lg:hidden fixed top-0 left-0 right-0 z-50 ${styles.mobileTopbar}`}>
+          <div className={styles.mobileTopbarInner}>
+            <button
+              type="button"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+              className={styles.mobileIconBtn}
+              onClick={() => setMobileMenuOpen((o) => !o)}
             >
-              <div
-                className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(230, 81, 0, 0.15)" }}
-              >
-                <svg
-                  className="w-8 h-8"
-                  style={{ color: "#e65100" }}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                {mobileMenuOpen ? <path d="M6 18L18 6M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
+              </svg>
+            </button>
+
+            <div className={styles.mobileBrand}>
+              <span className={styles.mobileBrandEyebrow}>Chithra</span>
+              <span className={styles.mobileBrandTitle}>Dashboard</span>
+            </div>
+
+            <div className={styles.mobileTopbarActions}>
+              <Link href="/search" aria-label="Search" className={styles.mobileIconBtn}>
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
                 </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-2" style={{ color: "#3d2a10" }}>
-                Logout
-              </h3>
-              <p className="mb-6 text-base leading-relaxed" style={{ color: "#6b4a1e" }}>
-                Are you sure you want to logout of your account? You&apos;ll need to sign in again to continue
-                watching.
-              </p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => setShowLogoutConfirm(false)}
-                  className="px-6 py-2.5 rounded-xl font-medium text-sm transition-all"
-                  style={{
-                    background: "rgba(255, 255, 255, 0.8)",
-                    color: "#6b4a1e",
-                    border: "1px solid rgba(212, 165, 116, 0.3)",
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => {
-                    await logout();
-                    window.location.href = "/";
-                  }}
-                  className="px-6 py-2.5 rounded-xl font-medium text-sm transition-all"
-                  style={{
-                    background: "linear-gradient(135deg, #e65100 0%, #cc4d00 100%)",
-                    color: "#fffbf5",
-                    border: "none",
-                    boxShadow: "0 4px 16px rgba(230, 81, 0, 0.4)",
-                  }}
-                >
-                  Logout
-                </button>
-              </div>
+              </Link>
+              <button
+                type="button"
+                aria-label="Notifications"
+                className={`${styles.mobileIconBtn} relative`}
+                onClick={() => setShowNotifications((o) => !o)}
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                {unread > 0 && (
+                  <span className={styles.mobileNotifDot}>{unread > 9 ? "9+" : unread}</span>
+                )}
+              </button>
+              <button
+                type="button"
+                aria-label="Profile"
+                className={styles.mobileAvatarBtn}
+                onClick={() => setShowProfileSelector(true)}
+              >
+                {profileIcon ? (
+                  <img src={`/avatars/${profileIcon}`} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span>{getInitials(userName)}</span>
+                )}
+              </button>
             </div>
           </div>
-        )}
 
-        {/* Mobile Header */}
-        <div
-          className={`lg:hidden fixed top-0 left-0 right-0 z-50 ${styles.topbar} px-4 py-3 flex items-center justify-between`}
-        >
-          <div className="flex items-center gap-3">
-            <span className="font-cinzel text-lg font-bold text-chocolate">Dashboard</span>
-          </div>
-          <button
-            type="button"
-            aria-label="Toggle menu"
-            className="p-2 rounded-lg hover:bg-light-orange-faint transition"
-            onClick={() => setMobileMenuOpen((o) => !o)}
-          >
-            <svg
-              className="w-6 h-6 text-chocolate"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              {mobileMenuOpen ? <path d="M6 18L18 6M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
-            </svg>
-          </button>
+          {/* Mobile notifications dropdown */}
+          {showNotifications && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+              <div className={styles.mobileNotifPanel}>
+                <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(212,165,116,0.2)]">
+                  <h4 className="text-sm font-bold text-chocolate">Notifications</h4>
+                  {unread > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        markAllNotificationsRead();
+                        setNotificationsState(getNotifications());
+                      }}
+                      className="text-[10px] font-semibold text-deep-orange"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-72 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <p className="p-6 text-center text-xs text-brown">No notifications yet</p>
+                  ) : (
+                    notifications.slice(0, 6).map((n) => (
+                      <button
+                        type="button"
+                        key={n.id}
+                        onClick={() => handleNotificationClick(n.id)}
+                        className={`flex w-full items-start gap-3 px-4 py-3 text-left ${n.read ? "" : "bg-light-orange-faint/40"}`}
+                      >
+                        <div className="mt-0.5 h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-tan/20">
+                          {n.posterPath ? (
+                            <img src={posterUrl(n.posterPath, "w342")} alt="" className="h-full w-full object-cover" />
+                          ) : null}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-semibold text-chocolate">{n.title}</p>
+                          <p className="mt-0.5 line-clamp-2 text-[10px] text-brown">{n.message}</p>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+                <Link
+                  href="/notifications"
+                  onClick={() => setShowNotifications(false)}
+                  className="block border-t border-[rgba(212,165,116,0.2)] px-4 py-2.5 text-center text-xs font-semibold text-deep-orange"
+                >
+                  View all →
+                </Link>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Mobile Menu Overlay */}
+        {/* Mobile Menu — slide-in drawer */}
         {mobileMenuOpen && (
           <>
             <div
-              className="lg:hidden fixed inset-0 z-40 bg-black/50"
+              className={`lg:hidden ${styles.mobileDrawerBackdrop}`}
               onClick={() => setMobileMenuOpen(false)}
             />
-            <div className="lg:hidden fixed inset-0 z-50 bg-faint-white pt-20 px-6 pb-6 overflow-y-auto">
-              <div className="space-y-6">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold mb-2">Browse</p>
-                  <div className="space-y-1">
-                    {browseNav.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium min-h-[44px] ${
-                          isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
-                        }`}
-                      >
-                        <NavIcon name={link.icon} />
-                        {link.label}
-                      </Link>
-                    ))}
+            <aside className={`lg:hidden ${styles.mobileDrawer}`} aria-label="Dashboard menu">
+              <div className={styles.mobileDrawerProfile}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setShowProfileSelector(true);
+                  }}
+                  className={styles.mobileDrawerProfileBtn}
+                >
+                  {profileIcon ? (
+                    <img src={`/avatars/${profileIcon}`} alt="" className={styles.mobileDrawerAvatar} />
+                  ) : (
+                    <div className={styles.mobileDrawerAvatarFallback}>{getInitials(userName)}</div>
+                  )}
+                  <div className="min-w-0 flex-1 text-left">
+                    <p className="truncate text-sm font-semibold text-[#fffbf5]">{userName}</p>
+                    <div className="mt-0.5">
+                      {isPro ? (
+                        <ProBadge />
+                      ) : isTrial ? (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#D4A574]">
+                          {trialDaysLeft}d Trial
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#a0785a]">Free</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold mb-2">Library</p>
-                  <div className="space-y-1">
-                    {libraryNav.map((link) => (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium min-h-[44px] ${
-                          isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
-                        }`}
-                      >
-                        <NavIcon name={link.icon} />
-                        {link.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-sandy font-semibold mb-2">Account</p>
-                  <div className="space-y-1">
-                    {accountNav.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium min-h-[44px] ${
-                          isActive(link.href) ? "bg-chocolate text-faint-white" : "text-brown hover:bg-light-orange-faint"
-                        }`}
-                      >
-                        <NavIcon name={link.icon} />
-                        {link.label}
-                      </Link>
-                    ))}
-                    <button
-                      type="button"
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium min-h-[44px] text-brown hover:bg-light-orange-faint w-full text-left border-none cursor-pointer bg-transparent"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        setShowLogoutConfirm(true);
-                      }}
-                    >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                      </svg>
-                      Logout
-                    </button>
-                  </div>
-                </div>
+                </button>
               </div>
-            </div>
+
+              <nav className={styles.mobileDrawerNav}>
+                <p className={styles.mobileDrawerLabel}>Browse</p>
+                {browseNav.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`${styles.mobileDrawerLink} ${isActive(link.href) ? styles.mobileDrawerLinkActive : ""}`}
+                  >
+                    <NavIcon name={link.icon} />
+                    {link.label}
+                  </Link>
+                ))}
+
+                <p className={`${styles.mobileDrawerLabel} ${styles.mobileDrawerLabelSpaced}`}>Library</p>
+                {libraryNav.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`${styles.mobileDrawerLink} ${isActive(link.href) ? styles.mobileDrawerLinkActive : ""}`}
+                  >
+                    <NavIcon name={link.icon} />
+                    {link.label}
+                  </Link>
+                ))}
+
+                <p className={`${styles.mobileDrawerLabel} ${styles.mobileDrawerLabelSpaced}`}>Account</p>
+                {accountNav.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`${styles.mobileDrawerLink} ${isActive(link.href) ? styles.mobileDrawerLinkActive : ""}`}
+                  >
+                    <NavIcon name={link.icon} />
+                    {link.label}
+                  </Link>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setShowLogoutConfirm(true);
+                  }}
+                  className={styles.mobileDrawerLink}
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  Logout
+                </button>
+              </nav>
+            </aside>
           </>
         )}
 
-        <main className="flex-1 lg:ml-64 min-h-screen pt-[60px] lg:pt-0 overflow-x-hidden max-w-full min-w-0">
+        <main className={`flex-1 lg:ml-64 min-h-screen overflow-x-hidden max-w-full min-w-0 ${styles.mobileMain}`}>
           {/* Desktop Topbar */}
           <header
             className={`${styles.topbar} sticky top-0 z-30 hidden lg:flex items-center justify-between px-8 py-4`}
@@ -1146,9 +1247,9 @@ export default function DashboardPage() {
             </div>
           </header>
 
-          <div className="px-4 py-6 md:px-8 md:py-8 max-w-7xl mx-auto min-w-0">
+          <div className={`px-4 py-6 md:px-8 md:py-8 max-w-7xl mx-auto min-w-0 ${styles.mobileContent}`}>
             {/* Appearance */}
-            <section className={`mb-6 ${styles.fadeUp}`}>
+            <section className={`mb-6 ${styles.fadeUp} ${styles.mobileHideAppearance}`}>
               <div className={`${styles.cardGlass} rounded-2xl border border-[#d4a574]/30 p-4 sm:p-5`}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div>
@@ -1165,6 +1266,12 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+            </section>
+
+            {/* Compact theme strip — mobile only */}
+            <section className={`${styles.mobileThemeStrip} ${styles.fadeUp}`}>
+              <p className={styles.mobileThemeLabel}>Theme</p>
+              <ThemeSelect />
             </section>
 
             {/* Cinematic Hero Section */}
@@ -1239,7 +1346,7 @@ export default function DashboardPage() {
             </section>
 
             {/* Dashboard Stats */}
-            <section className={`grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4 md:gap-5 mb-10 md:mb-12 ${styles.fadeUp} ${styles.delay1}`}>
+            <section className={`grid grid-cols-3 gap-2 sm:gap-4 md:gap-5 mb-8 md:mb-12 ${styles.fadeUp} ${styles.delay1} ${styles.mobileStats}`}>
               <StatCard
                 icon={
                   <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1333,7 +1440,7 @@ export default function DashboardPage() {
               {resumeItems.length > 0 ? (
                 <>
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-                    <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-[#3e2723]`}>
+                    <h2 className={`${styles.sectionHeading} font-cinzel text-xl md:text-2xl font-bold text-[#3e2723]`}>
                       RESUME WATCHING
                     </h2>
                     <Link
@@ -1392,7 +1499,7 @@ export default function DashboardPage() {
             <section className={`mb-8 md:mb-12 ${styles.fadeUp} ${styles.delay3}`}>
               <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                 <div>
-                  <h2 className={`${styles.sectionHeading} font-cinzel text-2xl font-bold text-chocolate`}>
+                  <h2 className={`${styles.sectionHeading} font-cinzel text-xl md:text-2xl font-bold text-chocolate`}>
                     The Archive
                   </h2>
                   <p className="text-xs text-sandy mt-1 ml-4">
@@ -1482,10 +1589,10 @@ export default function DashboardPage() {
                 <div className={styles.activityCardAccent} />
 
                 {/* Card content */}
-                <div className="p-6 md:p-8">
+                <div className="p-4 sm:p-6 md:p-8">
                   {/* Header */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-                    <h3 className="font-cinzel text-lg font-bold text-[#3e2723] tracking-[0.5px]">RECENT ACTIVITY</h3>
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4 md:mb-6">
+                    <h3 className="font-cinzel text-base md:text-lg font-bold text-[#3e2723] tracking-[0.5px]">RECENT ACTIVITY</h3>
                     <div className="flex overflow-x-auto whitespace-nowrap items-center gap-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                       {(["all", "watching", "watchlist", "completed"] as const).map((f) => (
                         <button

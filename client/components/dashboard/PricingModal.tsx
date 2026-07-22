@@ -1,191 +1,208 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
+import styles from "./PricingModal.module.css";
 
-const freeFeatures = ["60-Day Trial Access Only", "1 Device at a time", "Ad-supported"];
+const freeFeatures = ["60-day trial access", "1 device at a time", "Ad-supported streaming"];
 
-const freeRestrictions = ["No Offline Downloads", "No Live TV Access", "No The God's Eye (Torrents)"];
+const freeLocks = ["Offline downloads", "Live TV", "The God's Eye"];
 
 const proFeatures = [
-  "Unlimited Full Streaming",
-  "4 Devices simultaneously",
-  "Completely Ad-free",
-  "Offline Downloads",
-  "Full Live TV Access",
-  "The God's Eye (Torrent Stream/Download)",
-  "Early Access to Features & Content",
+  "Unlimited full streaming",
+  "4 devices at once",
+  "Completely ad-free",
+  "Offline downloads",
+  "Full Live TV access",
+  "The God's Eye",
+  "Early access to new features",
 ];
 
 export default function PricingModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [region, setRegion] = useState<"LKR" | "USD">("LKR");
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+  const titleId = useId();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   const isMonthly = billing === "monthly";
-  const price = isMonthly
-    ? region === "LKR" ? "LKR 200" : "$0.99"
-    : region === "LKR" ? "LKR 2,000" : "$9.90";
-  const originalPrice = isMonthly
-    ? region === "LKR" ? "LKR 500" : "$2.49"
-    : region === "LKR" ? "LKR 2,400" : "$11.88";
-  const perDay = isMonthly
-    ? region === "LKR" ? "LKR 6.67" : "$0.03"
-    : region === "LKR" ? "LKR 5.48" : "$0.03";
+  const price =
+    region === "LKR"
+      ? isMonthly
+        ? "LKR 200"
+        : "LKR 2,000"
+      : isMonthly
+        ? "$0.99"
+        : "$9.90";
+  const originalPrice =
+    region === "LKR"
+      ? isMonthly
+        ? "LKR 500"
+        : "LKR 2,400"
+      : isMonthly
+        ? "$2.49"
+        : "$11.88";
+  const perDay =
+    region === "LKR"
+      ? isMonthly
+        ? "LKR 6.67"
+        : "LKR 5.48"
+      : isMonthly
+        ? "$0.03"
+        : "$0.03";
   const savings = isMonthly ? "60%" : "17%";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="relative w-full max-w-4xl bg-[#FFFBF5] rounded-2xl overflow-hidden shadow-2xl dark:bg-[var(--bg-card)]">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FFFBF5]/10 backdrop-blur-sm border border-[#FFFBF5]/20 flex items-center justify-center hover:bg-[#FFFBF5]/20 hover:scale-110 transition-all z-10"
-        >
-          <svg
-            className="w-4 h-4 text-[#FFFBF5]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-          >
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
+    <div className={styles.overlay} onClick={onClose} role="presentation">
+      <div
+        className={styles.dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className={styles.header}>
+          <div>
+            <p className={styles.eyebrow}>Chithira Cinema</p>
+            <h2 id={titleId} className={styles.headerTitle}>
+              Choose your plan
+            </h2>
+          </div>
+          <button type="button" className={styles.close} onClick={onClose} aria-label="Close pricing">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+            </svg>
+          </button>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2">
-          {/* Free Plan */}
-          <div className="p-8 border-r border-[#3E2723]/10 flex flex-col bg-[#FFFBF5]/50 dark:border-[var(--border)] dark:bg-[var(--bg-secondary)]/50">
-            <h3 className="text-xl font-bold text-[#3E2723] dark:text-[var(--text-primary)] mb-1">Free</h3>
-            <p className="text-[#3E2723]/60 dark:text-[var(--text-primary)]/60 text-sm mb-6">Basic trial experience</p>
+        <div className={styles.controls}>
+          <div className={styles.segment} role="group" aria-label="Currency">
+            <button
+              type="button"
+              className={`${styles.segmentBtn} ${region === "LKR" ? styles.segmentBtnActive : ""}`}
+              onClick={() => setRegion("LKR")}
+              aria-pressed={region === "LKR"}
+            >
+              Sri Lanka
+            </button>
+            <button
+              type="button"
+              className={`${styles.segmentBtn} ${region === "USD" ? styles.segmentBtnActive : ""}`}
+              onClick={() => setRegion("USD")}
+              aria-pressed={region === "USD"}
+            >
+              Global
+            </button>
+          </div>
+          <div className={styles.segment} role="group" aria-label="Billing period">
+            <button
+              type="button"
+              className={`${styles.segmentBtn} ${isMonthly ? styles.segmentBtnActive : ""}`}
+              onClick={() => setBilling("monthly")}
+              aria-pressed={isMonthly}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              className={`${styles.segmentBtn} ${!isMonthly ? styles.segmentBtnActive : ""}`}
+              onClick={() => setBilling("yearly")}
+              aria-pressed={!isMonthly}
+            >
+              Yearly
+            </button>
+          </div>
+        </div>
 
-            <div className="mb-6">
-              <span className="text-4xl font-bold text-[#3E2723] dark:text-[var(--text-primary)]">LKR 0</span>
-              <span className="text-[#3E2723]/60">/month</span>
+        <div className={styles.plans}>
+          <article className={`${styles.plan} ${styles.planFree}`}>
+            <div className={styles.planTop}>
+              <h3 className={styles.planName}>Free</h3>
+              <p className={styles.planTag}>Trial experience</p>
             </div>
-
-            <ul className="space-y-3 mb-4">
+            <p className={styles.planPrice}>
+              {region === "LKR" ? "LKR 0" : "$0"}
+              <span>/{isMonthly ? "mo" : "yr"}</span>
+            </p>
+            <ul className={styles.list}>
               {freeFeatures.map((feat) => (
-                <li key={feat} className="flex items-center gap-3 text-[#3E2723]/80 dark:text-[var(--text-primary)]/80 text-sm">
-                  <svg
-                    className="w-4 h-4 text-[#3E2723]/40 dark:text-[var(--text-primary)]/40 flex-shrink-0"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
+                <li key={feat}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+                    <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   {feat}
                 </li>
               ))}
             </ul>
-
-            <div className="mt-auto pt-4 border-t border-[#3E2723]/10 dark:border-[var(--border)] space-y-2">
-              {freeRestrictions.map((res) => (
-                <div key={res} className="flex items-center gap-2 text-[#3E2723]/50 dark:text-[var(--text-primary)]/50 text-xs">
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0110 0v4" />
+            <ul className={styles.locks}>
+              {freeLocks.map((lock) => (
+                <li key={lock}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" />
                   </svg>
-                  <span className="line-through">{res}</span>
-                </div>
+                  {lock}
+                </li>
               ))}
-            </div>
-
-            <button className="w-full mt-6 py-3 border border-[#3E2723]/20 text-[#3E2723]/60 dark:border-[var(--border-strong)] dark:text-[var(--text-primary)]/60 font-semibold rounded-lg cursor-default">
-              Current Plan
+            </ul>
+            <button type="button" className={styles.ghostBtn} disabled>
+              Current plan
             </button>
-          </div>
+          </article>
 
-          {/* Pro Plan */}
-          <div className="p-8 bg-gradient-to-br from-[#3E2723] to-[#4E342E] flex flex-col relative">
-            <div className="absolute top-0 right-0 bg-gradient-to-bl from-[#FFB87A] to-[#D4A574] text-[#3E2723] text-xs font-bold px-4 py-1 rounded-bl-xl flex items-center gap-1">
-              <svg className="w-3 h-3 fill-[#3E2723]" viewBox="0 0 24 24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-              RECOMMENDED
+          <article className={`${styles.plan} ${styles.planPro}`}>
+            <div className={styles.proGlow} aria-hidden />
+            <div className={styles.planTop}>
+              <span className={styles.recommended}>Recommended</span>
+              <h3 className={styles.planNamePro}>Chithira Pro</h3>
+              <p className={styles.planTagPro}>Full cinematic access</p>
             </div>
 
-            <h3 className="text-xl font-bold text-[#FFB87A] mb-1 mt-4 md:mt-0">Chithira Pro</h3>
-            <p className="text-[#FFFBF5]/60 text-sm mb-6">The ultimate cinematic experience</p>
-
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-lg text-[#FFFBF5]/40 line-through decoration-2">
-                  {originalPrice}
-                </span>
-                <span className="text-4xl font-extrabold text-[#FFB87A]">{price}</span>
-                <span className="text-[#FFFBF5]/40 text-sm self-end mb-1">
-                  {isMonthly ? "/mo" : "/yr"}
+            <div className={styles.proPriceBlock}>
+              <span className={styles.save}>Save {savings}</span>
+              <div className={styles.proPriceRow}>
+                <span className={styles.was}>{originalPrice}</span>
+                <span className={styles.proPrice}>
+                  {price}
+                  <span>/{isMonthly ? "mo" : "yr"}</span>
                 </span>
               </div>
-              <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-red-500/15 border border-red-400/30">
-                <span className="text-red-300 text-xs font-bold">Save {savings}</span>
-              </div>
-              <div className="text-[#FFFBF5]/40 text-xs mt-3">
-                Only {perDay} per day &bull; Cancel anytime
-              </div>
+              <p className={styles.perDay}>
+                {perDay} / day · Cancel anytime
+              </p>
             </div>
 
-            <div className="flex gap-2 mt-4 mb-6">
-              <button
-                onClick={() => { setBilling("monthly"); }}
-                className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                  isMonthly ? "bg-[#FFB87A] text-[#3E2723]" : "bg-[#FFFBF5]/10 text-[#FFFBF5]/60"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => { setBilling("yearly"); }}
-                className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                  !isMonthly ? "bg-[#FFB87A] text-[#3E2723]" : "bg-[#FFFBF5]/10 text-[#FFFBF5]/60"
-                }`}
-              >
-                Yearly
-              </button>
-            </div>
-
-            <div className="flex gap-2 mt-4 mb-6">
-              <button
-                onClick={() => setRegion("LKR")}
-                className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                  region === "LKR" ? "bg-[#FFB87A] text-[#3E2723]" : "bg-[#FFFBF5]/10 text-[#FFFBF5]/60"
-                }`}
-              >
-                Sri Lanka
-              </button>
-              <button
-                onClick={() => setRegion("USD")}
-                className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                  region === "USD" ? "bg-[#FFB87A] text-[#3E2723]" : "bg-[#FFFBF5]/10 text-[#FFFBF5]/60"
-                }`}
-              >
-                Global
-              </button>
-            </div>
-
-            <ul className="space-y-3 mb-8 flex-1">
+            <ul className={styles.listPro}>
               {proFeatures.map((feat) => (
-                <li key={feat} className="flex items-center gap-3 text-[#FFFBF5]/90 text-sm">
-                  <svg
-                    className="w-4 h-4 text-[#FFB87A] flex-shrink-0"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
+                <li key={feat}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+                    <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   {feat}
                 </li>
               ))}
             </ul>
 
-            <button className="w-full py-3 bg-gradient-to-r from-[#FFB87A] to-[#D4A574] text-[#3E2723] font-bold rounded-lg hover:shadow-[0_0_20px_rgba(255,184,122,0.3)] transition-all">
+            <button type="button" className={styles.cta}>
               Upgrade to Pro
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
-          </div>
+          </article>
         </div>
       </div>
     </div>

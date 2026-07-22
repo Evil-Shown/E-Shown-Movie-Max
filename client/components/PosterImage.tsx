@@ -50,10 +50,10 @@ export default function PosterImage({
       height={height}
       priority={priority}
       sizes={sizes}
-      className={className}
+      className={className.includes("object-") ? className : `${className} object-cover`.trim()}
       onError={() => setFailed(true)}
       onLoad={onLoad}
-      style={{ width: "100%", height: "100%" }}
+      style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center" }}
     />
   );
 }

@@ -19,7 +19,7 @@ export default async function HomeHero({
       <HeroCarousel movies={heroMovies} />
       <ContinueWatchingRow />
       <PickedForYouRow />
-      <HomeSection className="section-base py-12">
+      <HomeSection className="section-base py-6 sm:py-12">
         <MovieRow
           embedded
           eyebrow="🔥 Trending"

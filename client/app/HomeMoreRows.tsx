@@ -16,7 +16,7 @@ export default async function HomeMoreRows({
 
   return (
     <>
-      <HomeSection className="section-alt py-12">
+      <HomeSection className="section-alt py-6 sm:py-12">
         <MovieRow
           embedded
           eyebrow="Popular Now"
@@ -26,7 +26,7 @@ export default async function HomeMoreRows({
         />
       </HomeSection>
 
-      <HomeSection className="section-alt py-12">
+      <HomeSection className="section-alt py-6 sm:py-12">
         <MovieRow
           embedded
           eyebrow="In Theaters"
@@ -37,7 +37,7 @@ export default async function HomeMoreRows({
       </HomeSection>
 
       {popularTv.length > 0 && (
-        <HomeSection className="section-surface py-12">
+        <HomeSection className="section-surface py-6 sm:py-12">
           <MovieRow
             embedded
             eyebrow="Series"
@@ -49,7 +49,7 @@ export default async function HomeMoreRows({
       )}
 
       {/* {sinhalaCinema.length > 0 && (
-        <HomeSection className="section-alt py-12">
+        <HomeSection className="section-alt py-6 sm:py-12">
           <MovieRow
             embedded
             eyebrow="Hela Cinema"
@@ -60,7 +60,7 @@ export default async function HomeMoreRows({
         </HomeSection>
       )} */}
 
-      <HomeSection className="section-base py-12">
+      <HomeSection className="section-base py-6 sm:py-12">
         <MovieRow
           embedded
           eyebrow="Critics' Choice"
@@ -70,11 +70,11 @@ export default async function HomeMoreRows({
         />
       </HomeSection>
 
-      <HomeSection className="section-alt py-12">
+      <HomeSection className="section-alt py-6 sm:py-12">
         <MovieRow embedded eyebrow="Genre Spotlight" title="Sci-Fi & Beyond" movies={sciFi} />
       </HomeSection>
 
-      <HomeSection className="section-base py-12">
+      <HomeSection className="section-base py-6 sm:py-12">
         <MovieRow embedded eyebrow="Genre Spotlight" title="Drama Collection" movies={drama} />
       </HomeSection>
 

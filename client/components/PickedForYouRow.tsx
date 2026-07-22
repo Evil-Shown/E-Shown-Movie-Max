@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 
 function PickedForYouSkeleton() {
   return (
-    <HomeSection className="section-surface py-12">
+    <HomeSection className="section-surface py-6 sm:py-12">
       <div className="mx-auto max-w-7xl animate-pulse px-4 sm:px-6 lg:px-8">
         <div className="mb-5 h-3 w-24 rounded bg-[var(--bg-secondary)]" />
         <div className="mb-2 h-8 w-48 rounded bg-[var(--bg-secondary)]" />
@@ -59,7 +59,7 @@ export default function PickedForYouRow() {
   if (!movies.length) return null;
 
   return (
-    <HomeSection className="section-surface py-12">
+    <HomeSection className="section-surface py-6 sm:py-12">
       <MovieRowClient
         embedded
         eyebrow="Personalized"

@@ -1,161 +1,99 @@
 "use client";
 
 import { useState } from "react";
+import styles from "./UpgradeBanner.module.css";
+
+const FEATURES = [
+  "Live TV & ad-free streaming",
+  "The God's Eye",
+  "Offline downloads",
+] as const;
 
 export default function UpgradeBanner({ onUpgradeClick }: { onUpgradeClick: () => void }) {
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
-
   const isMonthly = billing === "monthly";
-  const features = [
-    {
-      icon: (
-        <svg
-          className="w-3.5 h-3.5 text-[#D4A574]"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <circle cx="12" cy="12" r="2" />
-          <path d="M16.24 7.76a6 6 0 010 8.49m-8.48-.01a6 6 0 010-8.49m11.31-2.82a10 10 0 010 14.14m-14.14 0a10 10 0 010-14.14" />
-        </svg>
-      ),
-      text: "Live TV & Ad-free Streaming",
-    },
-    {
-      icon: (
-        <svg
-          className="w-3.5 h-3.5 text-[#D4A574]"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-      ),
-      text: "The God's Eye (Torrent Stream)",
-    },
-    {
-      icon: (
-        <svg
-          className="w-3.5 h-3.5 text-[#D4A574]"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ),
-      text: "Offline Downloads",
-    },
-  ];
+
+  const price = isMonthly ? "200" : "2,000";
+  const was = isMonthly ? "500" : "2,400";
+  const savings = isMonthly ? "60%" : "17%";
+  const perDay = isMonthly ? "LKR 6.67 / day" : "LKR 5.48 / day";
+  const usd = isMonthly ? "$0.99 / mo worldwide" : "$9.90 / yr worldwide";
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#D4A574]/30 bg-gradient-to-br from-[#3E2723] via-[#4E342E] to-[#3E2723] p-6 md:p-8 shadow-xl">
-      <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#FFB87A]/20 rounded-full blur-3xl" />
-      <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-[#E65100]/20 rounded-full blur-3xl" />
+    <section className={styles.banner} aria-labelledby="pro-banner-title">
+      <div className={styles.glow} aria-hidden />
+      <div className={styles.grain} aria-hidden />
 
-      <div className="relative flex flex-col md:flex-row items-center justify-between gap-6 z-10">
-        <div className="flex-1">
-          <div className="inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full bg-[#FFB87A]/10 border border-[#FFB87A]/30">
-            <svg
-              className="w-3.5 h-3.5 text-[#FFB87A]"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              <line x1="12" y1="17.77" x2="12" y2="2" />
-              <polyline points="12 9 6 14" />
-            </svg>
-            <span className="text-xs font-semibold text-[#FFB87A] uppercase tracking-wider">Chithira Pro</span>
-          </div>
-          <h2 className="text-2xl md:text-3xl font-bold text-[#FFFBF5] mb-2" style={{ fontFamily: "Cinzel, serif" }}>
-            Unlock The God&apos;s Eye & Live TV
+      <div className={styles.layout}>
+        <div className={styles.copy}>
+          <p className={styles.eyebrow}>
+            <span className={styles.star} aria-hidden>
+              ★
+            </span>
+            Chithira Pro
+          </p>
+          <h2 id="pro-banner-title" className={styles.title}>
+            Unlock Live TV &amp; The God&apos;s Eye
           </h2>
-          <p className="text-[#FFFBF5]/60 text-sm mb-4 max-w-lg">
-            Don&apos;t be limited by the 60-day trial. Upgrade to Pro for unlimited torrent downloading, movies and tv
-            series offline downloads, and best cinematic quality and fast streaming.
+          <p className={styles.lead}>
+            Keep streaming after the trial — ad-free cinema, downloads, and full Live TV access.
           </p>
 
-          <div className="flex flex-col md:flex-row md:flex-wrap gap-2 md:gap-4 mb-4">
-            {features.map((feat) => (
-              <div
-                key={feat.text}
-                className="flex items-center gap-2 text-sm text-[#FFFBF5]/80 bg-[#FFFBF5]/5 px-3 py-2 rounded-lg border border-[#FFFBF5]/10"
-              >
-                {feat.icon}
-                {feat.text}
-              </div>
+          <ul className={styles.features}>
+            {FEATURES.map((feat) => (
+              <li key={feat} className={styles.feature}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden>
+                  <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>{feat}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
 
-        <div className="relative flex flex-col items-center gap-3 bg-[#FFFBF5]/5 backdrop-blur-sm p-5 rounded-xl border border-[#FFFBF5]/10 w-full md:w-auto md:min-w-[260px]">
-          <div className="absolute -top-3 right-4 bg-[#FFB87A] text-[#3E2723] text-[10px] font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
-            LIMITED OFFER
-          </div>
-          <div className="flex gap-2">
+        <div className={styles.offer}>
+          <div className={styles.billing} role="group" aria-label="Billing period">
             <button
+              type="button"
+              className={`${styles.billingBtn} ${isMonthly ? styles.billingBtnActive : ""}`}
               onClick={() => setBilling("monthly")}
-              className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                isMonthly ? "bg-[#FFB87A] text-[#3E2723]" : "bg-[#FFFBF5]/10 text-[#FFFBF5]/60"
-              }`}
+              aria-pressed={isMonthly}
             >
               Monthly
             </button>
             <button
+              type="button"
+              className={`${styles.billingBtn} ${!isMonthly ? styles.billingBtnActive : ""}`}
               onClick={() => setBilling("yearly")}
-              className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                !isMonthly ? "bg-[#FFB87A] text-[#3E2723]" : "bg-[#FFFBF5]/10 text-[#FFFBF5]/60"
-              }`}
+              aria-pressed={!isMonthly}
             >
               Yearly
             </button>
           </div>
-          <div className="text-center">
-            <span className="text-[#FFFBF5]/60 text-xs uppercase tracking-wider">Limited Time Offer</span>
-            <div className="flex items-center justify-center gap-3 mt-2">
-              {isMonthly ? (
-                <>
-                  <span className="text-lg text-[#FFFBF5]/40 line-through decoration-2">LKR 500</span>
-                  <span className="text-4xl font-extrabold text-[#FFB87A]">LKR 200</span>
-                  <span className="text-[#FFFBF5]/40 text-sm self-end mb-1">/mo</span>
-                </>
-              ) : (
-                <>
-                  <span className="text-lg text-[#FFFBF5]/40 line-through decoration-2">LKR 2,400</span>
-                  <span className="text-4xl font-extrabold text-[#FFB87A]">LKR 2,000</span>
-                  <span className="text-[#FFFBF5]/40 text-sm self-end mb-1">/yr</span>
-                </>
-              )}
-            </div>
-            <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-red-500/15 border border-red-400/30">
-              <span className="text-red-300 text-xs font-bold">
-                {isMonthly ? "🔥 Save 60%" : "🎉 Save 17%"}
+
+          <div className={styles.priceBlock}>
+            <p className={styles.saveChip}>Save {savings}</p>
+            <div className={styles.priceRow}>
+              <span className={styles.was}>LKR {was}</span>
+              <span className={styles.price}>
+                LKR {price}
+                <span className={styles.period}>{isMonthly ? "/mo" : "/yr"}</span>
               </span>
             </div>
-            <div className="text-[#FFFBF5]/40 text-xs mt-3">
-              {isMonthly ? "Only LKR 6.67 per day" : "Only LKR 5.48 per day"}
-              &bull; Cancel anytime
-            </div>
-            <div className="text-[#FFFBF5]/40 text-xs mt-1">
-              {isMonthly ? "or $0.99/month for global users" : "or $9.90/year for global users"}
-            </div>
+            <p className={styles.meta}>
+              {perDay} · Cancel anytime
+              <span className={styles.metaUsd}>{usd}</span>
+            </p>
           </div>
 
-          <button
-            onClick={onUpgradeClick}
-            className="w-full mt-2 px-6 py-3 bg-gradient-to-r from-[#FFB87A] to-[#D4A574] text-[#3E2723] font-bold rounded-lg hover:shadow-[0_0_20px_rgba(255,184,122,0.4)] transition-all duration-300 transform hover:scale-105"
-          >
-            Upgrade Now
+          <button type="button" onClick={onUpgradeClick} className={styles.cta}>
+            Upgrade to Pro
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+              <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -22,18 +22,29 @@ export default function CtaBanner({ stats }: CtaBannerProps) {
   ];
 
   return (
-    <section className="bg-[var(--bg-dark)] py-16">
-      <div className="mx-auto max-w-[1280px] px-6">
-        <div className="grid gap-8 text-center sm:grid-cols-3 sm:gap-0">
+    <section className="relative overflow-hidden bg-[var(--bg-dark)] py-9 sm:py-16">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-40 sm:opacity-50"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 80% at 20% 0%, rgba(230,81,0,0.22), transparent 55%), radial-gradient(ellipse 50% 60% at 90% 100%, rgba(255,184,122,0.12), transparent 50%)",
+        }}
+      />
+      <div className="relative mx-auto max-w-[1280px] px-4 sm:px-6">
+        <p className="mb-5 text-center text-[9px] font-semibold uppercase tracking-[0.22em] text-[rgba(247,244,239,0.45)] sm:mb-8 sm:text-[10px]">
+          The Catalog
+        </p>
+        <div className="grid grid-cols-3 gap-2 text-center sm:gap-0">
           {items.map((stat, index) => (
             <div
               key={stat.label}
-              className={`px-6 ${index > 0 ? "sm:border-l sm:border-[rgba(247,244,239,0.16)]" : ""}`}
+              className={`px-2 sm:px-6 ${index > 0 ? "border-l border-[rgba(247,244,239,0.14)]" : ""}`}
             >
-              <p className="font-[var(--font-playfair)] text-5xl font-bold text-[var(--accent-warm)]">
+              <p className="font-[var(--font-playfair)] text-[1.75rem] font-bold leading-none text-[var(--accent-warm)] sm:text-5xl">
                 {stat.value}
               </p>
-              <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[rgba(247,244,239,0.6)]">
+              <p className="mt-2 text-[9px] font-semibold uppercase tracking-[0.14em] text-[rgba(247,244,239,0.55)] sm:mt-3 sm:text-[11px] sm:tracking-[0.12em]">
                 {stat.label}
               </p>
             </div>

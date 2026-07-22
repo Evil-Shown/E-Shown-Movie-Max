@@ -45,7 +45,7 @@ export default function LiveTvHero() {
         }}
       />
 
-      <div className="relative grid grid-cols-1 items-center gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:gap-12">
+      <div className="relative grid grid-cols-1 items-center gap-6 p-5 sm:gap-8 sm:p-8 lg:grid-cols-[1fr_auto] lg:gap-12">
         <motion.div
           variants={prefersReducedMotion ? undefined : fadeUpVariant}
           initial="hidden"

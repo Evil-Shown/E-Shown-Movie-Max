@@ -28,9 +28,9 @@ export default function Footer() {
 
   return (
     <footer className="mt-auto border-t border-[var(--border-strong)] bg-[var(--bg-secondary)]">
-      <div className="mx-auto max-w-[1280px] px-6 py-12">
-        <div className="grid gap-10 md:grid-cols-4">
-          <div>
+      <div className="mx-auto max-w-[1280px] px-4 py-8 sm:px-6 sm:py-12">
+        <div className="grid grid-cols-2 gap-8 sm:gap-10 md:grid-cols-4">
+          <div className="col-span-2 md:col-span-1">
             <p className="font-[var(--font-playfair)] text-xl font-bold tracking-wide text-[var(--text-primary)]">
               {BRAND_NAME}
             </p>
@@ -40,12 +40,12 @@ export default function Footer() {
 
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--accent-cool)]">Explore</p>
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-3 space-y-2 sm:mt-4">
               {exploreLinks.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    className="inline-flex min-h-[36px] items-center text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   >
                     {item.label}
                   </Link>
@@ -56,12 +56,12 @@ export default function Footer() {
 
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--accent-cool)]">Genres</p>
-            <ul className="mt-4 flex flex-wrap gap-2">
+            <ul className="mt-3 flex flex-wrap gap-2 sm:mt-4">
               {genres.map((genre) => (
                 <li key={genre}>
                   <Link
                     href={`/browse?genre=${encodeURIComponent(genre)}`}
-                    className="inline-flex rounded-full border border-[var(--border-strong)] px-3 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    className="inline-flex min-h-[32px] items-center rounded-full border border-[var(--border-strong)] px-3 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   >
                     {genre}
                   </Link>
@@ -70,16 +70,16 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--accent-cool)]">Legal</p>
-            <ul className="mt-4 space-y-2 text-[13px] text-[var(--text-secondary)]">
+            <ul className="mt-3 space-y-2 text-[13px] text-[var(--text-secondary)] sm:mt-4">
               <li>Movie data and posters courtesy of TMDB.</li>
               <li>Trailers open from public YouTube embeds.</li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-10 border-t border-[var(--border)] pt-6 text-center text-[11px] text-[var(--text-muted)]">
+        <div className="mt-8 border-t border-[var(--border)] pt-5 text-center text-[11px] text-[var(--text-muted)] sm:mt-10 sm:pt-6">
           <p>
             (c) {new Date().getFullYear()} {BRAND_NAME} · Developed by {BRAND_DEVELOPER}
           </p>
